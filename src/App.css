@@ -1,0 +1,51 @@
+/* Estilos generales */
+body, html {
+  @apply h-full;
+}
+
+.profile-page {
+  @apply flex flex-col h-screen; 
+}
+
+/* Navbar fijo en la parte superior */
+.navbar {
+  @apply w-full bg-primary text-white p-4 fixed top-0 z-50 flex justify-between;
+}
+
+/* Layout principal con sidebar y contenido */
+.main-layout {
+  @apply flex pt-16 h-full; 
+}
+
+/* Contenido principal */
+.content {
+  @apply flex-1 p-8 bg-white overflow-y-auto; 
+}
+
+/* Sidebar */
+.sidebar {
+  @apply w-64 bg-primary text-white shadow-lg p-5; 
+}
+
+/* Botones del sidebar */
+.sidebar-button {
+  @apply w-full p-2 mb-2 text-left bg-primary text-white cursor-pointer hover:bg-gray-600;
+}
+
+/* Footer */
+.footer {
+  @apply w-full bg-primary text-white p-4 text-center;
+}
+
+/* Estilos adicionales para títulos y formularios */
+h1 {
+  @apply text-2xl; 
+}
+
+form div {
+  @apply mb-4; 
+}
+
+form input {
+  @apply p-2 w-full box-border;
+}
