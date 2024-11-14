@@ -1,11 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser } from '../../features/user/services/auth/logoutUser'; // Asumiendo que esta función llama al endpoint de logout
+import { logoutUser } from '../../features/user/services/auth/logoutUser';
+import {
+  HomeIcon,
+  UserIcon,
+  CubeIcon,
+  ClipboardDocumentListIcon,
+  UsersIcon,
+  ChatBubbleLeftEllipsisIcon,
+  TagIcon,
+  Squares2X2Icon,
+  ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline';
 
 const Sidebar = () => {
   const navigate = useNavigate();
 
-  // Funciones de navegación para cada botón
   const handleLogout = async () => {
     try {
       await logoutUser();
@@ -21,8 +31,6 @@ const Sidebar = () => {
   const goToOrders = () => navigate('/cutting-orders');
   const goToUsers = () => navigate('/users-list');
   const goToComments = () => navigate('/comments');
-  
-  // Nuevas funciones de navegación para Categorías y Tipos
   const goToCategories = () => navigate('/categories');
   const goToTypes = () => navigate('/types');
 
@@ -30,59 +38,67 @@ const Sidebar = () => {
     <aside className="w-64 h-screen bg-zinc-800 text-white min-h-screen p-4 font-sans">
       <button 
         onClick={goToHome} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <HomeIcon className="h-5 w-5 mr-3" />
         Inicio
       </button>
       <button 
         onClick={goToProfile} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <UserIcon className="h-5 w-5 mr-3" />
         Mi Perfil
       </button>
       <button 
         onClick={goToProducts} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <CubeIcon className="h-5 w-5 mr-3" />
         Productos
       </button>
       <button 
         onClick={goToOrders} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <ClipboardDocumentListIcon className="h-5 w-5 mr-3" />
         Órdenes de Corte
       </button>
       <button 
         onClick={goToUsers} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <UsersIcon className="h-5 w-5 mr-3" />
         Usuarios
       </button>
       <button 
         onClick={goToComments} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3" />
         Comentarios
       </button>
       
-      {/* Nuevos botones para Categorías y Tipos */}
       <button 
         onClick={goToCategories} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <Squares2X2Icon className="h-5 w-5 mr-3" />
         Categorías
       </button>
       <button 
         onClick={goToTypes} 
-        className="w-full text-left py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
       >
+        <TagIcon className="h-5 w-5 mr-3" />
         Tipos
       </button>
 
       <button 
         onClick={handleLogout} 
-        className="w-full text-left py-2 px-4 bg-red-600 rounded hover:bg-red-500"
+        className="w-full text-left flex items-center py-2 px-4 bg-red-600 rounded hover:bg-red-500"
       >
+        <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
         Cerrar Sesión
       </button>
     </aside>
