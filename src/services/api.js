@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Base URL configurable desde variables de entorno
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api/v1/';
+// Base URL configurable desde variables de entorno (Vite utiliza `import.meta.env`)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1/';
 
 // Crear una instancia de Axios
 const api = axios.create({

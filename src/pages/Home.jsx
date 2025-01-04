@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth'; // Importa el hook personalizado
+import { useAuth } from '../hooks/useAuth';
+import ErrorMessage from '../components/common/ErrorMessage';
+import InputField from '../components/ui/form/InputField';
+import Spinner from '../components/ui/Spinner'; // Corregido el path de la importación
 
 const Home = () => {
-  const { login, error, loading } = useAuth(); // Extraemos la función de login, error y estado de carga desde el hook
+  const { login, error, loading } = useAuth(); // Hook para login, error y loading
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const credentials = { username, password };
+    // Validar campos antes de enviar
+    if (!username || !password) {
+      console.log('Debe completar ambos campos');
+      return;
+    }
 
-    // Verifica que los datos se capturan correctamente antes de enviarlos
+    const credentials = { username, password };
     console.log('Datos enviados al backend:', credentials);
 
-    // Ejecuta la función de login desde el hook
+    // Ejecutar la función de login del hook
     await login(credentials);
   };
 
@@ -27,42 +34,44 @@ const Home = () => {
           </div>
 
           <div className="bg-neutral-light p-8 rounded-lg shadow-lg w-full max-w-md lg:w-1/2">
-            <h2 className="text-black font-sans font-semibold pb-0.5 text-center">Sistema de gestión de stock</h2>
+            <h2 className="text-black font-sans font-semibold pb-0.5 text-center">
+              Sistema de gestión de stock
+            </h2>
             <form onSubmit={handleLogin}>
-              <div className="relative mb-4">
-                <input
-                  type="text"
-                  className="peer block w-full px-3 py-2 rounded bg-gray-200 font-sans font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  id="username"
-                  placeholder="Ingrese su usuario"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={loading} // Deshabilitar mientras carga
-                />
-              </div>
+              {/* Campo de entrada para el nombre de usuario */}
+              <InputField
+                label="Usuario"
+                type="text"
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Ingrese su usuario"
+                disabled={loading}
+                aria-label="Usuario"
+              />
 
-              <div className="relative mb-4">
-                <input
-                  type="password"
-                  className="peer block w-full px-3 py-2 rounded bg-gray-200 font-sans font-medium text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  id="password"
-                  placeholder="Ingrese su contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading} // Deshabilitar mientras carga
-                />
-              </div>
+              {/* Campo de entrada para la contraseña */}
+              <InputField
+                label="Contraseña"
+                type="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingrese su contraseña"
+                disabled={loading}
+                aria-label="Contraseña"
+              />
 
               {/* Mostrar mensaje de error si ocurre */}
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {error && <ErrorMessage message={error} />}
 
               <div className="text-center lg:text-left">
                 <button
                   type="submit"
                   className="w-full rounded bg-accent-dark px-4 py-2 font-sans font-semibold text-white shadow-md transition duration-150 ease-in-out hover:bg-blue-700 focus:bg-blue-700 focus:outline-none"
-                  disabled={loading} // Deshabilitar mientras carga
+                  disabled={loading}
                 >
-                  {loading ? 'Cargando...' : 'Ingresar'}
+                  {loading ? <Spinner size="5" color="text-white" /> : 'Ingresar'}
                 </button>
               </div>
             </form>

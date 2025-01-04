@@ -12,48 +12,49 @@ export const useAuth = () => {
   // Verificar si el token existe en localStorage al montar el componente
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    if (token) {
-      setIsAuthenticated(true); // Autenticado si hay token
-    } else {
-      setIsAuthenticated(false); // No autenticado si no hay token
-    }
+    setIsAuthenticated(!!token); // Autenticado si hay token, caso contrario no
     setLoading(false); // Terminamos de cargar la autenticación
   }, []); // Solo lo hacemos al montar el componente
 
   // Función de login
   const login = async (credentials) => {
-    setError(null);
-    setLoading(true);
+    setError(null); // Reiniciar error
+    setLoading(true); // Mostrar estado de carga
     try {
       const data = await loginUser(credentials); // Llamamos al servicio de login
-      if (data && data.access) {
+      if (data?.access) {
         localStorage.setItem('access_token', data.access); // Guardamos el token en localStorage
         setIsAuthenticated(true); // Usuario autenticado
         navigate('/dashboard'); // Redirigimos al dashboard
       } else {
-        setError('Error en la autenticación');
+        setError('Authentication error. Please try again.'); // Mensaje de error si el login falla
       }
     } catch (err) {
-      setError('Error en el login');
-      console.error('Error en el login:', err);
+      setError('Error during login. Please check your credentials.'); // Mensaje genérico para el usuario
+      console.error('Login error:', err); // Log más detallado para desarrollo
     } finally {
-      setLoading(false);
+      setLoading(false); // Terminamos el estado de carga
     }
   };
 
   // Función de logout
-  const logout = () => {
-    logoutUser(); // Llamamos al servicio de logout
-    localStorage.removeItem('access_token'); // Eliminamos el token de localStorage
-    setIsAuthenticated(false); // Actualizamos el estado de autenticación
-    navigate('/'); // Redirigimos al home después del logout
+  const logout = async () => {
+    try {
+      await logoutUser(); // Llamamos al servicio de logout
+    } catch (err) {
+      console.error('Error during logout:', err); // Registrar errores del backend (opcional)
+    } finally {
+      localStorage.removeItem('access_token'); // Eliminamos el token de localStorage
+      setIsAuthenticated(false); // Actualizamos el estado de autenticación
+      navigate('/'); // Redirigimos al home después del logout
+    }
   };
 
   return {
-    isAuthenticated,
-    login, // Retornamos la función de login
-    logout, // Retornamos la función de logout
-    loading, // Retornamos el estado de carga
-    error, // Retornamos el estado de error
+    isAuthenticated, // Devuelve el estado de autenticación
+    login, // Función de login
+    logout, // Función de logout
+    loading, // Estado de carga
+    error, // Estado de error
   };
 };

@@ -7,9 +7,9 @@ import ProtectedRoute from '../components/common/ProtectedRoute';
 // Importar las rutas de las features
 import productRoutes from '../features/product/router/productRoutes'; 
 import userRoutes from '../features/user/router/userRoutes'; 
-import cuttingOrder from '../features/cuttingOrder/router/cuttingOrderRoutes';
+import cuttingOrderRoutes from '../features/cuttingOrder/router/cuttingOrderRoutes'; // Ajuste al nombre para claridad
 import categoryRoutes from '../features/category/router/categoryRoutes';
-import typeRoutes from '../features/type/router/typeRoutes'; // Importar el router de tipos
+import typeRoutes from '../features/type/router/typeRoutes';
 
 const AppRoutes = () => (
   <Router>
@@ -17,14 +17,21 @@ const AppRoutes = () => (
       {/* Rutas generales */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Home />} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
 
-      {/* Rutas modulares: Productos, Usuarios, Ordenes de corte, Categorías y Tipos */}
-      {cuttingOrder}    {/* Las rutas del módulo de Ordenes de corte */}
-      {productRoutes}   {/* Las rutas del módulo de productos */}
-      {userRoutes}      {/* Las rutas del módulo de usuarios */}
-      {categoryRoutes}  {/* Las rutas del módulo de categorías */}
-      {typeRoutes}      {/* Las rutas del módulo de tipos */}
+      {/* Rutas modulares */}
+      {cuttingOrderRoutes}    {/* Rutas del módulo de Órdenes de Corte */}
+      {productRoutes}         {/* Rutas del módulo de Productos */}
+      {userRoutes}            {/* Rutas del módulo de Usuarios */}
+      {categoryRoutes}        {/* Rutas del módulo de Categorías */}
+      {typeRoutes}            {/* Rutas del módulo de Tipos */}
     </Routes>
   </Router>
 );
