@@ -19,23 +19,46 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('Error en la configuración de la solicitud:', error);
+    console.error("Request configuration error:", error);
     return Promise.reject(error);
   }
 );
 
+// Variables para evitar múltiples renovaciones de token simultáneamente
+let isRefreshing = false;
+let subscribers = [];
+
+// Función para notificar a las solicitudes en espera cuando se renueve el token
+const onRefreshed = (token) => {
+  subscribers.forEach((callback) => callback(token));
+  subscribers = [];
+};
+
+// Función para agregar suscriptores a la cola de espera
+const addSubscriber = (callback) => {
+  subscribers.push(callback);
+};
+
 // Interceptor de respuestas: Manejar la renovación del token JWT
 api.interceptors.response.use(
-  (response) => {
-    // Respuesta exitosa
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
     // Manejo de errores 401 por expiración del token
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true; // Evitar bucle infinito
+
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          addSubscriber((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
       const refreshToken = localStorage.getItem('refresh_token');
 
       if (refreshToken) {
@@ -47,18 +70,19 @@ api.interceptors.response.use(
 
           // Guardar el nuevo token de acceso
           localStorage.setItem('access_token', data.access);
-
-          // Actualizar el header de autorización
-          originalRequest.headers.Authorization = `Bearer ${data.access}`;
-
-          // Reintentar la solicitud original
+          api.defaults.headers.Authorization = `Bearer ${data.access}`;
+          
+          // Notificar a las solicitudes en espera
+          onRefreshed(data.access);
+          isRefreshing = false;
           return api(originalRequest);
         } catch (refreshError) {
-          console.warn('Refresh token inválido o expirado:', refreshError);
+          console.warn("Refresh token invalid or expired:", refreshError);
           handleSessionExpiration();
+          isRefreshing = false;
         }
       } else {
-        console.warn('No se encontró refresh token. Redirigiendo al login.');
+        console.warn("No refresh token found. Redirecting to login.");
         handleSessionExpiration();
       }
     }
@@ -67,11 +91,11 @@ api.interceptors.response.use(
   }
 );
 
-// Función para manejar expiración de sesión
+// Función para manejar expiración de sesión sin redirección forzada
 const handleSessionExpiration = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
-  window.location.href = '/login'; // Redirigir al login
+  window.dispatchEvent(new Event('sessionExpired')); // Enviar un evento global
 };
 
 export default api;

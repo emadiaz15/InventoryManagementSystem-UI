@@ -3,17 +3,19 @@ import api from '../../../../services/api'; // Importa la instancia de Axios con
 // Método para el login de usuarios
 export const loginUser = async (credentials) => {
   try {
-    const response = await api.post('users/login/', credentials);
-    
-    // Almacenar los tokens en el localStorage
-    if (response.data.access) {
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
-    }
+    const response = await api.post('/users/login/', credentials);
+    console.log('Backend response:', response.data); // Debugging
 
-    return response.data; // Devolver la respuesta para manejarla en el frontend
+    // Verificar que la respuesta contenga los tokens antes de almacenarlos
+    if (response.data.access_token && response.data.refresh_token) {
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+      return response.data;
+    } else {
+      throw new Error('Invalid response from server.');
+    }
   } catch (error) {
-    console.error('Error en el login:', error);
+    console.error('Login error:', error.response?.data || error.message);
     throw error; // Lanzamos el error para manejarlo en el componente
   }
 };

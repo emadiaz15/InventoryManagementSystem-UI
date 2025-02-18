@@ -35,45 +35,45 @@ const Sidebar = () => {
   const goToTypes = () => navigate('/types');
 
   return (
-    <aside className="w-64 h-screen bg-zinc-800 text-white min-h-screen p-4 font-sans">
+    <aside className="w-64 h-full bg-primary-500 text-neutral-50 p-2 font-sans overflow-y-auto fixed top-14 left-0">
       <button 
         onClick={goToHome} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <HomeIcon className="h-5 w-5 mr-3" />
         Inicio
       </button>
       <button 
         onClick={goToProfile} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <UserIcon className="h-5 w-5 mr-3" />
         Mi Perfil
       </button>
       <button 
         onClick={goToProducts} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <CubeIcon className="h-5 w-5 mr-3" />
         Productos
       </button>
       <button 
         onClick={goToOrders} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <ClipboardDocumentListIcon className="h-5 w-5 mr-3" />
         Órdenes de Corte
       </button>
       <button 
         onClick={goToUsers} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <UsersIcon className="h-5 w-5 mr-3" />
         Usuarios
       </button>
       <button 
         onClick={goToComments} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3" />
         Comentarios
@@ -81,14 +81,14 @@ const Sidebar = () => {
       
       <button 
         onClick={goToCategories} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <Squares2X2Icon className="h-5 w-5 mr-3" />
         Categorías
       </button>
       <button 
         onClick={goToTypes} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-gray-700 rounded hover:bg-gray-600"
+        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
       >
         <TagIcon className="h-5 w-5 mr-3" />
         Tipos
@@ -96,7 +96,7 @@ const Sidebar = () => {
 
       <button 
         onClick={handleLogout} 
-        className="w-full text-left flex items-center py-2 px-4 bg-red-600 rounded hover:bg-red-500"
+        className="w-full text-left flex items-center py-2 px-4 bg-accent-500 rounded hover:bg-accent-400 transition-all"
       >
         <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
         Cerrar Sesión

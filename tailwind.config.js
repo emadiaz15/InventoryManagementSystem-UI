@@ -7,40 +7,55 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          light: '#21DBAF',   // Color claro del botón verde "Talk to us"
-          DEFAULT: '#06203f', // Color principal oscuro para el texto general
-          dark: '#111827',    // Color oscuro usado en los bordes o fondos secundarios
+          500: '#1f618d', // Color primario
+          600: '#23495d', // Color primario para hover
         },
         secondary: {
-          light: '#FF9275',   // Color claro del botón "Book a Demo" (rojo claro)
-          DEFAULT: '#F95738', // Color secundario, posiblemente un acento naranja/rojo
-          dark: '#C62B1A',    // Color oscuro usado en hover del botón "Book a Demo"
+          500: '#168769', // Color de acento
+          600: '#1f618d', // Color de acento más claro
+        },
+        background: {
+          100: '#e5e7e9', // Fondo principal
+          200: '#aeb6bf', // Fondo secundario
+        },
+        text: {
+          primary: '#17202a ', // Texto principal
+          secondary: '#1c2638', // Texto secundario
+          white: '#f4f6f7', // Texto blanco
         },
         accent: {
-          light: '#43D0B9',   // Color del botón "Price Calculator" (verde/menta claro)
-          DEFAULT: '#1FC5A8', // Color de acento general (verde agua claro en botones)
-          dark: '#0FA097',    // Color más oscuro del verde/acento en botones
+          400: '#9b222b', // Para hover o acentos más oscuros
+          500: '#f14e52', // Color de acento (usado para botones secundarios o detalles)
+        },
+        success: {
+          500: '#28a745', // Éxito
+          600: '#1e7e34', // Éxito para hover
+        },
+        warning: {
+          500: '#ffc107', // Advertencia
+          600: '#e6a800', // Advertencia para hover
+        },
+        error: {
+          500: '#dc3545', // Error
+        },
+        info: {
+          500: '#17a2b8', // Información
         },
         neutral: {
-          light: '#F3F4F6',   // Fondo claro, como el fondo general de la página o la caja de cookies
-          DEFAULT: '#334155', // Color neutro de fondo oscuro o fondo del sidebar
-          dark: '#1E293B',    // Fondo más oscuro usado en sidebar o tarjetas
-        },
-        highlight: {
-          DEFAULT: '#0AB6FF', // Color azul claro (acento en logotipos, elementos destacados)
-          dark: '#007BBB',    // Azul oscuro para hover o iconografía
+          500: '#6c757d', // Neutro
         },
       },
-      // Extensiones para tipografías personalizadas (opcional)
       fontFamily: {
-        sans: ['Inter', 'sans-serif'], // Tipografía personalizada, comúnmente usada en interfaces modernas
+        sans: ['Inter', 'sans-serif'],
         serif: ['Merriweather', 'serif'],
       },
-      // Extensiones para bordes redondeados (opcional)
       borderRadius: {
         '4xl': '2rem',
+      },
+      transitionProperty: {
+        colors: 'background-color, border-color, color, fill, stroke',
       },
     },
   },
   plugins: [],
-};
+}

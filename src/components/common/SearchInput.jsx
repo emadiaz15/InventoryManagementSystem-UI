@@ -1,11 +1,10 @@
-// src/components/common/SearchInput.jsx
 import React from 'react';
 
 const SearchInput = ({ placeholder, onSearch }) => {
   return (
     <div className="relative">
       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-        <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+        <svg className="w-4 h-4 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
           <path
             stroke="currentColor"
             strokeLinecap="round"
@@ -17,9 +16,10 @@ const SearchInput = ({ placeholder, onSearch }) => {
       </div>
       <input
         type="text"
-        className="block pt-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        className="block pt-2 pl-10 text-sm text-text-primary border border-primary-500 rounded-lg w-80 bg-background-100 focus:ring-primary-600 focus:border-primary-600"
         placeholder={placeholder}
         onChange={(e) => onSearch(e.target.value)}
+        aria-label="Buscar"
       />
     </div>
   );

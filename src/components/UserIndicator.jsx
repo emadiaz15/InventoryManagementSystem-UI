@@ -1,35 +1,33 @@
-// src/components/UserDropdown.jsx
 import React, { useState, useEffect } from 'react';
-import { getUserProfileLogged } from '../features/user/services/auth/getUserProfileLogged'; // Asegúrate de que este servicio existe y está configurado correctamente
+import { getUserProfileLogged } from '../features/user/services/auth/getUserProfileLogged';
 
 const UserDropdown = () => {
-  const [user, setUser] = useState({
-    name: '',
-    last_name: '',
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userProfile = await getUserProfileLogged(); // Supongamos que esto devuelve el perfil del usuario logueado
-        setUser({
-          name: userProfile.name,
-          last_name: userProfile.last_name,
-        });
+        const userProfile = await getUserProfileLogged();
+        setUser({ name: userProfile.name, last_name: userProfile.last_name });
       } catch (error) {
-        console.error('Error al obtener los datos del usuario', error);
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserData();
   }, []);
 
+  if (loading) {
+    return <span className="text-white text-sm sm:text-base mr-2">Cargando...</span>;
+  }
+
   return (
-    <div className="relative">
-      <button className="dropdown-button font-mono text-white font-bold text-2xl">
-        {user.name} {user.last_name}
-      </button>
-    </div>
+    <span className="text-white font-semibold text-sm sm:text-base mr-2">
+      {user ? `${user.name} ${user.last_name}` : 'Usuario'}
+    </span>
   );
 };
 

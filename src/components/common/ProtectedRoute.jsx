@@ -1,21 +1,24 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth'; // Asegúrate de que este hook esté correctamente implementado
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import Spinner from '../ui/Spinner';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth(); // Obtenemos el estado de autenticación y carga
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
-  // Mostrar un mensaje de carga mientras se verifica la autenticación
   if (loading) {
-    return <p>Cargando...</p>;
+    return (
+      <div className="flex justify-center items-center h-screen bg-background-100">
+        <Spinner size="8" color="text-primary-500" aria-label="Cargando..." />
+      </div>
+    );
   }
 
-  // Si no está autenticado, redirige a la página de login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Si está autenticado, renderiza los hijos (el contenido protegido)
   return children;
 };
 

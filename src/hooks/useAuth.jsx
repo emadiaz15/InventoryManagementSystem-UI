@@ -1,60 +1,140 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Para redirigir después de login
-import { loginUser } from '../features/user/services/auth/loginUser'; // Servicio de login
-import { logoutUser } from '../features/user/services/auth/logoutUser'; // Servicio de logout
+import { useNavigate } from 'react-router-dom';
+import { loginUser } from '../features/user/services/auth/loginUser';
+import { logoutUser } from '../features/user/services/auth/logoutUser';
+import api from '../services/api'; // Asegurar que importamos la instancia de Axios
 
 export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Estado de autenticación
-  const [loading, setLoading] = useState(true); // Estado de carga
-  const [error, setError] = useState(null); // Estado de error
-  const navigate = useNavigate(); // Para redirigir al dashboard
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // Verificar si el token existe en localStorage al montar el componente
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    setIsAuthenticated(!!token); // Autenticado si hay token, caso contrario no
-    setLoading(false); // Terminamos de cargar la autenticación
-  }, []); // Solo lo hacemos al montar el componente
+    const validateToken = async () => {
+      const accessToken = localStorage.getItem('access_token');
+      const refreshToken = localStorage.getItem('refresh_token');
 
-  // Función de login
+      if (!accessToken) {
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Intentar acceder al perfil del usuario para verificar si el token es válido
+        await api.get('/users/profile/', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.warn('Token expirado. Intentando refrescar...', err);
+
+        if (refreshToken) {
+          try {
+            const { data } = await api.post('/users/refresh/', { refresh: refreshToken });
+            localStorage.setItem('access_token', data.access);
+            setIsAuthenticated(true);
+          } catch (refreshError) {
+            console.error('Error al refrescar el token:', refreshError);
+            logout();
+          }
+        } else {
+          logout();
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateToken();
+  }, []);
+
   const login = async (credentials) => {
-    setError(null); // Reiniciar error
-    setLoading(true); // Mostrar estado de carga
+    setError(null);
+    setLoading(true);
     try {
-      const data = await loginUser(credentials); // Llamamos al servicio de login
-      if (data?.access) {
-        localStorage.setItem('access_token', data.access); // Guardamos el token en localStorage
-        setIsAuthenticated(true); // Usuario autenticado
-        navigate('/dashboard'); // Redirigimos al dashboard
+      const data = await loginUser(credentials);
+      console.log('Backend response:', data);
+  
+      if (data?.access_token && data?.refresh_token) {
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        
+        // Asegurar que los tokens se guardan antes de cambiar el estado
+        setTimeout(() => {
+          setIsAuthenticated(true);
+          navigate('/dashboard'); // Redirigir al Dashboard
+        }, 100);
       } else {
-        setError('Authentication error. Please try again.'); // Mensaje de error si el login falla
+        setError('Authentication error. Please try again.');
       }
     } catch (err) {
-      setError('Error during login. Please check your credentials.'); // Mensaje genérico para el usuario
-      console.error('Login error:', err); // Log más detallado para desarrollo
+      console.error('Login error:', err);
+      setError('Error during login. Please check your credentials.');
     } finally {
-      setLoading(false); // Terminamos el estado de carga
+      setLoading(false);
     }
   };
+  
 
-  // Función de logout
   const logout = async () => {
     try {
-      await logoutUser(); // Llamamos al servicio de logout
+      await logoutUser();
     } catch (err) {
-      console.error('Error during logout:', err); // Registrar errores del backend (opcional)
+      console.warn('Logout request failed, but clearing session anyway:', err);
     } finally {
-      localStorage.removeItem('access_token'); // Eliminamos el token de localStorage
-      setIsAuthenticated(false); // Actualizamos el estado de autenticación
-      navigate('/'); // Redirigimos al home después del logout
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token'); 
+      setIsAuthenticated(false);
+      navigate('/login'); // Redirigir al login
     }
   };
-
+  
+  const validateToken = async () => {
+    const accessToken = localStorage.getItem('access_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+  
+    if (!accessToken) {
+      setIsAuthenticated(false);
+      setLoading(false);
+      return;
+    }
+  
+    try {
+      // Intentar acceder al perfil del usuario para verificar si el token es válido
+      await api.get('/users/profile/', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.warn('Token expired. Attempting to refresh...', err);
+  
+      if (refreshToken) {
+        try {
+          const { data } = await api.post('/users/refresh/', { refresh: refreshToken });
+          if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+            setIsAuthenticated(true);
+            return;
+          }
+        } catch (refreshError) {
+          console.error('Error refreshing token:', refreshError);
+        }
+      }
+  
+      logout(); // Si el refresh falla, cerrar sesión
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return {
-    isAuthenticated, // Devuelve el estado de autenticación
-    login, // Función de login
-    logout, // Función de logout
-    loading, // Estado de carga
-    error, // Estado de error
+    isAuthenticated,
+    login,
+    logout,
+    loading,
+    error,
+    validateToken,
   };
 };
