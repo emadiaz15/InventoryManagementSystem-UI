@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import UserInfoCard from './UserInfoCard';
 
 const UserInfoSection = ({ user, setUser }) => {
-  const handleUpdateUser = (updatedUser) => {
-    setUser(updatedUser); // Actualiza el estado del usuario en el componente padre
-  };
 
+  const handleUpdateUser = (updatedFields) => {
+    setUser((prevUser) => ({ ...prevUser, ...updatedFields }));
+  };
+  
   return (
     <div className="mt-6 grid md:grid-cols-2 gap-4 text-secondary-500">
       {[
@@ -21,7 +22,7 @@ const UserInfoSection = ({ user, setUser }) => {
           label={info.label}
           value={info.value}
           userId={user.id}
-          onUpdate={() => handleUpdateUser(user)} // Actualiza el usuario después de una edición
+          onUpdate={handleUpdateUser} // Actualiza el usuario después de una edición
         />
       ))}
     </div>

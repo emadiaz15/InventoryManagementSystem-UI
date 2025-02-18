@@ -1,7 +1,7 @@
 // src/components/types/TypeForm.js
 import React from 'react';
 
-const TypeForm = ({ formData, onChange, onSubmit, loading, error, submitText }) => (
+const TypeForm = ({ formData, onChange, onSubmit, loading, error, submitText, onCancel }) => (
   <form onSubmit={onSubmit}>
     {error && <p className="text-red-500 mb-4">{error}</p>}
     <div className="mb-4">
@@ -25,7 +25,7 @@ const TypeForm = ({ formData, onChange, onSubmit, loading, error, submitText }) 
       />
     </div>
     <div className="flex justify-end space-x-2">
-      <button type="button" onClick={onSubmit} className="bg-gray-500 text-white py-2 px-4 rounded">
+      <button type="button" onClick={onCancel} className="bg-gray-500 text-white py-2 px-4 rounded">
         Cancelar
       </button>
       <button type="submit" disabled={loading} className="bg-blue-500 text-white py-2 px-4 rounded">

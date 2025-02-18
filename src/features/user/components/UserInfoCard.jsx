@@ -16,17 +16,26 @@ const UserInfoCard = ({ label, value, userId, onUpdate }) => {
     setIsEditing(true);
   };
 
-  const handleSaveClick = async () => {
+  const handleSaveClick = () => {
     setShowConfirm(true);
   };
 
   const handleConfirm = async () => {
     try {
-      await updateUser(userId, { [label.toLowerCase()]: newValue });
-      onUpdate();
+      let formattedValue = newValue;
+      if (label === "Activo" || label === "Administrador") {
+        formattedValue = newValue === "Sí"; // Convierte "Sí" en true y "No" en false
+      }
+
+      const fieldName = label.toLowerCase().replace(/\s/g, "_");
+      await updateUser(userId, { [fieldName]: formattedValue });
+
       setIsEditing(false);
       setShowSuccess(true);
       setShowConfirm(false);
+
+      onUpdate(); // 🚀 Ahora forzamos la recarga de datos en MyProfile
+
     } catch (error) {
       console.error('Error al actualizar el perfil:', error.message);
       setShowError(true);
@@ -45,23 +54,28 @@ const UserInfoCard = ({ label, value, userId, onUpdate }) => {
       <h7 className="text-lg font-semibold text-primary-50 mr-10 flex">{label}</h7>
       {isEditing ? (
         <div>
-          <input
-            type="text"
-            value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
-            className="p-2 w-full border-gray-500 text-primary-500 rounded-md"
-          />
-          <div className="mt-4 flex justify-center space-x-4">
-            <button
-              className="px-4 py-2 bg-warning-500 text-white rounded-lg dark:hover:bg-warning-600 transition-all"
-              onClick={handleCancel}
+          {label === "Activo" || label === "Administrador" ? (
+            <select
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              className="p-2 w-full border-gray-500 text-primary-500 rounded-md"
             >
+              <option value="Sí">Sí</option>
+              <option value="No">No</option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              className="p-2 w-full border-gray-500 text-primary-500 rounded-md"
+            />
+          )}
+          <div className="mt-4 flex justify-center space-x-4">
+            <button className="px-4 py-2 bg-warning-500 text-white rounded-lg" onClick={handleCancel}>
               Cancelar
             </button>
-            <button
-              className="px-4 py-2 bg-success-500 text-white rounded-lg hover:bg-success-600 transition-all"
-              onClick={handleSaveClick}
-            >
+            <button className="px-4 py-2 bg-success-500 text-white rounded-lg hover:bg-success-600 transition-all" onClick={handleSaveClick}>
               Guardar
             </button>
           </div>
@@ -81,15 +95,10 @@ const UserInfoCard = ({ label, value, userId, onUpdate }) => {
       )}
 
       {showConfirm && (
-        <ConfirmDialog
-          message="¿Estás seguro de que deseas guardar los cambios?"
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-        />
+        <ConfirmDialog message="¿Estás seguro de que deseas guardar los cambios?" onConfirm={handleConfirm} onCancel={handleCancel} />
       )}
 
       {showSuccess && <SuccessMessage message="¡Datos actualizados correctamente!" onClose={() => setShowSuccess(false)} />}
-
       {showError && <ErrorMessage message="Error al guardar los cambios" />}
     </div>
   );

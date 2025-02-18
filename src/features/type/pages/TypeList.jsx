@@ -1,150 +1,156 @@
-// src/features/type/pages/TypesList.jsx
-import React, { useState, useEffect } from 'react';
-import { listTypes } from '../services/listType';
-import { updateType } from '../services/updateType';
-import Navbar from '../../../components/common/Navbar';
-import Sidebar from '../../../components/common/Sidebar';
-import Footer from '../../../components/common/Footer';
-import Toolbar from '../../../components/common/Toolbar';
-import Modal from '../../../components/ui/Modal';
-import SuccessMessage from '../../../components/common/SuccessMessage';
-import Table from '../../../components/common/Table';
-import ButtonsActions from '../../../components/ui/ButtonsActions';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../../../components/common/Navbar";
+import Sidebar from "../../../components/common/Sidebar";
+import Footer from "../../../components/common/Footer";
+import Toolbar from "../../../components/common/Toolbar";
+import Table from "../../../components/common/Table";
+import Pagination from "../../../components/ui/Pagination";
+import SuccessMessage from "../../../components/common/SuccessMessage";
+import { listTypes } from "../services/listType";
+import { updateType } from "../services/updateType";
+import ButtonsActions from "../../../components/ui/ButtonsActions";
+import Modal from "../../../components/ui/Modal";
 
 const TypesList = () => {
-  const [types, setTypes] = useState([]);
-  const [filteredTypes, setFilteredTypes] = useState([]);
+  const [types, setTypes] = useState([]);  // Inicializamos como array vacío
   const [error, setError] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedType, setSelectedType] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [nextPage, setNextPage] = useState(null);
+  const [previousPage, setPreviousPage] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showModal, setShowModal] = useState(false); // Único estado para controlar el modal
+  const [selectedType, setSelectedType] = useState(null);
+  const navigate = useNavigate();
+
+  // Cargar tipos
+  const fetchTypes = async (url = "inventory/types/") => {
+    setLoading(true);
+    try {
+      const data = await listTypes(url);
+      setTypes(data.activeTypes || []);  // Aseguramos que siempre sea un array
+      setNextPage(data.nextPage);
+      setPreviousPage(data.previousPage);
+    } catch (error) {
+      setError(error.message || "Error al cargar los tipos.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchTypes();
   }, []);
 
-  const fetchTypes = async () => {
-    try {
-      const response = await listTypes();
-      const activeTypes = response.filter((type) => type.is_active);
-      setTypes(activeTypes);
-      setFilteredTypes(activeTypes);
-    } catch (error) {
-      console.error('Error al obtener los tipos:', error);
-      setError('Error al obtener los tipos.');
-    }
-  };
-
-  // Asegúrate de que handleSearch esté definida
   const handleSearch = (query) => {
-    const filtered = types.filter((type) =>
-      type.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredTypes(filtered);
+    console.log("Buscar tipos con el término:", query);
   };
 
   const handleCreateType = () => {
-    setShowCreateModal(true);
+    setSelectedType(null); // Para crear un nuevo tipo
+    setShowModal(true);
   };
 
   const handleEditType = (type) => {
-    setSelectedType(type);
-    setShowEditModal(true);
+    setSelectedType(type); // Para editar un tipo existente
+    setShowModal(true);
   };
 
   const handleToggleStatus = async (typeId, isActive) => {
-    if (window.confirm(`¿Estás seguro de que deseas ${isActive ? 'restaurar' : 'eliminar'} este tipo?`)) {
+    if (window.confirm(`¿Estás seguro de que deseas ${isActive ? "restaurar" : "eliminar"} este tipo?`)) {
       try {
-        await updateType(typeId, { is_active: isActive });
+        await updateType(typeId, { status: isActive });
         fetchTypes();
-        showSuccessMessage(`Tipo ${isActive ? 'restaurado' : 'eliminado'} correctamente.`);
+        setSuccessMessage(`Tipo ${isActive ? "restaurado" : "eliminado"} correctamente.`);
+        setShowSuccess(true);
       } catch (error) {
-        console.error('Error al cambiar el estado del tipo:', error);
-        setError('No se pudo cambiar el estado del tipo.');
+        setError("No se pudo cambiar el estado del tipo.");
       }
     }
   };
 
-  const showSuccessMessage = (message) => {
-    setSuccessMessage(message);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 4000);
+  const handleNextPage = () => {
+    if (nextPage) {
+      fetchTypes(nextPage);
+      setCurrentPage(currentPage + 1);
+    }
   };
 
-  const headers = ["Nombre de Tipo", "Descripción", "Acciones"];
-  const rows = filteredTypes.map((type) => ({
+  const handlePreviousPage = () => {
+    if (previousPage) {
+      fetchTypes(previousPage);
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const headers = ["Categoría", "Nombre de Tipo", "Descripción", "Acciones"];
+
+  // Verificamos que `types` siempre sea un array antes de usar `map`
+  const rows = Array.isArray(types) ? types.map((type) => ({
     id: type.id,
     cells: [
-      type.name,
-      type.description,
+      type.category ? type.category.name : "Sin Categoría", // Aseguramos que esta celda exista
+      type.name || "Sin nombre", // Aseguramos que esta celda exista
+      type.description || "Sin descripción", // Aseguramos que esta celda exista
       <ButtonsActions
         onEdit={() => handleEditType(type)}
         onDelete={() => handleToggleStatus(type.id, false)}
       />
     ]
-  }));
+  })) : [];
+
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <div className="w-64">
           <Sidebar />
         </div>
-        <div className="flex-1 mt-14 rounded-lg">
-          <div className="p-2 border-gray-200 rounded-lg dark:border-gray-700">
-            <Toolbar
-              onSearch={handleSearch}
-              onCreate={handleCreateType}
-              createButtonText="Nuevo Tipo"
-              placeholder="Buscar Tipo"
-            />
-            {error ? (
-              <p className="text-red-500">{error}</p>
-            ) : (
-              <Table headers={headers} rows={rows} />
-            )}
+        <div className="flex-1 flex flex-col p-2 mt-14">
+          <Toolbar
+            onSearch={handleSearch}
+            onCreate={handleCreateType}
+            createButtonText="Nuevo Tipo"
+            placeholder="Buscar Tipo"
+          />
+          <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
+            <Table headers={headers} rows={rows} />
           </div>
+
+          <Pagination
+            onNext={handleNextPage}
+            onPrevious={handlePreviousPage}
+            hasNext={Boolean(nextPage)}
+            hasPrevious={Boolean(previousPage)}
+          />
         </div>
       </div>
-
-      {showCreateModal && (
-        <Modal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          title="Crear Tipo"
-        >
-          <TypeCreateForm
-            onClose={() => setShowCreateModal(false)}
-            onSave={() => { fetchTypes(); showSuccessMessage('Tipo creado correctamente.'); }}
-          />
-        </Modal>
-      )}
-      
-      {showEditModal && (
-        <Modal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          title="Editar Tipo"
-        >
-          <TypeEditForm
-            type={selectedType}
-            onClose={() => setShowEditModal(false)}
-            onSave={() => { fetchTypes(); showSuccessMessage('Tipo editado correctamente.'); }}
-          />
-        </Modal>
-      )}
+      <Footer />
 
       {showSuccess && (
-        <SuccessMessage 
-          message={successMessage} 
-          onClose={() => setShowSuccess(false)} 
+        <SuccessMessage
+          message={successMessage}
+          onClose={() => setShowSuccess(false)}
         />
       )}
 
-      <Footer />
+      {/* Modal de Crear/Editar Tipo */}
+      {showModal && (
+        <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={selectedType ? "Editar Tipo" : "Crear Tipo"}>
+          <TypeModal
+            type={selectedType}
+            onClose={() => setShowModal(false)}
+            onSave={() => {
+              fetchTypes();
+              setSuccessMessage(selectedType ? "Tipo editado correctamente." : "Tipo creado correctamente.");
+              setShowSuccess(true);
+            }}
+          />
+        </Modal>
+      )}
     </div>
   );
 };
