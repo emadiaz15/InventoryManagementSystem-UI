@@ -1,38 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { listCategories } from '../services/listCategory';
-import { deleteCategory } from '../services/deleteCategory';
+import { updateCategory } from '../services/updateCategory';
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
 import CategoryToolbar from '../components/CategoryToolbar';
 import CategoryCreateModal from '../components/CategoryCreateModal';
 import CategoryEditModal from '../components/CategoryEditModal';
-import SuccessMessage from '../../../components/common/SuccessMessage'; // Importar el componente SuccessMessage
+import SuccessMessage from '../../../components/common/SuccessMessage';
+import Pagination from '../../../components/ui/Pagination';
+import Table from "../../../components/common/Table"; // Importamos la tabla común
+import ButtonsActions from "../../../components/ui/ButtonsActions"; // Si no tienes este componente, puedes crear uno para los botones de acción
 
 const CategoriesList = () => {
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [nextPage, setNextPage] = useState(null);
+  const [previousPage, setPreviousPage] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false); // Estado para mostrar el mensaje de éxito
-  const [successMessage, setSuccessMessage] = useState(''); // Mensaje de éxito
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const fetchCategories = async (url = "/inventory/categories/") => {
+    setLoading(true);
+    try {
+      const response = await listCategories(url);
+      setCategories(response);
+      setFilteredCategories(response);
+      setNextPage(response.next);
+      setPreviousPage(response.previous);
+    } catch (error) {
+      setError('Error al obtener las categorías.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchCategories();
   }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await listCategories();
-      setCategories(response);
-      setFilteredCategories(response);
-    } catch (error) {
-      console.error('Error al obtener las categorías:', error);
-      setError('Error al obtener las categorías.');
-    }
-  };
 
   const handleSearch = (query) => {
     const filtered = categories.filter((category) =>
@@ -50,25 +61,36 @@ const CategoriesList = () => {
     setShowEditModal(true);
   };
 
-  const handleDeleteCategory = async (categoryId) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar esta categoría?")) {
+  const handleToggleStatus = async (categoryId, isActive) => {
+    if (window.confirm(`¿Estás seguro de que deseas ${isActive ? "restaurar" : "eliminar"} esta categoría?`)) {
       try {
-        await deleteCategory(categoryId);
-        fetchCategories(); // Recargar categorías después de la eliminación
-        showSuccessMessage('Categoría eliminada correctamente.'); // Mostrar mensaje de éxito
+        await updateCategory(categoryId, { status: isActive });
+        fetchCategories();
+        showSuccessMessage(`Categoría ${isActive ? "restaurada" : "eliminada"} correctamente.`);
       } catch (error) {
-        console.error('Error al eliminar la categoría:', error);
-        setError('No se pudo eliminar la categoría.');
+        setError('No se pudo cambiar el estado de la categoría.');
       }
     }
   };
 
-  // Función para mostrar el mensaje de éxito
   const showSuccessMessage = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 4000); // Ocultar después de 4 segundos
   };
+
+  const headers = ["Nombre de Categoría", "Descripción", "Acciones"];
+
+  const rows = filteredCategories.map((category) => ({
+    "Nombre de Categoría": category.name,
+    "Descripción": category.description,
+    "Acciones": (
+      <ButtonsActions
+        onEdit={() => handleEditCategory(category)}
+        onDelete={() => handleToggleStatus(category.id, false)}
+      />
+    ),
+  }));
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -82,64 +104,46 @@ const CategoriesList = () => {
             <CategoryToolbar onSearch={handleSearch} onCreate={handleCreateCategory} />
             {error ? (
               <p className="text-red-500">{error}</p>
+            ) : loading ? (
+              <p>Cargando...</p>
             ) : (
-              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 rounded-lg">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 rounded-lg">
-                  <tr>
-                    <th className="px-6 py-3">Nombre de Categoría</th>
-                    <th className="px-6 py-3">Descripción</th>
-                    <th className="px-6 py-3">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCategories.map((category) => (
-                    <tr key={category.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                      <td className="px-6 py-4">{category.name}</td>
-                      <td className="px-6 py-4">{category.description}</td>
-                      <td className="px-6 py-4 space-x-2">
-                        <button 
-                          className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
-                          onClick={() => handleEditCategory(category)}
-                        >
-                          Editar
-                        </button>
-                        <button 
-                          className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
-                          onClick={() => handleDeleteCategory(category.id)}
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
+                <Table headers={headers} rows={rows} />
+              </div>
             )}
           </div>
+          <Pagination
+            onNext={() => {
+              if (nextPage) {
+                fetchCategories(nextPage);
+                setCurrentPage((prev) => prev + 1);
+              }
+            }}
+            onPrevious={() => {
+              if (previousPage) {
+                fetchCategories(previousPage);
+                setCurrentPage((prev) => prev - 1);
+              }
+            }}
+            hasNext={Boolean(nextPage)}
+            hasPrevious={Boolean(previousPage)}
+          />
         </div>
       </div>
 
-      {/* Modales */}
       {showCreateModal && <CategoryCreateModal onClose={() => setShowCreateModal(false)} />}
       {showEditModal && (
         <CategoryEditModal
           category={selectedCategory}
           onClose={() => setShowEditModal(false)}
           onSave={() => {
-            fetchCategories(); // Recargar categorías después de la edición
-            showSuccessMessage('Categoría editada correctamente.'); // Mostrar mensaje de éxito
+            fetchCategories();
+            showSuccessMessage('Categoría editada correctamente.');
           }}
         />
       )}
 
-      {/* Mensaje de éxito */}
-      {showSuccess && (
-        <SuccessMessage 
-          message={successMessage} 
-          onClose={() => setShowSuccess(false)} 
-        />
-      )}
-
+      {showSuccess && <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />}
       <Footer />
     </div>
   );
