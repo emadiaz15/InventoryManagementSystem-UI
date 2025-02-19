@@ -51,7 +51,7 @@ const UserInfoCard = ({ label, value, userId, onUpdate }) => {
 
   return (
     <div className="p-2 bg-background-200 text-primary-500 font-sans rounded-lg shadow-sm flex items-start">
-      <h7 className="text-lg font-semibold text-primary-50 mr-10 flex">{label}</h7>
+      <h2 className="text-lg font-semibold text-primary-50 mr-10 flex">{label}</h2>
       {isEditing ? (
         <div>
           {label === "Activo" || label === "Administrador" ? (

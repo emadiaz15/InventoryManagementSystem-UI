@@ -1,4 +1,4 @@
-import api from '../../../../services/api'; // Usa la instancia de Axios configurada
+import api from '../../../services/api'; // Usa la instancia de Axios configurada
 
 // Método para crear un nuevo producto
 export const createProduct = async (productData) => {

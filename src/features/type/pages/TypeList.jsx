@@ -9,7 +9,7 @@ import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import Modal from "../../../components/ui/Modal";
 import TypeModal from "../components/TypeModal";
-import ButtonsActions from "../../../components/ui/ButtonsActions";
+import { ButtonsActions } from "../../../components/ui/ButtonsActions";
 import { listTypes } from "../services/listType";
 import { updateType } from "../services/updateType";
 import { useAuth } from "../../../hooks/useAuth";

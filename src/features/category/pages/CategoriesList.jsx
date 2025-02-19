@@ -10,7 +10,7 @@ import CategoryEditModal from '../components/CategoryEditModal';
 import SuccessMessage from '../../../components/common/SuccessMessage';
 import Pagination from '../../../components/ui/Pagination';
 import Table from "../../../components/common/Table"; // Importamos la tabla común
-import ButtonsActions from "../../../components/ui/ButtonsActions"; // Si no tienes este componente, puedes crear uno para los botones de acción
+import { ButtonsActions } from "../../../components/ui/ButtonsActions"; // Si no tienes este componente, puedes crear uno para los botones de acción
 
 const CategoriesList = () => {
   const [categories, setCategories] = useState([]);

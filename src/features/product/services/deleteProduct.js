@@ -1,4 +1,4 @@
-import api from '../../../../services/api';
+import api from '../../../services/api';
 
 // Método para cambiar el estado de `is_active` a false (eliminación lógica)
 export const deleteProduct = async (productId) => {

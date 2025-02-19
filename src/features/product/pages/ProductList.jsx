@@ -1,123 +1,98 @@
-// src/features/product/components/ProductList.jsx
 import React, { useState, useEffect } from 'react';
-import { listProducts } from '../services/products/listProducts';
-import { deleteProduct } from '../services/products/deleteProduct';
+import { useNavigate } from 'react-router-dom';
+import listProducts from '../services/listProducts'; // Importa el servicio de productos
+import { deleteProduct } from '../services/deleteProduct';
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
-import Toolbar from '../../../components/common/Toolbar';
-import Pagination from '../../../components/ui/Pagination';
-import ProductCreateModal from '../components/ProductCreateModal';
-import ProductEditModal from '../components/ProductEditModal';
 import Table from '../../../components/common/Table';
-import ButtonsActions from '../../../components/ui/ButtonsActions';
+import Pagination from '../../../components/ui/Pagination';
+import SuccessMessage from '../../../components/common/SuccessMessage';
+import ProductModal from '../components/ProductModal';
+import { ButtonsActions } from '../../../components/ui/ButtonsActions';
 
-// Simulación de usuario actual
-const currentUser = {
-  isAdmin: true, // Cambia esto a `false` para simular un usuario no administrador
-};
-
-const ProductList = () => {
+const ProductsList = () => {
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const navigate = useNavigate();
+
+  const fetchProducts = async (url = '/inventory/products/') => {
+    setLoading(true);
+    try {
+      const data = await listProducts(url); // Pide productos con la URL correspondiente
+      setProducts(data.results); // Actualiza los productos con los resultados de la API
+      setNextPage(data.next); // URL para la siguiente página (si existe)
+      setPreviousPage(data.previous); // URL para la página anterior (si existe)
+    } catch (error) {
+      setError('Error al cargar los productos.');
+      console.error(error); // Podrías agregar más detalles de error aquí para depuración
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    fetchProducts(); // Solo ejecuta la primera vez para cargar los productos
+  }, []); // Esta ejecución inicial no debería depender de las páginas
 
-  const fetchProducts = async (url = null) => {
-    try {
-      const response = await listProducts(url || '/inventory/products/');
-      const activeProducts = Array.isArray(response)
-        ? response.filter((product) => product.is_active)
-        : response.results?.filter((product) => product.is_active) || [];
-
-      setProducts(activeProducts);
-      setFilteredProducts(activeProducts);
-      setNextPage(response.next || null);
-      setPreviousPage(response.previous || null);
-    } catch (error) {
-      setError('Error al obtener los productos.');
+  useEffect(() => {
+    if (nextPage || previousPage) {
+      fetchProducts(nextPage || previousPage); // Recarga los productos cuando cambian las URLs de paginación
     }
-  };
-
-  const handleSearch = (query) => {
-    const filtered = products.filter((product) =>
-      product.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredProducts(filtered);
-  };
-
-  const handleCreateProduct = () => {
-    setShowCreateModal(true);
-  };
-
-  const handleEditProduct = (product) => {
-    setSelectedProduct(product);
-    setShowEditModal(true);
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    if (!currentUser.isAdmin) {
-      alert("No tienes permisos para eliminar productos.");
-      return;
-    }
-
-    const confirmed = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
-    if (!confirmed) return;
-
-    try {
-      await deleteProduct(productId);
-
-      // Filtra el producto eliminado de la lista en el frontend
-      setProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
-      setFilteredProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
-    } catch (error) {
-      console.error(`Error al eliminar el producto con ID ${productId}`, error);
-      setError('No se pudo eliminar el producto.');
-    }
-  };
+  }, [nextPage, previousPage]);
 
   const handleNextPage = () => {
     if (nextPage) {
-      fetchProducts(nextPage);
+      fetchProducts(nextPage); // Pide los productos de la siguiente página
     }
   };
 
   const handlePreviousPage = () => {
     if (previousPage) {
-      fetchProducts(previousPage);
+      fetchProducts(previousPage); // Pide los productos de la página anterior
     }
   };
 
-  const headers = [
-    'Código',
-    'Tipo',
-    'Nombre del Producto',
-    'Categoría',
-    'Stock',
-    'Acciones',
-];
+  const handleEditProduct = (product) => {
+    setSelectedProduct(product);
+    setShowModal(true);
+  };
 
-const rows = filteredProducts.map((product) => ({
-    code: product.code,
-    type: product.type ? product.type.name : 'Sin Tipo',  // Asegúrate de acceder a product.type.name
-    name: product.name,
-    category: product.category ? product.category.name : 'Sin Categoría',  // Asegúrate de acceder a product.category.name
-    stock: product.stock ? product.stock.quantity : 'No Disponible',
-    actions: (
+  const handleDeleteProduct = async (productId) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+      try {
+        await deleteProduct(productId); // Elimina el producto de manera suave
+        fetchProducts(); // Recarga la lista
+        setSuccessMessage('Producto eliminado correctamente.');
+        setShowSuccess(true);
+      } catch (error) {
+        setError('No se pudo eliminar el producto.');
+        console.error(error); // Agrega más detalles de error aquí para depuración
+      }
+    }
+  };
+
+  const headers = ['Nombre', 'Categoría', 'Precio', 'Stock', 'Acciones'];
+  const rows = products.map(product => ({
+    Nombre: product.name,
+    Categoría: product.category.name,
+    Precio: `$${product.price}`,
+    Stock: product.stock_quantity,
+    Acciones: (
       <ButtonsActions
         onEdit={() => handleEditProduct(product)}
         onDelete={() => handleDeleteProduct(product.id)}
       />
     ),
-}));
+  }));
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -126,53 +101,38 @@ const rows = filteredProducts.map((product) => ({
         <div className="w-64">
           <Sidebar />
         </div>
-        <div className="flex-1 mt-14 rounded-lg">
-          <div className="p-2 border-gray-200 rounded-lg dark:border-gray-700">
-            <Toolbar onSearch={handleSearch} onCreate={handleCreateProduct} createButtonText="Nuevo Producto" />
-
-            {error ? (
-              <p className="text-red-500">{error}</p>
-            ) : (
+        <div className="flex-1 mt-14 p-2">
+          {loading ? (
+            <div className="text-center">Cargando productos...</div> // Indicador de carga
+          ) : (
+            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
               <Table headers={headers} rows={rows} />
-            )}
-
-            {nextPage || previousPage ? (
-              <Pagination
-                onNext={handleNextPage}
-                onPrevious={handlePreviousPage}
-                hasNext={!!nextPage}
-                hasPrevious={!!previousPage}
-              />
-            ) : null}
-          </div>
+            </div>
+          )}
+          {error && <div className="text-red-500">{error}</div>} // Mostrar error si ocurre
+          <Pagination
+            onNext={handleNextPage}
+            onPrevious={handlePreviousPage}
+            hasNext={Boolean(nextPage)} // Indica si hay una página siguiente
+            hasPrevious={Boolean(previousPage)} // Indica si hay una página anterior
+          />
         </div>
       </div>
-
-      {showCreateModal && <ProductCreateModal onClose={() => setShowCreateModal(false)} />}
-      
-      {showEditModal && selectedProduct && (
-        <ProductEditModal
+      {showSuccess && <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />}
+      {showModal && (
+        <ProductModal
           product={selectedProduct}
-          onClose={() => setShowEditModal(false)}
-          onSave={(updatedProduct) => {
-            setProducts((prevProducts) =>
-              prevProducts.map((product) =>
-                product.id === updatedProduct.id ? updatedProduct : product
-              )
-            );
-            setFilteredProducts((prevProducts) =>
-              prevProducts.map((product) =>
-                product.id === updatedProduct.id ? updatedProduct : product
-              )
-            );
-            setShowEditModal(false);
+          onClose={() => setShowModal(false)}
+          onSave={() => {
+            fetchProducts();
+            setSuccessMessage('Producto actualizado correctamente.');
+            setShowSuccess(true);
           }}
         />
       )}
-
       <Footer />
     </div>
   );
 };
 
-export default ProductList;
+export default ProductsList;
