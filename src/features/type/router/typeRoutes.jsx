@@ -4,7 +4,15 @@ import ProtectedRoute from '../../../components/common/ProtectedRoute';
 import TypesList from '../pages/TypeList';
 
 const typeRoutes = [
-  <Route key="types-list" path="/types" element={<ProtectedRoute><TypesList /></ProtectedRoute>} />,
+  <Route
+    key="types-list"
+    path="/types"
+    element={
+      <ProtectedRoute>
+        <TypesList />
+      </ProtectedRoute>
+    }
+  />,
 ];
 
 export default typeRoutes;

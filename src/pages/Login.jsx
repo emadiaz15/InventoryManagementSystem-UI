@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthProvider';
 import ErrorMessage from '../components/common/ErrorMessage';
 import InputField from '../components/ui/form/InputField';
 import Spinner from '../components/ui/Spinner'; // Corregido el path de la importación

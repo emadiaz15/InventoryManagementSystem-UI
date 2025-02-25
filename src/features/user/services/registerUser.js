@@ -1,4 +1,4 @@
-import api from '../../../services/api'; // Usa la instancia de Axios configurada
+import { axiosInstance } from '../../../services/api'; // Usa la instancia de Axios configurada
 
 // Método para el registro de usuarios
 export const registerUser = async (userData) => {
@@ -17,14 +17,14 @@ export const registerUser = async (userData) => {
       formData.append('image', userData.image);
     }
 
-    // Obtener el token de acceso del localStorage
-    const token = localStorage.getItem('access_token');
+    // Obtener el token de acceso del sessionStorage
+    const token = sessionStorage.getItem('accessToken');
     if (!token) {
       throw new Error("Token de acceso no encontrado. Por favor, inicia sesión.");
     }
 
     // Enviar la solicitud POST al endpoint de registro de usuarios
-    const response = await api.post('/users/register/', formData, {
+    const response = await axiosInstance.post('/users/register/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${token}`, // Incluye el token Bearer

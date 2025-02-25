@@ -4,7 +4,7 @@ import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
 import DashboardCard from "../components/DashboardCard";
 import Footer from "../components/common/Footer";
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthProvider';
 
 const Dashboard = () => {
   const { isAuthenticated } = useAuth();
@@ -12,7 +12,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/login'); // Redirigir a login si no está autenticado
     }
   }, [isAuthenticated, navigate]);
 

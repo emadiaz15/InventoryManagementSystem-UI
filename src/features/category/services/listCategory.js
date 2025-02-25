@@ -1,10 +1,10 @@
-import api from '../../../services/api'; // Asegúrate de que esta es tu instancia configurada de Axios
+import { axiosInstance } from '../../../services/api'; // Asegúrate de que esta es tu instancia configurada de Axios
 
 // Servicio para obtener la lista de categorías
 export const listCategories = async () => {
   try {
     // Enviar solicitud GET para obtener todas las categorías
-    const response = await api.get('/inventory/categories/');
+    const response = await axiosInstance.get('/inventory/categories/');
     console.log('Categorias obtenidas:', response.data.results); // Verifica las categorías obtenidas
     return response.data.results; // Devuelve las categorías desde 'results'
   } catch (error) {

@@ -1,16 +1,8 @@
-import api from '../../../services/api'; // Asegúrate de usar tu instancia configurada de Axios
+import { axiosInstance } from '../../../services/api'; // Asegúrate de usar tu instancia configurada de Axios
 
 export const listTypes = async (url = '/inventory/types/') => {  // Aquí agregamos el prefijo '/api/v1'
   try {
-    const token = localStorage.getItem('jwtToken'); // Cambia esto si usas otro método de almacenamiento
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,  // Agrega el token al encabezado Authorization
-      },
-    };
-
-    const response = await api.get(url, config);  // Aquí usas la URL correcta y pasas los headers
+    const response = await axiosInstance.get(url);  // Axios ya maneja automáticamente el token
     console.log('Respuesta de la API:', response.data);  // Verifica que la respuesta sea correcta
 
     const activeTypes = response.data.results.filter((type) => type.status);

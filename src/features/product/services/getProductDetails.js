@@ -1,9 +1,9 @@
-import api from '../../../services/api'; // Usa la instancia de Axios configurada
+import { axiosInstance } from '../../../services/api'; // Usa la instancia de Axios configurada
 
 // Método para obtener los detalles de un producto específico
 export const getProductDetails = async (productId) => {
     try {
-      const response = await api.get(`/inventory/products/${productId}/`); // El token se agrega automáticamente
+      const response = await axiosInstance.get(`/inventory/products/${productId}/`); // El token se agrega automáticamente
       return response.data; // Devuelve los detalles del producto
     } catch (error) {
       console.error(`Error al obtener detalles del producto ${productId}:`, error.response?.data || error.message);

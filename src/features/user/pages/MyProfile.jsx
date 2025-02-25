@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { getMyProfile } from '../services/getMyProfile';
-import { useNavigate } from 'react-router-dom';
+// src/features/user/pages/MyProfile.jsx
+import React, { useState } from 'react';
+import { useAuth } from '../../../context/AuthProvider';
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
@@ -10,28 +10,11 @@ import SuccessMessage from '../../../components/common/SuccessMessage';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 
 const MyProfile = () => {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
 
-  const navigate = useNavigate();
-
-  const fetchUserProfile = async () => {
-    try {
-      const profile = await getMyProfile();
-      setUser(profile);
-    } catch (error) {
-      console.error('Error al obtener el perfil del usuario:', error);
-      navigate('/');
-    }
-  };
-
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
   const handleUserUpdate = (updatedUser) => {
-    setUser((prevUser) => ({ ...prevUser, ...updatedUser }));
     setShowSuccess(true);
   };
 
@@ -55,7 +38,13 @@ const MyProfile = () => {
         </div>
       </div>
       <Footer />
-      {showSuccess && <SuccessMessage message="¡Perfil actualizado correctamente!" onClose={() => setShowSuccess(false)} />}
+
+      {showSuccess && (
+        <SuccessMessage
+          message="¡Perfil actualizado correctamente!"
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
       {showError && <ErrorMessage message="Error al actualizar el perfil." />}
     </div>
   );

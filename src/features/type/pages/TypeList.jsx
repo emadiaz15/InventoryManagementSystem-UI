@@ -12,7 +12,7 @@ import TypeModal from "../components/TypeModal";
 import { ButtonsActions } from "../../../components/ui/ButtonsActions";
 import { listTypes } from "../services/listType";
 import { updateType } from "../services/updateType";
-import { useAuth } from "../../../hooks/useAuth";
+import { useAuth } from '../../../context/AuthProvider';
 
 const TypesList = () => {
   const [types, setTypes] = useState([]);

@@ -27,37 +27,31 @@ const ProductsList = () => {
   const fetchProducts = async (url = '/inventory/products/') => {
     setLoading(true);
     try {
-      const data = await listProducts(url); // Pide productos con la URL correspondiente
-      setProducts(data.results); // Actualiza los productos con los resultados de la API
-      setNextPage(data.next); // URL para la siguiente página (si existe)
-      setPreviousPage(data.previous); // URL para la página anterior (si existe)
+      const data = await listProducts(url);
+      setProducts(data.products || []); // Accede correctamente a la lista de productos
+      setNextPage(data.nextPage || null);
+      setPreviousPage(data.prevPage || null);
     } catch (error) {
       setError('Error al cargar los productos.');
-      console.error(error); // Podrías agregar más detalles de error aquí para depuración
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts(); // Solo ejecuta la primera vez para cargar los productos
-  }, []); // Esta ejecución inicial no debería depender de las páginas
-
-  useEffect(() => {
-    if (nextPage || previousPage) {
-      fetchProducts(nextPage || previousPage); // Recarga los productos cuando cambian las URLs de paginación
-    }
-  }, [nextPage, previousPage]);
+    fetchProducts();
+  }, []);
 
   const handleNextPage = () => {
     if (nextPage) {
-      fetchProducts(nextPage); // Pide los productos de la siguiente página
+      fetchProducts(nextPage);
     }
   };
 
   const handlePreviousPage = () => {
     if (previousPage) {
-      fetchProducts(previousPage); // Pide los productos de la página anterior
+      fetchProducts(previousPage);
     }
   };
 
@@ -69,13 +63,13 @@ const ProductsList = () => {
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
       try {
-        await deleteProduct(productId); // Elimina el producto de manera suave
-        fetchProducts(); // Recarga la lista
+        await deleteProduct(productId);
+        fetchProducts();
         setSuccessMessage('Producto eliminado correctamente.');
         setShowSuccess(true);
       } catch (error) {
         setError('No se pudo eliminar el producto.');
-        console.error(error); // Agrega más detalles de error aquí para depuración
+        console.error(error);
       }
     }
   };
@@ -103,18 +97,18 @@ const ProductsList = () => {
         </div>
         <div className="flex-1 mt-14 p-2">
           {loading ? (
-            <div className="text-center">Cargando productos...</div> // Indicador de carga
+            <div className="text-center">Cargando productos...</div>
           ) : (
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
               <Table headers={headers} rows={rows} />
             </div>
           )}
-          {error && <div className="text-red-500">{error}</div>} // Mostrar error si ocurre
+          {error && <div className="text-red-500">{error}</div>}
           <Pagination
             onNext={handleNextPage}
             onPrevious={handlePreviousPage}
-            hasNext={Boolean(nextPage)} // Indica si hay una página siguiente
-            hasPrevious={Boolean(previousPage)} // Indica si hay una página anterior
+            hasNext={Boolean(nextPage)}
+            hasPrevious={Boolean(previousPage)}
           />
         </div>
       </div>

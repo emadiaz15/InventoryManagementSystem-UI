@@ -1,26 +1,44 @@
-// src/services/products/listProducts.js
-import api from '../../../services/api'; // Importa la instancia de Axios configurada
+import { axiosInstance } from '../../../services/api';
 
-// Método para listar todos los productos
-const listProducts = async (url = '/inventory/products/') => {
+const listProducts = async (url = '/inventory/products/', options = {}) => {
   try {
-    const response = await api.get(url);
-    console.log('Respuesta de los productos:', response.data); // Depurar la respuesta
-    return response.data;
-  } catch (error) {
-    // Manejo de errores
-    if (error.response) {
-      console.error('Error al listar los productos:', error.response.data);
-      throw new Error(error.response.data?.detail || 'Error desconocido');
-    } else if (error.request) {
-      console.error('No se recibió respuesta del servidor:', error.request);
-      throw new Error('No se recibió respuesta del servidor');
-    } else {
-      console.error('Error al configurar la solicitud:', error.message);
-      throw new Error(error.message);
+    console.log("📢 Solicitando productos a:", url);
+
+    const token = sessionStorage.getItem("accessToken");
+    console.log("🔑 Token de autenticación:", token);
+
+    if (!token) {
+      console.error("❌ No hay token disponible. El usuario puede no estar autenticado.");
+      return {
+        success: false,
+        message: "No hay token de autenticación",
+        status: 401,
+      };
     }
+
+    const headers = { Authorization: `Bearer ${token}` };
+    console.log("📡 Headers enviados:", headers);
+
+    const response = await axiosInstance.get(url, { ...options, headers });
+
+    console.log("✅ Respuesta de la API:", response.data);
+
+    return {
+      success: true,
+      products: response.data.results || [],
+      total: response.data.count || 0,
+      nextPage: response.data.next || null,
+      prevPage: response.data.previous || null
+    };
+  } catch (error) {
+    console.error("❌ Error en listProducts:", error.response?.data || error.message);
+
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error desconocido",
+      status: error.response?.status || 500,
+    };
   }
 };
 
-// Exporta el servicio directamente
 export default listProducts;

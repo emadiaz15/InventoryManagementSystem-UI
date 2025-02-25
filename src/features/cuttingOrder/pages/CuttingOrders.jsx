@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Para redirigir si no está autenticado
 import axios from 'axios';
-import { useAuth } from '../../../hooks/useAuth';  // Importa el hook personalizado de autenticación
-
+import { useAuth } from '../../../context/AuthProvider';
 import Navbar from '../../../components/common/Navbar';  // Importa el componente Navbar
 import Sidebar from '../../../components/common/Sidebar';  // Importa el componente Sidebar
 import Footer from '../../../components/common/Footer';  // Importa el componente Footer

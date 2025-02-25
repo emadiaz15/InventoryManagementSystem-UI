@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser } from '../../features/user/services/auth/logoutUser';
+import { useAuth } from '../../context/AuthProvider';
+
+// Importar los íconos que necesites
 import {
   HomeIcon,
   UserIcon,
@@ -15,87 +17,82 @@ import {
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      navigate('/'); // Redirigir al login
-    } catch (err) {
-      console.error('Logout failed', err);
+  // Arreglo de ítems para el sidebar
+  const sidebarItems = [
+    {
+      label: 'Inicio',
+      icon: HomeIcon,
+      onClick: () => navigate('/dashboard'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Mi Perfil',
+      icon: UserIcon,
+      onClick: () => navigate('/my-profile'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Productos',
+      icon: CubeIcon,
+      onClick: () => navigate('/product-list'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Órdenes de Corte',
+      icon: ClipboardDocumentListIcon,
+      onClick: () => navigate('/cutting-orders'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Usuarios',
+      icon: UsersIcon,
+      onClick: () => navigate('/users-list'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Comentarios',
+      icon: ChatBubbleLeftEllipsisIcon,
+      onClick: () => navigate('/comments'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Categorías',
+      icon: Squares2X2Icon,
+      onClick: () => navigate('/categories'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Tipos',
+      icon: TagIcon,
+      onClick: () => navigate('/types'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
     }
-  };
+  ];
 
-  const goToProfile = () => navigate('/my-profile');
-  const goToHome = () => navigate('/dashboard');
-  const goToProducts = () => navigate('/product-list');
-  const goToOrders = () => navigate('/cutting-orders');
-  const goToUsers = () => navigate('/users-list');
-  const goToComments = () => navigate('/comments');
-  const goToCategories = () => navigate('/categories');
-  const goToTypes = () => navigate('/types');
+  // Función para logout
+  const handleLogout = async () => {
+    logout();
+  };
 
   return (
     <aside className="w-64 h-full bg-primary-500 text-neutral-50 p-2 font-sans overflow-y-auto fixed top-14 left-0">
-      <button 
-        onClick={goToHome} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <HomeIcon className="h-5 w-5 mr-3" />
-        Inicio
-      </button>
-      <button 
-        onClick={goToProfile} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <UserIcon className="h-5 w-5 mr-3" />
-        Mi Perfil
-      </button>
-      <button 
-        onClick={goToProducts} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <CubeIcon className="h-5 w-5 mr-3" />
-        Productos
-      </button>
-      <button 
-        onClick={goToOrders} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <ClipboardDocumentListIcon className="h-5 w-5 mr-3" />
-        Órdenes de Corte
-      </button>
-      <button 
-        onClick={goToUsers} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <UsersIcon className="h-5 w-5 mr-3" />
-        Usuarios
-      </button>
-      <button 
-        onClick={goToComments} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3" />
-        Comentarios
-      </button>
-      
-      <button 
-        onClick={goToCategories} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <Squares2X2Icon className="h-5 w-5 mr-3" />
-        Categorías
-      </button>
-      <button 
-        onClick={goToTypes} 
-        className="w-full text-left flex items-center py-2 px-4 mb-4 bg-primary-700 rounded hover:bg-primary-600 transition-all"
-      >
-        <TagIcon className="h-5 w-5 mr-3" />
-        Tipos
-      </button>
+      {/* Renderiza dinámicamente los items */}
+      {sidebarItems.map((item, index) => (
+        <button
+          key={index}
+          onClick={item.onClick}
+          className={`w-full text-left flex items-center py-2 px-4 mb-4 rounded transition-all ${item.bgClass}`}
+        >
+          <item.icon className="h-5 w-5 mr-3" />
+          {item.label}
+        </button>
+      ))}
 
-      <button 
-        onClick={handleLogout} 
+      {/* Botón de logout al final */}
+      <button
+        onClick={handleLogout}
         className="w-full text-left flex items-center py-2 px-4 bg-accent-500 rounded hover:bg-accent-400 transition-all"
       >
         <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />

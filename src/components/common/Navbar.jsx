@@ -2,23 +2,17 @@ import React, { useState, useEffect } from "react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { BellIcon, UserIcon } from "@heroicons/react/24/outline";
 import UserDropdown from "../UserIndicator";
-import { getMyProfile } from "../../features/user/services/getMyProfile"; // Importa la función para obtener el perfil
+import { useAuth } from "../../context/AuthProvider"; // Usa useAuth para obtener el usuario
 
 const Navbar = () => {
+  const { user } = useAuth();
   const [profileImage, setProfileImage] = useState(null);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const userProfile = await getMyProfile();
-        setProfileImage(userProfile.image); // Asigna la imagen del perfil
-      } catch (error) {
-        console.error("Error al obtener el perfil:", error);
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
+    if (user) {
+      setProfileImage(user.image); // Asigna la imagen del perfil
+    }
+  }, [user]);
 
   return (
     <nav className="fixed top-0 z-50 w-full bg-primary-500">
@@ -65,47 +59,20 @@ const Navbar = () => {
                 <MenuItem>
                   {({ active }) => (
                     <a
-                      href="#"
-                      className={`block px-4 py-2 text-sm text-neutral-700 ${
-                        active ? "bg-neutral-200" : ""
-                      }`}
+                      href="/my-profile"
+                      className={`block px-4 py-2 text-sm text-neutral-700 ${active ? "bg-neutral-200" : ""
+                        }`}
                     >
                       Mi Perfil
                     </a>
                   )}
                 </MenuItem>
-
                 <MenuItem>
                   {({ active }) => (
                     <a
-                      href="#"
-                      className={`block px-4 py-2 text-sm text-neutral-700 ${
-                        active ? "bg-neutral-200" : ""
-                      }`}
-                    >
-                      Mis Cortes
-                    </a>
-                  )}
-                </MenuItem>
-                <MenuItem>
-                  {({ active }) => (
-                    <a
-                      href="#"
-                      className={`block px-4 py-2 text-sm text-neutral-700 ${
-                        active ? "bg-neutral-200" : ""
-                      }`}
-                    >
-                      Mis Comentarios
-                    </a>
-                  )}
-                </MenuItem>
-                <MenuItem>
-                  {({ active }) => (
-                    <a
-                      href="#"
-                      className={`block px-4 py-2 text-sm text-neutral-700 ${
-                        active ? "bg-neutral-200" : ""
-                      }`}
+                      href="/logout"
+                      className={`block px-4 py-2 text-sm text-neutral-700 ${active ? "bg-neutral-200" : ""
+                        }`}
                     >
                       Cerrar Sesión
                     </a>

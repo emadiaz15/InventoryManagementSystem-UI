@@ -9,7 +9,7 @@ import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import UserRegisterModal from "../components/register/UserRegisterModal";
 import { listUsers } from "../services/listUsers";
-import { useAuth } from "../../../hooks/useAuth";
+import { useAuth } from '../../../context/AuthProvider';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -27,13 +27,13 @@ const UserList = () => {
 
   // Definimos los encabezados de la tabla
   const headers = [
-    "Nombre de usuario", 
-    "Nombre", 
-    "Email", 
-    "DNI", 
-    "Imagen", 
-    "Estado", 
-    "Administrador", 
+    "Nombre de usuario",
+    "Nombre",
+    "Email",
+    "DNI",
+    "Imagen",
+    "Estado",
+    "Administrador",
     "Acciones"
   ];
 
@@ -121,15 +121,15 @@ const UserList = () => {
     "Administrador": user.is_staff ? "Sí" : "No",
     "Acciones": (
       <div className="space-x-2">
-        <button 
-          onClick={() => handleEdit(user)} 
+        <button
+          onClick={() => handleEdit(user)}
           className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
           aria-label="Editar usuario"
         >
           Editar
         </button>
-        <button 
-          onClick={() => handleDelete(user.id)} 
+        <button
+          onClick={() => handleDelete(user.id)}
           className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
           aria-label="Eliminar usuario"
         >
@@ -173,7 +173,7 @@ const UserList = () => {
           onClose={() => setShowSuccess(false)}
         />
       )}
-      
+
       {showRegisterModal && (
         <UserRegisterModal
           onClose={() => setShowRegisterModal(false)}

@@ -1,9 +1,9 @@
-import api from '../../../services/api'; // Usa la instancia de Axios configurada
+import { axiosInstance } from '../../../services/api'; // Usa la instancia de Axios configurada
 
 // Método para actualizar los datos del perfil del usuario
 export const updateUser = async (userId, userData) => {
   try {
-    const response = await api.put(`users/${userId}/`, userData); // Asegúrate de que use la URL correcta
+    const response = await axiosInstance.put(`users/${userId}/`, userData); // Asegúrate de que use la URL correcta
     return response.data; // Devuelve los datos actualizados
   } catch (error) {
     console.error('Error al actualizar el perfil del usuario:', error.response?.data || error.message);
