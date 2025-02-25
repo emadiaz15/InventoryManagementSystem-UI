@@ -35,6 +35,11 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+// 1) Exportación por defecto (para `import api from '...'`)
+export default axiosInstance;
+
+// 2) Exportaciones nombradas (para `import { axiosInstance } from '...'`)
+//    y para las funciones getAccessToken, clearTokens
 export {
   axiosInstance,
   getAccessToken,
