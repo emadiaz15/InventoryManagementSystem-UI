@@ -4,7 +4,7 @@ import { axiosInstance } from '../../../services/api';
 export const updateUser = async (userId, userData) => {
   try {
     // Asegúrate de que la URL corresponda con tu API, por ejemplo, incluyendo el prefijo "api/v1/"
-    const response = await axiosInstance.put(`/api/v1/users/${userId}/`, userData);
+    const response = await axiosInstance.put(`/users/${userId}/`, userData);
     return response.data;
   } catch (error) {
     console.error('Error al actualizar el perfil del usuario:', error.response?.data || error.message);

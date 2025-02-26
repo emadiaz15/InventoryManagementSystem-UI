@@ -11,6 +11,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import UserRegisterModal from "../components/UserRegisterModal";
 import UserEditModal from "../components/UserEditModal";
 import { listUsers } from "../services/listUsers";
+import { updateUser } from "../services/updateUser"; // Importa el servicio de actualización
 import { useAuth } from "../../../context/AuthProvider";
 import Filter from "../components/Filter";
 import { PencilIcon } from "@heroicons/react/24/outline";
@@ -105,7 +106,7 @@ const UserList = () => {
     }
   };
 
-  // Effect to fetch users when component mounts and when filters change.
+  // Effect para cargar usuarios al montar el componente o al cambiar filtros.
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
@@ -113,13 +114,12 @@ const UserList = () => {
         return;
       }
       const query = buildQueryString(filters);
-      // Reset to first page when filters change.
       setCurrentPage(1);
       fetchUsers(`/users/list/${query}`);
     }
   }, [filters, isAuthenticated, loading, navigate]);
 
-  // Pagination handlers: maintain the current filters.
+  // Handlers para paginación (manteniendo filtros)
   const handleNextPage = () => {
     if (nextPage) {
       fetchUsers(nextPage);
@@ -204,7 +204,6 @@ const UserList = () => {
             onCreate={() => setShowRegisterModal(true)}
             createButtonText="Registrar Usuario"
           />
-          {/* Filtro */}
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             {loadingUsers ? (
@@ -240,15 +239,18 @@ const UserList = () => {
           user={selectedUser}
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
-          onSave={(id, updatedData) => {
-            console.log("Guardando cambios para", id, updatedData);
-            // Aquí debes llamar a tu servicio para actualizar el usuario y luego refrescar la lista.
-            setShowEditModal(false);
-            handleShowSuccess("Usuario actualizado con éxito");
+          onSave={async (id, updatedData) => {
+            try {
+              await updateUser(id, updatedData);
+              setShowEditModal(false);
+              handleShowSuccess("Usuario actualizado con éxito");
+            } catch (err) {
+              console.error("Error al actualizar:", err);
+            }
           }}
           onPasswordReset={(id, newPasswordData) => {
             console.log("Restableciendo contraseña para", id, newPasswordData);
-            // Lógica para restablecer la contraseña.
+            // Aquí implementa la lógica de restablecimiento de contraseña si es necesario.
           }}
         />
       )}
