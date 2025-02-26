@@ -1,59 +1,109 @@
-import React, { useState } from 'react';
-import { updateCategory } from '../services/updateCategory'; // Servicio para actualizar categoría
+import React, { useState, useEffect } from "react";
+import Modal from "../../../components/ui/Modal";
+import FormInput from "../../../components/ui/form/FormInput";
+import SuccessMessage from "../../../components/common/SuccessMessage";
+import ErrorMessage from "../../../components/common/ErrorMessage";
 
-const CategoryEditModal = ({ category, onClose, onSave }) => {
-  const [name, setName] = useState(category.name);
-  const [description, setDescription] = useState(category.description);
-  const [error, setError] = useState(null);
+const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
+  const [formData, setFormData] = useState({
+    name: category.name,
+    description: category.description || "",
+  });
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    if (category) {
+      setFormData({
+        name: category.name,
+        description: category.description || "",
+      });
+    }
+  }, [category]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     try {
-      await updateCategory(category.id, { name, description }); // Actualizar categoría
-      onSave(); // Actualizar la lista de categorías en la página principal
-      onClose(); // Cerrar el modal
-    } catch (error) {
-      console.error('Error al actualizar la categoría:', error);
-      setError('No se pudo actualizar la categoría.');
+      await onSave(category.id, formData);
+      setSuccessMessage("Categoría actualizada con éxito");
+      setTimeout(() => setSuccessMessage(""), 3000);
+      onClose();
+    } catch (err) {
+      setError(err.message || "Error al actualizar la categoría");
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(category.id);  // Llama a onDelete para cambiar el status a false
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded shadow-md w-1/3">
-        <h2 className="text-2xl mb-4">Editar Categoría</h2>
-        {error && <p className="text-red-500">{error}</p>}
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title="Editar Categoría">
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Nombre</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Descripción</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            />
-          </div>
-          <div className="flex justify-end space-x-2">
-            <button type="button" className="bg-gray-500 text-white py-2 px-4 rounded" onClick={onClose}>
-              Cancelar
+          {error && <ErrorMessage message={error} shouldReload={false} />}
+          <FormInput
+            label="Nombre de la Categoría"
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+          <FormInput
+            label="Descripción"
+            type="text"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+          />
+          <div className="flex justify-between mt-4">
+            <button
+              type="button"
+              onClick={handleDelete}  // Asegúrate de que handleDelete se ejecute correctamente
+              className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
+            >
+              Eliminar
             </button>
-            <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">
-              Guardar
-            </button>
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors"
+              >
+                Guardar
+              </button>
+            </div>
           </div>
         </form>
-      </div>
-    </div>
+      </Modal>
+
+      {successMessage && (
+        <SuccessMessage
+          message={successMessage}
+          onClose={() => setSuccessMessage("")}
+        />
+      )}
+    </>
   );
 };
+
 
 export default CategoryEditModal;

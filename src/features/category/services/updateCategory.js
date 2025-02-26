@@ -9,9 +9,10 @@ export const updateCategory = async (categoryId, updatedData) => {
   } catch (error) {
     console.error('Error al actualizar la categoría:', error.response?.data || error.message);
     
-    // Manejar errores específicos
+    // Manejo de errores específicos:
     if (error.response && error.response.data) {
-      throw new Error(error.response.data.detail || 'Error al actualizar la categoría.');
+      const errorDetail = error.response.data.detail || 'Error al actualizar la categoría.';
+      throw new Error(errorDetail);
     } else {
       throw new Error('Error en la conexión o en el servidor.');
     }

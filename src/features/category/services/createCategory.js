@@ -9,11 +9,12 @@ export const createCategory = async (categoryData) => {
   } catch (error) {
     console.error('Error al crear la categoría:', error.response?.data || error.message);
     
-    // Manejar errores específicos
+    // Manejar errores específicos y retornar un mensaje de error apropiado
     if (error.response && error.response.data) {
-      throw new Error(error.response.data.detail || 'Error al crear la categoría.');
+      const errorDetail = error.response.data.detail || 'Error al crear la categoría.';
+      throw new Error(errorDetail); // Si existe un detalle en el error, lo usamos
     } else {
-      throw new Error('Error en la conexión o en el servidor.');
+      throw new Error('Error en la conexión o en el servidor.'); // Error genérico si no hay respuesta
     }
   }
 };
