@@ -25,12 +25,6 @@ const Toolbar = ({ onSearch, buttonText = 'Nuevo', children, onSave }) => {
             />
           </svg>
         </div>
-        <input
-          type="text"
-          className="block pt-2 pl-10 text-sm text-text-primary border border-neutral-300 rounded-lg w-80 bg-background-100 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-          placeholder="Buscar..."
-          onChange={(e) => onSearch(e.target.value)}
-        />
       </div>
     </div>
   );

@@ -9,7 +9,8 @@ import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import UserRegisterModal from "../components/register/UserRegisterModal";
 import { listUsers } from "../services/listUsers";
-import { useAuth } from '../../../context/AuthProvider';
+import { useAuth } from "../../../context/AuthProvider";
+import FilterTable from "../components/FilterTable";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -25,7 +26,7 @@ const UserList = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
 
-  // Definimos los encabezados de la tabla
+  // Define headers for the table (for display purposes)
   const headers = [
     "Nombre de usuario",
     "Nombre",
@@ -37,7 +38,15 @@ const UserList = () => {
     "Acciones"
   ];
 
-  // Función para cargar los usuarios de una página específica
+  // Define columns for FilterTable
+  const filterColumns = [
+    { key: "name", label: "Nombre", filterable: true },
+    { key: "dni", label: "DNI", filterable: true },
+    { key: "is_active", label: "Estado", filterable: true },
+    { key: "is_staff", label: "Administrador", filterable: true },
+  ];
+
+  // Function to load users from a given URL (pagination)
   const fetchUsers = async (url = "/users/list/") => {
     setLoadingUsers(true);
     try {
@@ -67,7 +76,7 @@ const UserList = () => {
     }
   }, [isAuthenticated, loading, navigate]);
 
-  // Funciones para manejar la paginación
+  // Pagination handlers
   const handleNextPage = () => {
     if (nextPage) {
       fetchUsers(nextPage);
@@ -82,26 +91,26 @@ const UserList = () => {
     }
   };
 
-  // Muestra un mensaje de éxito y recarga la lista de usuarios
+  // Show success message and refresh users list
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
-    fetchUsers(); // Actualiza la lista de usuarios después de cualquier operación exitosa
+    fetchUsers();
   };
 
-  // Lógica para el registro de usuario
+  // User registration logic
   const handleUserRegistration = () => {
     handleShowSuccess("¡Usuario registrado con éxito!");
     setShowRegisterModal(false);
   };
 
-  // Lógica para buscar usuarios
+  // Search logic (placeholder)
   const handleSearch = (query) => {
     console.log("Buscar usuarios con el término:", query);
-    // Aquí podrías aplicar un filtro a los usuarios o hacer una llamada a la API para buscar
+    // Here you could filter users locally or call the API with query parameters
   };
 
-  // Configuración de las filas para la tabla
+  // Configure rows for the table
   const rows = users.map((user) => ({
     "Nombre de usuario": user.username,
     "Nombre": `${user.name} ${user.last_name}`,
@@ -136,7 +145,7 @@ const UserList = () => {
           Borrar
         </button>
       </div>
-    )
+    ),
   }));
 
   return (
@@ -152,11 +161,11 @@ const UserList = () => {
             onCreate={() => setShowRegisterModal(true)}
             createButtonText="Registrar Usuario"
           />
-
+          {/* Place the FilterTable component above the table header */}
+          <FilterTable columns={filterColumns} onFilterChange={(filters) => console.log("Filters:", filters)} />
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             <Table headers={headers} rows={rows} />
           </div>
-
           <Pagination
             onNext={handleNextPage}
             onPrevious={handlePreviousPage}
@@ -166,14 +175,12 @@ const UserList = () => {
         </div>
       </div>
       <Footer />
-
       {showSuccess && (
         <SuccessMessage
           message={successMessage}
           onClose={() => setShowSuccess(false)}
         />
       )}
-
       {showRegisterModal && (
         <UserRegisterModal
           onClose={() => setShowRegisterModal(false)}
