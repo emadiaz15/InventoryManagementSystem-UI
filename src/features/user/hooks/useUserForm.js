@@ -21,15 +21,24 @@ const useUserForm = (onSave, showSuccessPrompt) => {
     const { name, value, type, checked, files } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value,
+      [name]: type === 'checkbox'
+        ? checked
+        : type === 'file'
+        ? files[0]
+        : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validaciones en el front:
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+    if (formData.dni.length < 7 || formData.dni.length > 9) {
+      setError('El DNI debe tener entre 7 y 9 dígitos.');
       return;
     }
 
@@ -37,14 +46,11 @@ const useUserForm = (onSave, showSuccessPrompt) => {
     setError(null);
 
     try {
-      // Intentar registrar el usuario
+      // Aquí puedes procesar la imagen con FormData si es necesario.
       await registerUser(formData);
-
-      // Mostrar mensaje de éxito si se proporcionó la función
       if (showSuccessPrompt) {
         showSuccessPrompt('¡Usuario registrado con éxito!');
       }
-
       // Resetear el formulario después de un registro exitoso
       setFormData({
         username: '',
@@ -58,8 +64,6 @@ const useUserForm = (onSave, showSuccessPrompt) => {
         password: '',
         confirmPassword: '',
       });
-
-      // Llamar a la función para cerrar el modal y actualizar la lista
       onSave();
     } catch (error) {
       setError(error.message || 'Error al registrar el usuario');

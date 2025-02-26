@@ -1,3 +1,4 @@
+// src/features/user/pages/UserList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/common/Navbar";
@@ -186,9 +187,9 @@ const UserList = () => {
         </div>
         <div className="flex-1 flex flex-col p-2 mt-14">
           <Toolbar
-            onSearch={handleSearch}
-            onCreate={() => setShowRegisterModal(true)}
-            createButtonText="Registrar Usuario"
+            title="Lista de usuarios"
+            buttonText="Crear Usuario"
+            onButtonClick={() => setShowRegisterModal(true)}
           />
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
@@ -232,6 +233,10 @@ const UserList = () => {
             } catch (err) {
               console.error("Error al actualizar:", err);
             }
+          }}
+          onPasswordReset={(id, newPasswordData) => {
+            console.log("Restableciendo contraseña para", id, newPasswordData);
+            // Implementa la lógica de restablecimiento si es necesario.
           }}
         />
       )}
