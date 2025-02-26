@@ -1,19 +1,21 @@
+// src/components/common/ActionButtonWithModal.jsx
 import React, { useState } from 'react';
+import { PlusCircleIcon } from '@heroicons/react/24/solid';
 
-const ActionButtonWithModal = ({ buttonText, children, onSave }) => {
+const ActionButtonWithModal = ({ children, onSave }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
-    setIsModalOpen(true); // Abrir el modal
+    setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false); // Cerrar el modal
+    setIsModalOpen(false);
   };
 
   const handleSave = (data) => {
-    if (onSave) onSave(data); // Ejecutar la función onSave si está presente
-    setIsModalOpen(false); // Cerrar el modal después de guardar
+    if (onSave) onSave(data);
+    setIsModalOpen(false);
   };
 
   return (
@@ -21,9 +23,9 @@ const ActionButtonWithModal = ({ buttonText, children, onSave }) => {
       <button
         onClick={handleOpenModal}
         type="button"
-        className="bg-primary-500 text-text-white py-2 px-4 rounded hover:bg-primary-600 focus:outline-none focus:ring-4 focus:ring-primary-500 transition-colors"
+        className="bg-primary-500 text-text-white p-2 rounded hover:bg-primary-600 focus:outline-none focus:ring-4 focus:ring-primary-500 transition-colors"
       >
-        {buttonText}
+        <PlusCircleIcon className="w-6 h-6" />
       </button>
 
       {isModalOpen && (
