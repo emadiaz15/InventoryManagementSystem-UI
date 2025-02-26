@@ -1,10 +1,11 @@
-import { axiosInstance } from '../../../services/api'; // Importa la instancia de Axios configurada
+// src/features/user/services/deleteUser.js
+import { axiosInstance } from '../../../services/api';
 
-// Método para eliminar un usuario específico (solo accesible para admin)
 export const deleteUser = async (userId) => {
   try {
-    const response = await axiosInstance.delete(`users/${userId}/`);
-    return response.data; // Devuelve los datos del usuario eliminado
+    // La URL es relativa para que se use el baseURL definido en Axios
+    const response = await axiosInstance.delete(`/users/${userId}/`);
+    return response.data; // Devuelve los datos del usuario eliminado (soft delete)
   } catch (error) {
     console.error(`Error al eliminar el usuario ${userId}:`, error.response?.data || error.message);
     throw new Error(error.response?.data?.detail || `Error al eliminar el usuario ${userId}`);
@@ -12,5 +13,5 @@ export const deleteUser = async (userId) => {
 };
 
 export default {
-  deleteUser
+  deleteUser,
 };

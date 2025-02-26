@@ -1,10 +1,24 @@
-// src/features/user/services/updateUser.js
 import { axiosInstance } from '../../../services/api';
 
 export const updateUser = async (userId, userData) => {
   try {
-    // Asegúrate de que la URL corresponda con tu API, por ejemplo, incluyendo el prefijo "api/v1/"
-    const response = await axiosInstance.put(`/users/${userId}/`, userData);
+    let dataToSend;
+    // Verifica si se ha seleccionado un archivo para la imagen
+    if (userData.image && userData.image instanceof File) {
+      dataToSend = new FormData();
+      // Añade todos los campos al FormData
+      for (const key in userData) {
+        if (userData.hasOwnProperty(key)) {
+          dataToSend.append(key, userData[key]);
+        }
+      }
+    } else {
+      // Si no hay archivo, se envía el JSON directamente
+      dataToSend = userData;
+    }
+
+    // Realiza la petición PUT
+    const response = await axiosInstance.put(`/users/${userId}/`, dataToSend);
     return response.data;
   } catch (error) {
     console.error('Error al actualizar el perfil del usuario:', error.response?.data || error.message);
@@ -21,7 +35,11 @@ export const updateUser = async (userId, userData) => {
       }
       if (typeof errorMsg === 'object') {
         const fieldErrors = Object.entries(errorMsg)
-          .map(([field, messages]) => `${field}: ${messages.join(', ')}`);
+          .map(([field, messages]) =>
+            Array.isArray(messages)
+              ? `${field}: ${messages.join(', ')}`
+              : `${field}: ${messages}`
+          );
         throw new Error(fieldErrors.join(' | '));
       }
       throw new Error(errorMsg.detail || 'Error al actualizar el perfil del usuario.');

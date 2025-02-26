@@ -15,13 +15,13 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
     dni: user.dni,
     is_active: user.is_active,
     is_staff: user.is_staff,
-    // Quitamos campos de contraseña
+    image: null, // Inicialmente null para no enviar nada si no se selecciona archivo
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Actualiza los datos del formulario cuando el usuario cambia
+  // Actualiza el formulario cuando cambia el usuario
   useEffect(() => {
     if (user) {
       setFormData({
@@ -32,6 +32,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
         dni: user.dni,
         is_active: user.is_active,
         is_staff: user.is_staff,
+        image: null, // Reseteamos a null al cargar el usuario
       });
     }
   }, [user]);
@@ -44,11 +45,35 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
     }));
   };
 
+  // Manejador para el input de archivo
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData((prevData) => ({
+        ...prevData,
+        image: e.target.files[0],
+      }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      await onSave(user.id, formData);
+      let dataToSend;
+      // Si se seleccionó un archivo para la imagen, usar FormData
+      if (formData.image instanceof File) {
+        dataToSend = new FormData();
+        for (const key in formData) {
+          // Agrega todos los campos al FormData
+          dataToSend.append(key, formData[key]);
+        }
+      } else {
+        // Si no se seleccionó imagen, omite el campo "image"
+        const { image, ...rest } = formData;
+        dataToSend = rest;
+      }
+      // Se llama al onSave con los datos adecuados
+      await onSave(user.id, dataToSend);
       setSuccessMessage('Usuario actualizado con éxito');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
@@ -74,7 +99,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Editar Usuario">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} encType="multipart/form-data">
           {error && <p className="text-error-500 mb-4">{error}</p>}
 
           <FormInput
@@ -127,7 +152,15 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             onChange={handleChange}
           />
 
-          {/* Botón para redirigir a cambiar la contraseña */}
+          {/* Campo para seleccionar imagen */}
+          <FormInput
+            label="Imagen"
+            type="file"
+            name="image"
+            onChange={handleFileChange}
+          />
+
+          {/* Botón para cambiar contraseña */}
           <div className="flex justify-end mt-4">
             <button
               type="button"

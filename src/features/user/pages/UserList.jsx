@@ -1,4 +1,3 @@
-// src/features/user/pages/UserList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/common/Navbar";
@@ -11,7 +10,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import UserRegisterModal from "../components/UserRegisterModal";
 import UserEditModal from "../components/UserEditModal";
 import { listUsers } from "../services/listUsers";
-import { updateUser } from "../services/updateUser"; // Importa el servicio de actualización
+import { updateUser } from "../services/updateUser"; // Servicio de actualización
 import { useAuth } from "../../../context/AuthProvider";
 import Filter from "../components/Filter";
 import { PencilIcon } from "@heroicons/react/24/outline";
@@ -28,22 +27,19 @@ const UserList = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
-  // Estados para el modal de edición
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // State to hold the filter values.
   const [filters, setFilters] = useState({
     full_name: "",
     dni: "",
-    is_active: "Activo", // Default to "Activo"
-    is_staff: ""         // Default blank: show all
+    is_active: "Activo", // Por defecto, filtra activos
+    is_staff: ""         // Sin filtro para admin
   });
 
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
 
-  // Table headers (for display)
   const headers = [
     "Nombre de usuario",
     "Nombre",
@@ -55,7 +51,6 @@ const UserList = () => {
     "Acciones"
   ];
 
-  // Define columns for the Filter component
   const filterColumns = [
     { key: "full_name", label: "Nombre y Apellido", filterable: true },
     { key: "dni", label: "DNI", filterable: true },
@@ -63,17 +58,14 @@ const UserList = () => {
     { key: "is_staff", label: "Administrador", filterable: true }
   ];
 
-  // Helper: Build query string from filters with conversion for booleans
   const buildQueryString = (filterObj) => {
     const queryParams = new URLSearchParams();
     Object.entries(filterObj).forEach(([key, value]) => {
       if (value) {
         if (key === "is_active") {
-          // Convert "Activo" -> "true", "Inactivo" -> "false"
           value = value.toLowerCase() === "activo" ? "true" : "false";
         }
         if (key === "is_staff") {
-          // Convert "Sí" -> "true", "No" -> "false"
           if (value.toLowerCase() === "sí") {
             value = "true";
           } else if (value.toLowerCase() === "no") {
@@ -86,7 +78,6 @@ const UserList = () => {
     return queryParams.toString() ? `?${queryParams.toString()}` : "";
   };
 
-  // Function to load users (with filters and pagination)
   const fetchUsers = async (url = "/users/list/") => {
     setLoadingUsers(true);
     try {
@@ -106,7 +97,6 @@ const UserList = () => {
     }
   };
 
-  // Effect para cargar usuarios al montar el componente o al cambiar filtros.
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
@@ -119,7 +109,6 @@ const UserList = () => {
     }
   }, [filters, isAuthenticated, loading, navigate]);
 
-  // Handlers para paginación (manteniendo filtros)
   const handleNextPage = () => {
     if (nextPage) {
       fetchUsers(nextPage);
@@ -146,17 +135,14 @@ const UserList = () => {
     setShowRegisterModal(false);
   };
 
-  // Lógica de búsqueda: actualiza filtros (por ejemplo, full_name)
   const handleSearch = (query) => {
     setFilters((prev) => ({ ...prev, full_name: query }));
   };
 
-  // Handler para actualizar filtros desde el componente Filter.
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
   };
 
-  // Configurar filas para la tabla.
   const rows = users.map((user) => ({
     "Nombre de usuario": user.username,
     "Nombre": `${user.name} ${user.last_name}`,
@@ -233,7 +219,6 @@ const UserList = () => {
           onSave={handleUserRegistration}
         />
       )}
-      {/* Modal de edición de usuario */}
       {showEditModal && selectedUser && (
         <UserEditModal
           user={selectedUser}
@@ -247,10 +232,6 @@ const UserList = () => {
             } catch (err) {
               console.error("Error al actualizar:", err);
             }
-          }}
-          onPasswordReset={(id, newPasswordData) => {
-            console.log("Restableciendo contraseña para", id, newPasswordData);
-            // Aquí implementa la lógica de restablecimiento de contraseña si es necesario.
           }}
         />
       )}
