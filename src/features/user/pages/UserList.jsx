@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/common/Navbar";
 import Sidebar from "../../../components/common/Sidebar";
@@ -10,7 +10,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import UserRegisterModal from "../components/register/UserRegisterModal";
 import { listUsers } from "../services/listUsers";
 import { useAuth } from "../../../context/AuthProvider";
-import FilterTable from "../components/FilterTable";
+import Filter from "../components/Filter";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -23,10 +23,19 @@ const UserList = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+
+  // State to hold the filter values.
+  const [filters, setFilters] = useState({
+    name: "",
+    dni: "",
+    is_active: "Activo", // Default to "Activo"
+    is_staff: ""         // Default blank: show all
+  });
+
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
 
-  // Define headers for the table (for display purposes)
+  // Table headers (for display)
   const headers = [
     "Nombre de usuario",
     "Nombre",
@@ -38,15 +47,38 @@ const UserList = () => {
     "Acciones"
   ];
 
-  // Define columns for FilterTable
+  // Define columns for the Filter component
   const filterColumns = [
-    { key: "name", label: "Nombre", filterable: true },
+    { key: "full_name", label: "Nombre y Apellido", filterable: true },
     { key: "dni", label: "DNI", filterable: true },
     { key: "is_active", label: "Estado", filterable: true },
-    { key: "is_staff", label: "Administrador", filterable: true },
+    { key: "is_staff", label: "Administrador", filterable: true }
   ];
 
-  // Function to load users from a given URL (pagination)
+  // Helper: Build query string from filters with conversion for booleans
+  const buildQueryString = (filterObj) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(filterObj).forEach(([key, value]) => {
+      if (value) {
+        if (key === "is_active") {
+          // Convert "Activo" -> "true", "Inactivo" -> "false"
+          value = value.toLowerCase() === "activo" ? "true" : "false";
+        }
+        if (key === "is_staff") {
+          // Convert "Sí" -> "true", "No" -> "false"
+          if (value.toLowerCase() === "sí") {
+            value = "true";
+          } else if (value.toLowerCase() === "no") {
+            value = "false";
+          }
+        }
+        queryParams.append(key, value);
+      }
+    });
+    return queryParams.toString() ? `?${queryParams.toString()}` : "";
+  };
+
+  // Function to load users (with filters and pagination)
   const fetchUsers = async (url = "/users/list/") => {
     setLoadingUsers(true);
     try {
@@ -66,17 +98,21 @@ const UserList = () => {
     }
   };
 
+  // Effect to fetch users when component mounts and when filters change.
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
         navigate("/");
         return;
       }
-      fetchUsers();
+      const query = buildQueryString(filters);
+      // Reset to first page when filters change.
+      setCurrentPage(1);
+      fetchUsers(`/users/list/${query}`);
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [filters, isAuthenticated, loading, navigate]);
 
-  // Pagination handlers
+  // Pagination handlers: maintain the current filters.
   const handleNextPage = () => {
     if (nextPage) {
       fetchUsers(nextPage);
@@ -91,26 +127,29 @@ const UserList = () => {
     }
   };
 
-  // Show success message and refresh users list
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
-    fetchUsers();
+    const query = buildQueryString(filters);
+    fetchUsers(`/users/list/${query}`);
   };
 
-  // User registration logic
   const handleUserRegistration = () => {
     handleShowSuccess("¡Usuario registrado con éxito!");
     setShowRegisterModal(false);
   };
 
-  // Search logic (placeholder)
+  // Search logic: update filters (for example, update the "name" filter)
   const handleSearch = (query) => {
-    console.log("Buscar usuarios con el término:", query);
-    // Here you could filter users locally or call the API with query parameters
+    setFilters((prev) => ({ ...prev, name: query }));
   };
 
-  // Configure rows for the table
+  // Handler to update filters from the Filter component.
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  // Configure rows for the table.
   const rows = users.map((user) => ({
     "Nombre de usuario": user.username,
     "Nombre": `${user.name} ${user.last_name}`,
@@ -145,7 +184,7 @@ const UserList = () => {
           Borrar
         </button>
       </div>
-    ),
+    )
   }));
 
   return (
@@ -161,10 +200,14 @@ const UserList = () => {
             onCreate={() => setShowRegisterModal(true)}
             createButtonText="Registrar Usuario"
           />
-          {/* Place the FilterTable component above the table header */}
-          <FilterTable columns={filterColumns} onFilterChange={(filters) => console.log("Filters:", filters)} />
+          {/* Place the Filter component above the table */}
+          <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
-            <Table headers={headers} rows={rows} />
+            {loadingUsers ? (
+              <p className="p-6">Cargando usuarios...</p>
+            ) : (
+              <Table headers={headers} rows={rows} />
+            )}
           </div>
           <Pagination
             onNext={handleNextPage}

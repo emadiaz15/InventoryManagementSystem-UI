@@ -1,14 +1,14 @@
-// src/components/common/FilterTable.jsx
+// src/components/common/Filter.jsx
 import React, { useState } from "react";
 
-const FilterTable = ({ columns, onFilterChange }) => {
-    // Initialize filter state for each column key.
+const Filter = ({ columns, onFilterChange }) => {
+    // Inicializa el estado de los filtros para cada columna.
     const [filters, setFilters] = useState(
         columns.reduce((acc, col) => {
             if (col.key === "is_active") {
-                acc[col.key] = "Activo"; // Default to "Activo" for estado.
+                acc[col.key] = "Activo"; // Por defecto, filtra usuarios activos.
             } else if (col.key === "is_staff") {
-                acc[col.key] = ""; // Default blank for administrador.
+                acc[col.key] = ""; // Por defecto, sin filtro para administradores.
             } else {
                 acc[col.key] = "";
             }
@@ -27,37 +27,35 @@ const FilterTable = ({ columns, onFilterChange }) => {
     return (
         <table id="filter-table" className="w-full mb-4">
             <thead>
-                {/* Header row with labels and sort icons */}
+                {/* Primera fila: encabezados con etiquetas e icono de búsqueda */}
                 <tr>
                     {columns.map((col) => (
-                        <th key={col.key} className="py-2 px-4 border-b border-gray-200">
-                            <span className="flex items-center">
+                        <th key={col.key} className="py-2 px-4 border-b border-background-200">
+                            <span className="flex items-center text-text-primary">
                                 {col.label}
                                 <svg
-                                    className="w-4 h-4 ms-1"
+                                    className="w-4 h-4 ms-1 text-primary-500"
                                     aria-hidden="true"
                                     xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
                                     fill="none"
                                     viewBox="0 0 24 24"
+                                    stroke="currentColor"
                                 >
                                     <path
-                                        stroke="currentColor"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="m8 15 4 4 4-4m0-6-4-4-4 4"
+                                        strokeWidth={2}
+                                        d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"
                                     />
                                 </svg>
                             </span>
                         </th>
                     ))}
                 </tr>
-                {/* Second header row with filter inputs */}
+                {/* Segunda fila: inputs de filtro */}
                 <tr>
                     {columns.map((col) => (
-                        <th key={`${col.key}-filter`} className="py-1 px-4 border-b border-gray-200">
+                        <th key={`${col.key}-filter`} className="py-1 px-4 border-b border-background-200">
                             {col.filterable !== false && (
                                 <>
                                     {col.key === "is_active" ? (
@@ -82,7 +80,13 @@ const FilterTable = ({ columns, onFilterChange }) => {
                                     ) : (
                                         <input
                                             type="text"
-                                            placeholder={`Filter ${col.label}`}
+                                            placeholder={
+                                                col.key === "full_name"
+                                                    ? "Filtrar por nombre/apellido"
+                                                    : col.key === "dni"
+                                                        ? "Filtrar por DNI"
+                                                        : `Filter ${col.label}`
+                                            }
                                             value={filters[col.key]}
                                             onChange={(e) => handleInputChange(col.key, e.target.value)}
                                             className="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -98,4 +102,4 @@ const FilterTable = ({ columns, onFilterChange }) => {
     );
 };
 
-export default FilterTable;
+export default Filter;
