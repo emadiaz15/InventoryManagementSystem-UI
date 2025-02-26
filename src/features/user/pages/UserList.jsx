@@ -1,3 +1,4 @@
+// src/features/user/pages/UserList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/common/Navbar";
@@ -7,10 +8,12 @@ import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
-import UserRegisterModal from "../components/register/UserRegisterModal";
+import UserRegisterModal from "../components/UserRegisterModal";
+import UserEditModal from "../components/UserEditModal";
 import { listUsers } from "../services/listUsers";
 import { useAuth } from "../../../context/AuthProvider";
 import Filter from "../components/Filter";
+import { PencilIcon } from "@heroicons/react/24/outline";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -22,7 +25,11 @@ const UserList = () => {
   const [previousPage, setPreviousPage] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [showRegisterModal, setShowRegisterModal] = useState(false); // Asegúrate de tener esta línea
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+
+  // Estados para el modal de edición
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // State to hold the filter values.
   const [filters, setFilters] = useState({
@@ -139,17 +146,17 @@ const UserList = () => {
     setShowRegisterModal(false);
   };
 
-  // Search logic: update filters (for example, update the "name" filter)
+  // Lógica de búsqueda: actualiza filtros (por ejemplo, full_name)
   const handleSearch = (query) => {
     setFilters((prev) => ({ ...prev, full_name: query }));
   };
 
-  // Handler to update filters from the Filter component.
+  // Handler para actualizar filtros desde el componente Filter.
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
   };
 
-  // Configure rows for the table.
+  // Configurar filas para la tabla.
   const rows = users.map((user) => ({
     "Nombre de usuario": user.username,
     "Nombre": `${user.name} ${user.last_name}`,
@@ -168,20 +175,17 @@ const UserList = () => {
     ),
     "Administrador": user.is_staff ? "Sí" : "No",
     "Acciones": (
-      <div className="space-x-2">
+      <div className="flex space-x-2">
         <button
-          onClick={() => console.log("Editar", user)}
-          className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
+          onClick={() => {
+            console.log("Editar", user);
+            setSelectedUser(user);
+            setShowEditModal(true);
+          }}
+          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
           aria-label="Editar usuario"
         >
-          Editar
-        </button>
-        <button
-          onClick={() => console.log("Eliminar", user.id)}
-          className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
-          aria-label="Eliminar usuario"
-        >
-          Borrar
+          <PencilIcon className="w-5 h-5 text-text-white" />
         </button>
       </div>
     )
@@ -200,7 +204,7 @@ const UserList = () => {
             onCreate={() => setShowRegisterModal(true)}
             createButtonText="Registrar Usuario"
           />
-          {/* Place the Filter component above the table */}
+          {/* Filtro */}
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             {loadingUsers ? (
@@ -228,6 +232,24 @@ const UserList = () => {
         <UserRegisterModal
           onClose={() => setShowRegisterModal(false)}
           onSave={handleUserRegistration}
+        />
+      )}
+      {/* Modal de edición de usuario */}
+      {showEditModal && selectedUser && (
+        <UserEditModal
+          user={selectedUser}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSave={(id, updatedData) => {
+            console.log("Guardando cambios para", id, updatedData);
+            // Aquí debes llamar a tu servicio para actualizar el usuario y luego refrescar la lista.
+            setShowEditModal(false);
+            handleShowSuccess("Usuario actualizado con éxito");
+          }}
+          onPasswordReset={(id, newPasswordData) => {
+            console.log("Restableciendo contraseña para", id, newPasswordData);
+            // Lógica para restablecer la contraseña.
+          }}
         />
       )}
     </div>

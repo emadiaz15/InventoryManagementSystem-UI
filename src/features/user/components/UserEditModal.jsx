@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import Modal from '../../../../components/ui/Modal';
-import FormInput from '../../../../components/forms/FormInput';
-import FormCheckbox from '../../../../components/forms/FormCheckbox'; // Importamos el componente reutilizable de checkbox
-import SuccessMessage from '../../../../components/ui/SuccessMessage';
+// src/features/user/components/UserEditModal.jsx
+import React, { useState, useEffect } from 'react';
+import Modal from '../../../components/ui/Modal';
+import FormInput from '../../../components/ui/form/FormInput';
+import FormCheckbox from '../../../components/ui/form/FormCheckbox';
+import SuccessMessage from '../../../components/common/SuccessMessage';
 import PasswordResetModal from './PasswordResetModal';
 
 const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
@@ -17,10 +18,26 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
     password: '',
     confirmPassword: '',
   });
-
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Actualiza los datos del formulario cuando el usuario cambia
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        username: user.username,
+        name: user.name,
+        last_name: user.last_name,
+        email: user.email,
+        dni: user.dni,
+        is_active: user.is_active,
+        is_staff: user.is_staff,
+        password: '',
+        confirmPassword: '',
+      });
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -41,13 +58,13 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+    setError('');
     try {
       await onSave(user.id, formData);
       setSuccessMessage('Usuario actualizado con éxito');
       setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (error) {
-      setError(error.message || 'Error al actualizar el usuario');
+    } catch (err) {
+      setError(err.message || 'Error al actualizar el usuario');
     }
   };
 
@@ -61,7 +78,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
       setSuccessMessage('Contraseña cambiada exitosamente');
       setShowPasswordModal(false);
       setTimeout(() => setSuccessMessage(''), 4000);
-    } catch (error) {
+    } catch (err) {
       setError('Error al cambiar la contraseña');
     }
   };
@@ -70,9 +87,8 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Editar Usuario">
         <form onSubmit={handleSubmit}>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
+          {error && <p className="text-error-500 mb-4">{error}</p>}
 
-          {/* Campos de entrada del formulario */}
           <FormInput
             label="Nombre de usuario"
             type="text"
@@ -109,7 +125,6 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             onChange={handleChange}
           />
 
-          {/* Checkbox para estado activo */}
           <FormCheckbox
             label="Activo"
             name="is_active"
@@ -117,7 +132,6 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             onChange={handleChange}
           />
 
-          {/* Checkbox para rol de administrador */}
           <FormCheckbox
             label="Administrador"
             name="is_staff"
@@ -125,7 +139,6 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             onChange={handleChange}
           />
 
-          {/* Campos para cambio de contraseña */}
           <FormInput
             label="Nueva Contraseña"
             type="password"
@@ -141,25 +154,24 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             onChange={handleChange}
           />
 
-          {/* Botones de acción */}
           <div className="flex justify-end space-x-2 mt-4">
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-500 text-white py-2 px-4 rounded"
+              className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="bg-blue-500 text-white py-2 px-4 rounded"
+              className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors"
             >
               Guardar
             </button>
             <button
               type="button"
               onClick={handleRestorePassword}
-              className="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600"
+              className="bg-warning-500 text-white py-2 px-4 rounded hover:bg-warning-600 transition-colors"
             >
               Restaurar Contraseña
             </button>
@@ -167,16 +179,15 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
         </form>
       </Modal>
 
-      {/* Mensaje de éxito */}
       <SuccessMessage
         message={successMessage}
         onClose={() => setSuccessMessage('')}
       />
 
-      {/* Modal para restablecimiento de contraseña */}
       {showPasswordModal && (
         <PasswordResetModal
           userId={user.id}
+          isOpen={showPasswordModal}
           onClose={() => setShowPasswordModal(false)}
           onSave={handleSaveNewPassword}
         />

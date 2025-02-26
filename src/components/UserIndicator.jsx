@@ -5,7 +5,7 @@ const UserDropdown = () => {
   const { user } = useAuth();
 
   return (
-    <span className="text-white font-semibold text-sm sm:text-base mr-2">
+    <span className="text-text-white font-semibold text-sm sm:text-base mr-2">
       {user ? `${user.name} ${user.last_name}` : 'Usuario'}
     </span>
   );

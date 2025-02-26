@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import useUserForm from '../../hooks/useUserForm';
-import FormInput from '../../../../components/ui/form/FormInput';
-import FormCheckbox from '../../../../components/ui/form/FormCheckbox';
+import useUserForm from '../hooks/useUserForm';
+import FormInput from '../../../components/ui/form/FormInput';
+import FormCheckbox from '../../../components/ui/form/FormCheckbox';
 import ActionButtons from './ActionButtons';
-import SuccessMessage from '../../../../components/common/SuccessMessage'; // Importa el componente de mensaje de éxito
+import SuccessMessage from '../../../components/common/SuccessMessage'; // Importa el componente de mensaje de éxito
 
 const UserRegisterModal = ({ onClose, onSave }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   const { formData, handleChange, handleSubmit, loading, error } = useUserForm(async () => {
     handleShowSuccess(); // Mostrar mensaje de éxito después de un registro exitoso
     await onSave(); // Llamar a `onSave` después de un registro exitoso (esto actualizará la lista de usuarios en la página principal)
@@ -29,13 +29,13 @@ const UserRegisterModal = ({ onClose, onSave }) => {
         <h2 className="text-2xl mb-4">Registrar Nuevo Usuario</h2>
         <form onSubmit={handleSubmit}>
           {error && <p className="text-red-500 mb-4">{error}</p>}
-          
+
           <FormInput label="Nombre de usuario" name="username" value={formData.username} onChange={handleChange} required />
           <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required />
           <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} required />
           <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required />
           <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required />
-          
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Cargar Imagen</label>
             <input
@@ -49,7 +49,7 @@ const UserRegisterModal = ({ onClose, onSave }) => {
 
           <FormCheckbox label="Activo" name="is_active" checked={formData.is_active} onChange={handleChange} />
           <FormCheckbox label="Administrador" name="is_staff" checked={formData.is_staff} onChange={handleChange} />
-          
+
           <FormInput label="Contraseña" name="password" type="password" value={formData.password} onChange={handleChange} required />
           <FormInput label="Confirmar Contraseña" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
 
@@ -59,9 +59,9 @@ const UserRegisterModal = ({ onClose, onSave }) => {
 
       {/* Mostrar el mensaje de éxito si está activo */}
       {showSuccess && (
-        <SuccessMessage 
-          message={successMessage} 
-          onClose={() => setShowSuccess(false)} 
+        <SuccessMessage
+          message={successMessage}
+          onClose={() => setShowSuccess(false)}
         />
       )}
     </div>

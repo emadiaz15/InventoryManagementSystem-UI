@@ -1,11 +1,12 @@
 import React from 'react';
-import { PencilIcon, TrashIcon, PlusCircleIcon } from "@heroicons/react/24/solid"; // Actualización de los íconos
+import { PencilIcon, TrashIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
 
 // Componente para el botón de editar
 const EditButton = ({ onClick }) => (
   <button
-    className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 flex items-center"
-    onClick={onClick} // Llama a la función onEdit cuando se hace clic
+    onClick={onClick}
+    className="bg-primary-500 text-white py-1 px-3 rounded hover:bg-primary-600 flex items-center transition-colors"
+    aria-label="Editar usuario"
   >
     <PencilIcon className="h-5 w-5 mr-2" /> Editar
   </button>
@@ -14,8 +15,9 @@ const EditButton = ({ onClick }) => (
 // Componente para el botón de eliminar
 const DeleteButton = ({ onClick }) => (
   <button
-    className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 ml-2 flex items-center"
-    onClick={onClick} // Llama a la función onDelete cuando se hace clic
+    onClick={onClick}
+    className="bg-error-500 text-white py-1 px-3 rounded hover:bg-error-600 ml-2 flex items-center transition-colors"
+    aria-label="Eliminar usuario"
   >
     <TrashIcon className="h-5 w-5 mr-2" /> Eliminar
   </button>
@@ -24,8 +26,9 @@ const DeleteButton = ({ onClick }) => (
 // Componente para el botón de crear
 const CreateButton = ({ onClick }) => (
   <button
-    className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600 flex items-center"
-    onClick={onClick} // Llama a la función onCreate cuando se hace clic
+    onClick={onClick}
+    className="bg-success-500 text-white py-1 px-3 rounded hover:bg-success-600 flex items-center transition-colors"
+    aria-label="Crear usuario"
   >
     <PlusCircleIcon className="h-5 w-5 mr-2" /> Crear
   </button>

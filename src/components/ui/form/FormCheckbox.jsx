@@ -7,9 +7,9 @@ const FormCheckbox = ({ label, name, checked, onChange }) => (
       name={name}
       checked={checked}
       onChange={onChange}
-      className="mr-2"
+      className="mr-2 h-4 w-4 rounded border border-background-200 text-primary-500 focus:ring-primary-500"
     />
-    <label className="text-sm font-medium text-gray-700">{label}</label>
+    <label className="text-sm font-medium text-text-primary">{label}</label>
   </div>
 );
 

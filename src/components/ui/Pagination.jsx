@@ -5,16 +5,16 @@ const Pagination = ({ onNext, onPrevious, hasNext, hasPrevious }) => {
   return (
     <div className="flex justify-between mt-4">
       <button
-        className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
         onClick={onPrevious}
         disabled={!hasPrevious}
+        className="bg-primary-500 text-text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors disabled:opacity-50"
       >
         Anterior
       </button>
       <button
-        className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
         onClick={onNext}
         disabled={!hasNext}
+        className="bg-primary-500 text-text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors disabled:opacity-50"
       >
         Siguiente
       </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import UserRegisterModal from './UserRegisterModal';
-import { listUsers } from '../../services/listUsers'; // Importa el servicio para cargar usuarios
-import SuccessMessage from '../../../../components/common/SuccessMessage';
+import { listUsers } from '../services/listUsers'; // Importa el servicio para cargar usuarios
+import SuccessMessage from '../../../components/common/SuccessMessage';
 
 const ParentComponent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,7 +40,7 @@ const ParentComponent = () => {
   return (
     <>
       <button onClick={() => setIsModalOpen(true)}>Registrar nuevo usuario</button>
-      
+
       {/* Mostrar la lista de usuarios */}
       <div>
         {users.map((user) => (
@@ -54,9 +54,9 @@ const ParentComponent = () => {
 
       {/* Mostrar el mensaje de éxito si está activo */}
       {showSuccess && (
-        <SuccessMessage 
-          message={successMessage} 
-          onClose={() => setShowSuccess(false)} 
+        <SuccessMessage
+          message={successMessage}
+          onClose={() => setShowSuccess(false)}
         />
       )}
     </>

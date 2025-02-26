@@ -1,9 +1,9 @@
 // src/components/edit/PasswordResetModal.jsx
 import React, { useState } from 'react';
-import Modal from '../../../../components/ui/Modal';
-import FormInput from '../../../../components/forms/FormInput';
+import Modal from '../../../components/ui/Modal';
+import FormInput from '../../../components/ui/form/FormInput';
 
-const PasswordResetModal = ({ userId, onClose, onSave }) => {
+const PasswordResetModal = ({ userId, isOpen, onClose, onSave }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,15 +19,15 @@ const PasswordResetModal = ({ userId, onClose, onSave }) => {
     try {
       await onSave(userId, { password });
       onClose();
-    } catch (error) {
-      setError(error.message || 'Error al cambiar la contraseña');
+    } catch (err) {
+      setError(err.message || 'Error al cambiar la contraseña');
     }
   };
 
   return (
-    <Modal isOpen={true} onClose={onClose} title="Restablecer Contraseña">
-      <form onSubmit={handleSubmit}>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+    <Modal isOpen={isOpen} onClose={onClose} title="Restablecer Contraseña">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p className="text-error-500">{error}</p>}
 
         <FormInput
           label="Nueva Contraseña"
@@ -35,27 +35,29 @@ const PasswordResetModal = ({ userId, onClose, onSave }) => {
           name="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
-        
+
         <FormInput
           label="Confirmar Nueva Contraseña"
           type="password"
           name="confirmPassword"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
+          className="border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
 
-        <div className="flex justify-end space-x-2 mt-4">
+        <div className="flex justify-end space-x-2">
           <button
             type="button"
             onClick={onClose}
-            className="bg-gray-500 text-white py-2 px-4 rounded"
+            className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="bg-blue-500 text-white py-2 px-4 rounded"
+            className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors"
           >
             Guardar
           </button>
