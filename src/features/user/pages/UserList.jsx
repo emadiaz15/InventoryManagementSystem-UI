@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/common/Navbar";
 import Sidebar from "../../../components/common/Sidebar";
@@ -22,11 +22,11 @@ const UserList = () => {
   const [previousPage, setPreviousPage] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false); // Asegúrate de tener esta línea
 
   // State to hold the filter values.
   const [filters, setFilters] = useState({
-    name: "",
+    full_name: "",
     dni: "",
     is_active: "Activo", // Default to "Activo"
     is_staff: ""         // Default blank: show all
@@ -141,7 +141,7 @@ const UserList = () => {
 
   // Search logic: update filters (for example, update the "name" filter)
   const handleSearch = (query) => {
-    setFilters((prev) => ({ ...prev, name: query }));
+    setFilters((prev) => ({ ...prev, full_name: query }));
   };
 
   // Handler to update filters from the Filter component.
@@ -170,14 +170,14 @@ const UserList = () => {
     "Acciones": (
       <div className="space-x-2">
         <button
-          onClick={() => handleEdit(user)}
+          onClick={() => console.log("Editar", user)}
           className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
           aria-label="Editar usuario"
         >
           Editar
         </button>
         <button
-          onClick={() => handleDelete(user.id)}
+          onClick={() => console.log("Eliminar", user.id)}
           className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
           aria-label="Eliminar usuario"
         >
