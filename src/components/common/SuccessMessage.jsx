@@ -1,3 +1,4 @@
+// src/components/common/SuccessMessage.jsx
 import React, { useEffect } from 'react';
 
 const SuccessMessage = ({ message, onClose, shouldReload = false }) => {
@@ -5,12 +6,11 @@ const SuccessMessage = ({ message, onClose, shouldReload = false }) => {
     const timer = setTimeout(() => {
       onClose(); // Cerrar automáticamente después de 4 segundos
       if (shouldReload) {
-        // Forzar el reload de la página aquí
         window.location.reload();
       }
     }, 4000);
 
-    return () => clearTimeout(timer); // Limpiar el temporizador cuando el componente se desmonte
+    return () => clearTimeout(timer);
   }, [onClose, shouldReload]);
 
   return (

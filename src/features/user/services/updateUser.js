@@ -1,18 +1,15 @@
-import { axiosInstance } from '../../../services/api'; // Usa la instancia de Axios configurada
+// src/features/user/services/updateUser.js
+import { axiosInstance } from '../../../services/api';
 
-// Método para actualizar los datos del perfil del usuario
 export const updateUser = async (userId, userData) => {
   try {
-    const response = await axiosInstance.put(`users/${userId}/`, userData); // Asegúrate de que use la URL correcta
-    return response.data; // Devuelve los datos actualizados
+    // Asegúrate de que la URL corresponda con tu API, por ejemplo, incluyendo el prefijo "api/v1/"
+    const response = await axiosInstance.put(`/api/v1/users/${userId}/`, userData);
+    return response.data;
   } catch (error) {
     console.error('Error al actualizar el perfil del usuario:', error.response?.data || error.message);
-    
-    // Manejar errores específicos de campos duplicados
     if (error.response && error.response.data) {
       const errorMsg = error.response.data;
-
-      // Captura errores específicos de validación y campos duplicados
       if (errorMsg.username) {
         throw new Error("El nombre de usuario ya está en uso.");
       }
@@ -22,14 +19,11 @@ export const updateUser = async (userId, userData) => {
       if (errorMsg.dni) {
         throw new Error("El DNI ya está registrado.");
       }
-
-      // Mostrar todos los errores si existen múltiples problemas
       if (typeof errorMsg === 'object') {
-        const fieldErrors = Object.entries(errorMsg).map(([field, messages]) => `${field}: ${messages.join(', ')}`);
+        const fieldErrors = Object.entries(errorMsg)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`);
         throw new Error(fieldErrors.join(' | '));
       }
-
-      // Manejar cualquier otro error
       throw new Error(errorMsg.detail || 'Error al actualizar el perfil del usuario.');
     } else {
       throw new Error('Error en la conexión o en el servidor.');

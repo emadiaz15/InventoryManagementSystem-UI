@@ -15,8 +15,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
     dni: user.dni,
     is_active: user.is_active,
     is_staff: user.is_staff,
-    password: '',
-    confirmPassword: '',
+    // Quitamos campos de contraseña
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState('');
@@ -33,8 +32,6 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
         dni: user.dni,
         is_active: user.is_active,
         is_staff: user.is_staff,
-        password: '',
-        confirmPassword: '',
       });
     }
   }, [user]);
@@ -47,17 +44,8 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
     }));
   };
 
-  const validateForm = () => {
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return false;
-    }
-    return true;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
     setError('');
     try {
       await onSave(user.id, formData);
@@ -139,21 +127,18 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             onChange={handleChange}
           />
 
-          <FormInput
-            label="Nueva Contraseña"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-          <FormInput
-            label="Confirmar Nueva Contraseña"
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-          />
+          {/* Botón para redirigir a cambiar la contraseña */}
+          <div className="flex justify-end mt-4">
+            <button
+              type="button"
+              onClick={handleRestorePassword}
+              className="bg-warning-500 text-white py-2 px-4 rounded hover:bg-warning-600 transition-colors"
+            >
+              Cambiar Contraseña
+            </button>
+          </div>
 
+          {/* Botones de acción */}
           <div className="flex justify-end space-x-2 mt-4">
             <button
               type="button"
@@ -167,13 +152,6 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
               className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors"
             >
               Guardar
-            </button>
-            <button
-              type="button"
-              onClick={handleRestorePassword}
-              className="bg-warning-500 text-white py-2 px-4 rounded hover:bg-warning-600 transition-colors"
-            >
-              Restaurar Contraseña
             </button>
           </div>
         </form>

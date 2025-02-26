@@ -4,10 +4,13 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
 
 const ErrorMessage = ({ message = "Ocurrió un error inesperado", shouldReload = false }) => {
   useEffect(() => {
+    let timer;
     if (shouldReload) {
-      // Forzar el reload de la página aquí
-      window.location.reload();
+      timer = setTimeout(() => {
+        window.location.reload();
+      }, 4000);
     }
+    return () => clearTimeout(timer);
   }, [shouldReload]);
 
   return (
@@ -16,13 +19,12 @@ const ErrorMessage = ({ message = "Ocurrió un error inesperado", shouldReload =
       role="alert"
       aria-live="assertive"
     >
-      <ExclamationCircleIcon className="size-5 me-2" />
+      <ExclamationCircleIcon className="w-5 h-5 me-2" />
       <span>{message}</span>
     </div>
   );
 };
 
-// Validación de tipos para las props
 ErrorMessage.propTypes = {
   message: PropTypes.string,
   shouldReload: PropTypes.bool,
