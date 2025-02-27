@@ -4,7 +4,7 @@ import { axiosInstance } from '../../../services/api'; // Asegúrate de que esta
 export const createCategory = async (categoryData) => {
   try {
     // Enviar solicitud POST para crear una nueva categoría
-    const response = await axiosInstance.post('/inventory/categories/', categoryData);
+    const response = await axiosInstance.post('/inventory/categories/create/', categoryData);
     return response.data; // Devuelve los datos de la categoría creada
   } catch (error) {
     console.error('Error al crear la categoría:', error.response?.data || error.message);

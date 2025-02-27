@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/common/Navbar";
 import Sidebar from "../../../components/common/Sidebar";
 import Footer from "../../../components/common/Footer";
@@ -10,7 +9,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import CategoryCreateModal from "../components/CategoryCreateModal";
 import CategoryEditModal from "../components/CategoryEditModal";
 import { listCategories } from "../services/listCategory";
-import { updateCategory } from "../services/updateCategory"; // Servicio de actualización
+import { updateCategory } from "../services/updateCategory"; // Solo usar este servicio
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { PencilIcon } from "@heroicons/react/24/outline";
 
@@ -18,7 +17,7 @@ const CategoryList = () => {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1); // Página actual
   const [totalPages, setTotalPages] = useState(1);
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
@@ -32,15 +31,15 @@ const CategoryList = () => {
 
   const headers = ["Nombre de Categoría", "Descripción", "Acciones"];
 
+  // Obtener categorías activas con paginación
   const fetchCategories = async (url = "/inventory/categories/") => {
     setLoadingCategories(true);
     try {
-      const response = await listCategories(url);
-      const activeCategories = response.filter(category => category.status === true); // Filtrar solo las categorías activas
-      setCategories(activeCategories);
+      const response = await listCategories(url); // Hacer la solicitud GET con paginación
+      setCategories(response.results); // Establecer las categorías en el estado
       setNextPage(response.next);
       setPreviousPage(response.previous);
-      setTotalPages(Math.ceil(response.length / 10)); // Asumiendo que hay 10 categorías por página
+      setTotalPages(Math.ceil(response.count / 10)); // Asumiendo que la respuesta incluye un campo 'count' con el total
     } catch (error) {
       setError("Error al obtener las categorías.");
     } finally {
@@ -50,28 +49,31 @@ const CategoryList = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, []); // Solo ejecutamos la carga inicial de categorías
 
+  // Funciones de paginación
   const handleNextPage = () => {
     if (nextPage) {
-      fetchCategories(nextPage);
-      setCurrentPage((prev) => prev + 1);
+      fetchCategories(nextPage); // Llamamos a la siguiente página
+      setCurrentPage(currentPage + 1); // Actualizamos la página actual
     }
   };
 
   const handlePreviousPage = () => {
     if (previousPage) {
-      fetchCategories(previousPage);
-      setCurrentPage((prev) => prev - 1);
+      fetchCategories(previousPage); // Llamamos a la página anterior
+      setCurrentPage(currentPage - 1); // Actualizamos la página actual
     }
   };
 
+  // Función de éxito para mostrar mensajes
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
     fetchCategories(); // Recargar la lista después de cualquier acción
   };
 
+  // Función de búsqueda
   const handleSearch = (query) => {
     const filtered = categories.filter((category) =>
       category.name.toLowerCase().includes(query.toLowerCase())
@@ -79,17 +81,20 @@ const CategoryList = () => {
     setCategories(filtered);
   };
 
+  // Mostrar el modal de eliminación
   const handleToggleStatus = (category) => {
     setCategoryToDelete(category);
     setShowConfirmDialog(true); // Mostrar confirmación de eliminación
   };
 
+  // Confirmar eliminación
   const confirmDelete = async () => {
     if (categoryToDelete) {
       try {
+        // Cambiar el status de la categoría a false (simulando la eliminación)
         await updateCategory(categoryToDelete.id, { status: false });
         setShowConfirmDialog(false);
-        fetchCategories(); // Actualizar la lista después de la eliminación
+        fetchCategories(); // Recargar la lista después de la eliminación
         handleShowSuccess("Categoría eliminada correctamente.");
       } catch (error) {
         setError("Error al cambiar el estado de la categoría.");
@@ -97,10 +102,12 @@ const CategoryList = () => {
     }
   };
 
+  // Cancelar eliminación
   const cancelDelete = () => {
     setShowConfirmDialog(false); // Cerrar ConfirmDialog si se cancela la eliminación
   };
 
+  // Crear filas para la tabla
   const rows = categories.map((category) => ({
     "Nombre de Categoría": category.name,
     "Descripción": category.description,

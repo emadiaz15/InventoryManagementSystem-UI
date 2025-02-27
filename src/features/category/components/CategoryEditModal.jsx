@@ -33,7 +33,7 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
     e.preventDefault();
     setError("");
     try {
-      await onSave(category.id, formData);
+      await onSave(category.id, formData); // Guardar los cambios
       setSuccessMessage("Categoría actualizada con éxito");
       setTimeout(() => setSuccessMessage(""), 3000);
       onClose();
@@ -44,7 +44,7 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
 
   const handleDelete = () => {
     if (onDelete) {
-      onDelete(category.id);  // Llama a onDelete para cambiar el status a false
+      onDelete(category);  // Llama a onDelete para cambiar el status a false
     }
   };
 
@@ -104,6 +104,5 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
     </>
   );
 };
-
 
 export default CategoryEditModal;
