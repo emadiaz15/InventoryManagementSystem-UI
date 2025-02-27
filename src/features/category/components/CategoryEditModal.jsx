@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
-import Modal from "../../../components/ui/Modal";
-import FormInput from "../../../components/ui/form/FormInput";
-import SuccessMessage from "../../../components/common/SuccessMessage";
-import ErrorMessage from "../../../components/common/ErrorMessage";
+import React, { useState, useEffect } from 'react';
+import Modal from '../../../components/ui/Modal';
+import FormInput from '../../../components/ui/form/FormInput';
+import SuccessMessage from '../../../components/common/SuccessMessage';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 
 const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
+  // Incluimos el campo status en el estado del formulario
   const [formData, setFormData] = useState({
     name: category.name,
     description: category.description || "",
+    status: category.status,
   });
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -17,6 +19,7 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
       setFormData({
         name: category.name,
         description: category.description || "",
+        status: category.status,
       });
     }
   }, [category]);
@@ -32,8 +35,9 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    console.log("Datos a enviar:", formData); // Verifica que aquí venga la nueva descripción
     try {
-      await onSave(category.id, formData); // Guardar los cambios
+      await onSave(category.id, formData); // Envia { name, description, status }
       setSuccessMessage("Categoría actualizada con éxito");
       setTimeout(() => setSuccessMessage(""), 3000);
       onClose();
@@ -42,9 +46,10 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
     }
   };
 
+  // Llamamos a onDelete para cambiar el status a false (simulando eliminación)
   const handleDelete = () => {
     if (onDelete) {
-      onDelete(category);  // Llama a onDelete para cambiar el status a false
+      onDelete(category);
     }
   };
 
@@ -69,9 +74,10 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
             onChange={handleChange}
           />
           <div className="flex justify-between mt-4">
+            {/* Botón de Eliminar */}
             <button
               type="button"
-              onClick={handleDelete}  // Asegúrate de que handleDelete se ejecute correctamente
+              onClick={handleDelete}
               className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
             >
               Eliminar

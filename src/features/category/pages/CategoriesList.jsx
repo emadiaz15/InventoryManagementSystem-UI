@@ -35,11 +35,11 @@ const CategoryList = () => {
   const fetchCategories = async (url = "/inventory/categories/") => {
     setLoadingCategories(true);
     try {
-      const response = await listCategories(url); // Hacer la solicitud GET con paginación
-      setCategories(response.results); // Establecer las categorías en el estado
+      const response = await listCategories(url);
+      setCategories(response.results);
       setNextPage(response.next);
       setPreviousPage(response.previous);
-      setTotalPages(Math.ceil(response.count / 10)); // Asumiendo que la respuesta incluye un campo 'count' con el total
+      setTotalPages(Math.ceil(response.count / 10));
     } catch (error) {
       setError("Error al obtener las categorías.");
     } finally {
@@ -49,20 +49,20 @@ const CategoryList = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []); // Solo ejecutamos la carga inicial de categorías
+  }, []);
 
   // Funciones de paginación
   const handleNextPage = () => {
     if (nextPage) {
-      fetchCategories(nextPage); // Llamamos a la siguiente página
-      setCurrentPage(currentPage + 1); // Actualizamos la página actual
+      fetchCategories(nextPage);
+      setCurrentPage(currentPage + 1);
     }
   };
 
   const handlePreviousPage = () => {
     if (previousPage) {
-      fetchCategories(previousPage); // Llamamos a la página anterior
-      setCurrentPage(currentPage - 1); // Actualizamos la página actual
+      fetchCategories(previousPage);
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -70,7 +70,7 @@ const CategoryList = () => {
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
-    fetchCategories(); // Recargar la lista después de cualquier acción
+    fetchCategories();
   };
 
   // Función de búsqueda
@@ -84,17 +84,23 @@ const CategoryList = () => {
   // Mostrar el modal de eliminación
   const handleToggleStatus = (category) => {
     setCategoryToDelete(category);
-    setShowConfirmDialog(true); // Mostrar confirmación de eliminación
+    setShowConfirmDialog(true);
   };
 
-  // Confirmar eliminación
+  // Confirmar eliminación: enviar todos los campos obligatorios, cambiando status a false
   const confirmDelete = async () => {
     if (categoryToDelete) {
       try {
-        // Cambiar el status de la categoría a false (simulando la eliminación)
-        await updateCategory(categoryToDelete.id, { status: false });
+        const dataToSend = {
+          name: categoryToDelete.name,
+          description: categoryToDelete.description,
+          status: false,
+        };
+        await updateCategory(categoryToDelete.id, dataToSend);
+        fetchCategories();
         setShowConfirmDialog(false);
-        fetchCategories(); // Recargar la lista después de la eliminación
+        // Además, si se muestra el modal de edición, se cierra:
+        setShowEditModal(false);
         handleShowSuccess("Categoría eliminada correctamente.");
       } catch (error) {
         setError("Error al cambiar el estado de la categoría.");
@@ -104,7 +110,7 @@ const CategoryList = () => {
 
   // Cancelar eliminación
   const cancelDelete = () => {
-    setShowConfirmDialog(false); // Cerrar ConfirmDialog si se cancela la eliminación
+    setShowConfirmDialog(false);
   };
 
   // Crear filas para la tabla
@@ -122,7 +128,7 @@ const CategoryList = () => {
       >
         <PencilIcon className="w-5 h-5 text-text-white" />
       </button>
-    )
+    ),
   }));
 
   return (
@@ -169,17 +175,43 @@ const CategoryList = () => {
             handleShowSuccess("Categoría actualizada correctamente.");
             setShowEditModal(false);
           }}
+          onDelete={handleToggleStatus} // Al presionar eliminar en el EditModal se llamará a handleToggleStatus
         />
       )}
 
-      {showSuccess && <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />}
-
-      {showConfirmDialog && (
-        <ConfirmDialog
-          message="¿Estás seguro de que deseas eliminar esta categoría?"
-          onConfirm={confirmDelete}
-          onCancel={cancelDelete}
+      {showSuccess && (
+        <SuccessMessage
+          message={successMessage}
+          onClose={() => setShowSuccess(false)}
         />
+      )}
+
+      {/* Modal de confirmación, con z-index alto para asegurarse de que esté encima */}
+      {showConfirmDialog && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+          style={{ zIndex: 9999 }}
+        >
+          <div className="bg-white p-6 rounded shadow-lg transition-all">
+            <h3 className="text-lg font-semibold text-text-primary">
+              ¿Estás seguro de que deseas eliminar esta categoría?
+            </h3>
+            <div className="mt-4 flex justify-end space-x-4">
+              <button
+                className="px-4 py-2 bg-warning-500 text-white rounded-lg hover:bg-warning-600 transition-colors"
+                onClick={cancelDelete}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-error-600 transition-colors"
+                onClick={confirmDelete}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <Footer />
