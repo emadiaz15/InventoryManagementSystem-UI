@@ -9,7 +9,6 @@ import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
 import SuccessMessage from '../../../components/common/SuccessMessage';
 import ProductModal from '../components/ProductModal';
-import { ButtonsActions } from '../../../components/ui/ButtonsActions';
 
 const ProductsList = () => {
   const [products, setProducts] = useState([]);
