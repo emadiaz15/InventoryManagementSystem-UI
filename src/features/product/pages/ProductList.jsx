@@ -37,13 +37,17 @@ const ProductsList = () => {
     };
   };
 
-  const [filters, setFilters] = useState(getFiltersFromURL());
+  const [filters, setFilters] = useState({
+    name: "",
+    category: "",
+    status: "true", // Change to "true" to get active products
+  });
 
   const buildQueryString = (filterObj) => {
     const queryParams = new URLSearchParams();
     Object.entries(filterObj).forEach(([key, value]) => {
       if (value) {
-        if (key === "status") value = value === "Disponible" ? "true" : "false";
+        if (key === "status") value = value === "Disponible" ? "true" : value === "Agotado" ? "false" : "";
         queryParams.append(key, value);
       }
     });
@@ -53,17 +57,20 @@ const ProductsList = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const query = buildQueryString(filters);
-      const data = await listProducts(`/inventory/products/${query}`);
+      console.log("Fetching ALL products without filters...");
+      const data = await listProducts(`/inventory/products/`); // Remove query params
+      console.log("Products fetched:", data.results);
       setProducts(data.results);
       setNextPage(data.next);
       setPreviousPage(data.previous);
     } catch (error) {
+      console.error("Error fetching products:", error);
       setError("Error al obtener los productos.");
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     const query = buildQueryString(filters);
@@ -76,10 +83,10 @@ const ProductsList = () => {
   };
 
   const rows = products.map((product) => ({
+    "Código": product.code,
+    "Tipo": product.type?.name || "Sin tipo",
     "Nombre": product.name,
-    "Categoría": product.category?.name || "Sin categoría",
-    "Precio": `$${product.price}`,
-    "Stock": product.stock_quantity,
+    "Stock": product.subproducts.length > 0 ? "Tiene subproductos" : "Stock independiente",
     "Acciones": (
       <div className="flex space-x-2">
         <button
@@ -104,6 +111,8 @@ const ProductsList = () => {
     ),
   }));
 
+  console.log("Rendering rows:", rows);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -112,7 +121,7 @@ const ProductsList = () => {
         <div className="flex-1 p-2 mt-14 ml-64">
           <Toolbar title="Lista de Productos" buttonText="Crear Producto" onButtonClick={() => setShowCreateModal(true)} />
           <ProductFilter onFilterChange={handleFilterChange} />
-          <Table headers={["Nombre", "Categoría", "Precio", "Stock", "Acciones"]} rows={rows} />
+          <Table headers={["Código", "Tipo", "Nombre", "Stock", "Acciones"]} rows={rows} />
           <Pagination
             onNext={() => nextPage && fetchProducts(nextPage)}
             onPrevious={() => previousPage && fetchProducts(previousPage)}
