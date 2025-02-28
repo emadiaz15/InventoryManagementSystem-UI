@@ -1,44 +1,21 @@
-import { axiosInstance } from '../../../services/api';
+import { axiosInstance } from '../../../services/api'; // Usa la instancia configurada
 
-const listProducts = async (url = '/inventory/products/', options = {}) => {
+export const listProducts = async (url = '/inventory/products/') => {
   try {
-    console.log("📢 Solicitando productos a:", url);
+    const response = await axiosInstance.get(url);
 
-    const token = sessionStorage.getItem("accessToken");
-    console.log("🔑 Token de autenticación:", token);
-
-    if (!token) {
-      console.error("❌ No hay token disponible. El usuario puede no estar autenticado.");
-      return {
-        success: false,
-        message: "No hay token de autenticación",
-        status: 401,
-      };
+    if (response.data && Array.isArray(response.data.results)) {
+      // Ordenar los productos por fecha de creación (de más recientes a más antiguos)
+      response.data.results.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
 
-    const headers = { Authorization: `Bearer ${token}` };
-    console.log("📡 Headers enviados:", headers);
-
-    const response = await axiosInstance.get(url, { ...options, headers });
-
-    console.log("✅ Respuesta de la API:", response.data);
-
-    return {
-      success: true,
-      products: response.data.results || [],
-      total: response.data.count || 0,
-      nextPage: response.data.next || null,
-      prevPage: response.data.previous || null
-    };
+    return response.data; // Retorna el objeto con { results, next, previous }
   } catch (error) {
-    console.error("❌ Error en listProducts:", error.response?.data || error.message);
-
-    return {
-      success: false,
-      message: error.response?.data?.detail || "Error desconocido",
-      status: error.response?.status || 500,
-    };
+    console.error('❌ Error al obtener productos:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.detail || 'Error al obtener la lista de productos.');
   }
 };
 
-export default listProducts;
+export default {
+  listProducts,
+};

@@ -1,17 +1,15 @@
-import { axiosInstance } from '../../../services/api'; // Usa la instancia de Axios configurada
+import { axiosInstance } from '../../../services/api';
 
-// Método para crear un nuevo producto
 export const createProduct = async (productData) => {
-    try {
-      const response = await axiosInstance.post('/inventory/products/', productData); // El token se agrega automáticamente por Axios
-      return response.data; // Devuelve los datos del producto creado
-    } catch (error) {
-      console.error('Error al crear el producto:', error.response?.data || error.message);
-      throw error; // Lanzamos el error para manejarlo en el componente
-    }
-  };
+  try {
+    const response = await axiosInstance.post('/inventory/products/', productData);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error al crear el producto:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.detail || 'No se pudo crear el producto.');
+  }
+};
 
-// Exportamos todo el servicio para facilitar la importación en otros archivos
 export default {
-  createProduct
+  createProduct,
 };

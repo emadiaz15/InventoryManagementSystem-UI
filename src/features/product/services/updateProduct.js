@@ -1,17 +1,15 @@
-import { axiosInstance } from '../../../services/api'; // Usa la instancia de Axios configurada
+import { axiosInstance } from '../../../services/api';
 
-// Método para actualizar un producto existente
-export const updateProduct = async (productId, updateData) => {
+export const updateProduct = async (productId, productData) => {
   try {
-    const response = await axiosInstance.put(`/inventory/products/${productId}/`, updateData); // El token se agrega automáticamente
-    return response.data; // Devuelve los datos actualizados del producto
+    const response = await axiosInstance.put(`/inventory/products/${productId}/`, productData);
+    return response.data;
   } catch (error) {
-    console.error(`Error al actualizar el producto ${productId}:`, error.response?.data || error.message);
-    throw error; // Lanzamos el error para manejarlo en el componente
+    console.error('❌ Error al actualizar el producto:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.detail || 'No se pudo actualizar el producto.');
   }
 };
 
-// Exportamos el servicio
 export default {
   updateProduct,
 };

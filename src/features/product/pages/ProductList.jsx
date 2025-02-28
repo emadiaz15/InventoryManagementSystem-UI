@@ -1,89 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import listProducts from '../services/listProducts'; // Importa el servicio de productos
-import { deleteProduct } from '../services/deleteProduct';
-import Navbar from '../../../components/common/Navbar';
-import Sidebar from '../../../components/common/Sidebar';
-import Footer from '../../../components/common/Footer';
-import Table from '../../../components/common/Table';
-import Pagination from '../../../components/ui/Pagination';
-import SuccessMessage from '../../../components/common/SuccessMessage';
-import ProductModal from '../components/ProductModal';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import Navbar from "../../../components/common/Navbar";
+import Sidebar from "../../../components/common/Sidebar";
+import Footer from "../../../components/common/Footer";
+import Toolbar from "../../../components/common/Toolbar";
+import Table from "../../../components/common/Table";
+import Pagination from "../../../components/ui/Pagination";
+import SuccessMessage from "../../../components/common/SuccessMessage";
+import ProductFormModal from "../components/ProductFormModal";
+import ProductFilter from "../components/ProductFilter";
+import { listProducts } from "../services/listProducts";
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 const ProductsList = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const navigate = useNavigate();
+  const getFiltersFromURL = () => {
+    const params = new URLSearchParams(location.search);
+    return {
+      name: params.get("name") || "",
+      category: params.get("category") || "",
+      status: params.get("status") === "true" ? "Disponible" : "Agotado",
+    };
+  };
 
-  const fetchProducts = async (url = '/inventory/products/') => {
+  const [filters, setFilters] = useState(getFiltersFromURL());
+
+  const buildQueryString = (filterObj) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(filterObj).forEach(([key, value]) => {
+      if (value) {
+        if (key === "status") value = value === "Disponible" ? "true" : "false";
+        queryParams.append(key, value);
+      }
+    });
+    return queryParams.toString() ? `?${queryParams.toString()}` : "";
+  };
+
+  const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await listProducts(url);
-      setProducts(data.products || []); // Accede correctamente a la lista de productos
-      setNextPage(data.nextPage || null);
-      setPreviousPage(data.prevPage || null);
+      const query = buildQueryString(filters);
+      const data = await listProducts(`/inventory/products/${query}`);
+      setProducts(data.results);
+      setNextPage(data.next);
+      setPreviousPage(data.previous);
     } catch (error) {
-      setError('Error al cargar los productos.');
-      console.error(error);
+      setError("Error al obtener los productos.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    const query = buildQueryString(filters);
+    navigate({ search: query });
     fetchProducts();
-  }, []);
+  }, [filters]);
 
-  const handleNextPage = () => {
-    if (nextPage) {
-      fetchProducts(nextPage);
-    }
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
   };
 
-  const handlePreviousPage = () => {
-    if (previousPage) {
-      fetchProducts(previousPage);
-    }
-  };
-
-  const handleEditProduct = (product) => {
-    setSelectedProduct(product);
-    setShowModal(true);
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
-      try {
-        await deleteProduct(productId);
-        fetchProducts();
-        setSuccessMessage('Producto eliminado correctamente.');
-        setShowSuccess(true);
-      } catch (error) {
-        setError('No se pudo eliminar el producto.');
-        console.error(error);
-      }
-    }
-  };
-
-  const headers = ['Nombre', 'Categoría', 'Precio', 'Stock', 'Acciones'];
-  const rows = products.map(product => ({
-    Nombre: product.name,
-    Categoría: product.category.name,
-    Precio: `$${product.price}`,
-    Stock: product.stock_quantity,
-    Acciones: (
-      <ButtonsActions
-        onEdit={() => handleEditProduct(product)}
-        onDelete={() => handleDeleteProduct(product.id)}
-      />
+  const rows = products.map((product) => ({
+    "Nombre": product.name,
+    "Categoría": product.category?.name || "Sin categoría",
+    "Precio": `$${product.price}`,
+    "Stock": product.stock_quantity,
+    "Acciones": (
+      <div className="flex space-x-2">
+        <button
+          onClick={() => {
+            setSelectedProduct(product);
+            setShowEditModal(true);
+          }}
+          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
+        >
+          <PencilIcon className="w-5 h-5 text-white" />
+        </button>
+        <button
+          onClick={() => {
+            setSelectedProduct(product);
+            setShowDeleteConfirm(true);
+          }}
+          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
+        >
+          <TrashIcon className="w-5 h-5 text-white" />
+        </button>
+      </div>
     ),
   }));
 
@@ -91,39 +108,23 @@ const ProductsList = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <div className="flex flex-1">
-        <div className="w-64">
-          <Sidebar />
-        </div>
-        <div className="flex-1 mt-14 p-2">
-          {loading ? (
-            <div className="text-center">Cargando productos...</div>
-          ) : (
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-              <Table headers={headers} rows={rows} />
-            </div>
-          )}
-          {error && <div className="text-red-500">{error}</div>}
+        <Sidebar />
+        <div className="flex-1 p-2 mt-14 ml-64">
+          <Toolbar title="Lista de Productos" buttonText="Crear Producto" onButtonClick={() => setShowCreateModal(true)} />
+          <ProductFilter onFilterChange={handleFilterChange} />
+          <Table headers={["Nombre", "Categoría", "Precio", "Stock", "Acciones"]} rows={rows} />
           <Pagination
-            onNext={handleNextPage}
-            onPrevious={handlePreviousPage}
+            onNext={() => nextPage && fetchProducts(nextPage)}
+            onPrevious={() => previousPage && fetchProducts(previousPage)}
             hasNext={Boolean(nextPage)}
             hasPrevious={Boolean(previousPage)}
           />
         </div>
       </div>
-      {showSuccess && <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />}
-      {showModal && (
-        <ProductModal
-          product={selectedProduct}
-          onClose={() => setShowModal(false)}
-          onSave={() => {
-            fetchProducts();
-            setSuccessMessage('Producto actualizado correctamente.');
-            setShowSuccess(true);
-          }}
-        />
-      )}
       <Footer />
+      {showCreateModal && <ProductFormModal onClose={() => setShowCreateModal(false)} />}
+      {showEditModal && selectedProduct && <ProductFormModal product={selectedProduct} onClose={() => setShowEditModal(false)} />}
+      {showSuccess && <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />}
     </div>
   );
 };
