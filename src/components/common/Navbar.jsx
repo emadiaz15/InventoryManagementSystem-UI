@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { BellIcon, UserIcon } from "@heroicons/react/24/outline";
-import UserDropdown from "../UserIndicator";
+import UserIndicator from "../UserIndicator";
 import { useAuth } from "../../context/AuthProvider"; // Usa useAuth para obtener el usuario
 
 const Navbar = () => {
@@ -41,7 +41,7 @@ const Navbar = () => {
 
             {/* Menú de Usuario */}
             <Menu as="div" className="relative flex items-center">
-              <UserDropdown /> {/* ✅ Muestra nombre y apellido del usuario */}
+              <UserIndicator /> {/* ✅ Muestra nombre y apellido del usuario */}
 
               <MenuButton className="relative flex items-center space-x-2 rounded-full bg-primary-500 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 hover:bg-primary-600 transition-all">
                 {profileImage ? (
