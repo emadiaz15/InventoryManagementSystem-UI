@@ -8,7 +8,12 @@ import { updateType } from '../services/updateType';
 import { listCategories } from '../../category/services/listCategory';
 
 const TypeCreateModal = ({ type = null, isOpen, onClose, onSave }) => {
-  const [formData, setFormData] = useState({ name: '', description: '', category: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: '',
+  });
+
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -21,7 +26,7 @@ const TypeCreateModal = ({ type = null, isOpen, onClose, onSave }) => {
       try {
         const data = await listCategories();
         console.log("📂 Categorías obtenidas:", data.results);
-        setCategories(data.results.filter(cat => cat.status)); // Filtra solo activas
+        setCategories(data.results.filter(cat => cat.status)); // Filtrar solo activas
       } catch (error) {
         console.error('❌ Error al cargar categorías:', error);
       } finally {
@@ -48,7 +53,6 @@ const TypeCreateModal = ({ type = null, isOpen, onClose, onSave }) => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -60,7 +64,7 @@ const TypeCreateModal = ({ type = null, isOpen, onClose, onSave }) => {
       let dataToSend = {
         name: formData.name,
         description: formData.description,
-        category: formData.category ? parseInt(formData.category) : null, // Asegurar que se envía un ID numérico
+        category: parseInt(formData.category, 10), // ✅ Convertir a número
       };
 
       let response;

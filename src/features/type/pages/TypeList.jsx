@@ -13,6 +13,7 @@ import { listTypes } from "../services/listType";
 import { updateType } from "../services/updateType";
 import { useAuth } from '../../../context/AuthProvider';
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { listCategories } from "../../category/services/listCategory";
 
 const TypesList = () => {
   const [types, setTypes] = useState([]);
@@ -115,9 +116,32 @@ const TypesList = () => {
     setShowConfirmDialog(false);
   };
 
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await listCategories();
+        setCategories(data.results || []);
+      } catch (error) {
+        console.error('❌ Error al obtener las categorías:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+
+
   // Crear filas para la tabla
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : "Sin Categoría";
+  };
+
   const rows = types.map((type) => ({
-    "Categoría": type.category ? type.category.name : "Sin Categoría",  // Asegurar que muestra el nombre
+    "Categoría": getCategoryName(type.category),  // ✅ Busca el nombre basado en el ID
     "Nombre de Tipo": type.name || "Sin nombre",
     "Descripción": type.description || "Sin descripción",
     "Acciones": (
@@ -132,6 +156,8 @@ const TypesList = () => {
       </div>
     ),
   }));
+
+
 
 
   return (

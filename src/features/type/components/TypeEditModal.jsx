@@ -13,14 +13,15 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
         description: '',
         category: '',
     });
+
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [loadingCategories, setLoadingCategories] = useState(true);
     const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-    // Cargar la lista de categorías activas
+    // 🔹 Cargar la lista de categorías activas
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -37,7 +38,7 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
         fetchCategories();
     }, []);
 
-    // Cargar los datos del tipo seleccionado
+    // 🔹 Cargar los datos del tipo seleccionado
     useEffect(() => {
         if (type) {
             setFormData({
@@ -52,6 +53,7 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // 🔹 Manejo de envío del formulario (Edición de tipo)
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -63,15 +65,10 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
             let dataToSend = {
                 name: formData.name,
                 description: formData.description,
-                category: formData.category ? parseInt(formData.category) : null, // Asegurar que se envía un ID numérico
+                category: parseInt(formData.category, 10), // ✅ Convertir a número
             };
 
-            let response;
-            if (type) {
-                response = await updateType(type.id, dataToSend);
-            } else {
-                response = await createType(dataToSend);
-            }
+            const response = await updateType(type.id, dataToSend);
 
             console.log("✅ Respuesta de la API:", response);
 
@@ -82,22 +79,20 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
                 onClose();
             }, 2000);
         } catch (error) {
-            console.error('❌ Error al procesar el tipo:', error.response?.data || error.message);
-            setError(error.message || 'Error al procesar la solicitud.');
+            console.error('❌ Error al actualizar el tipo:', error.response?.data || error.message);
+            setError(error.message || 'Error al actualizar el tipo.');
         } finally {
             setLoading(false);
         }
     };
 
-
-    // Confirmar eliminación (soft delete)
+    // 🔹 Confirmar eliminación (soft delete)
     const handleDelete = async () => {
         try {
             await updateType(type.id, { status: false });
-            setSuccessMessage('¡Tipo eliminado correctamente!');
-
+            setShowSuccess(true);
             setTimeout(() => {
-                setSuccessMessage('');
+                setShowSuccess(false);
                 onSave();
                 onClose();
             }, 2000);
@@ -130,7 +125,7 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
                         onChange={handleChange}
                     />
 
-                    {/* Lista desplegable de categorías */}
+                    {/* 🔹 Lista desplegable de categorías */}
                     <FormSelect
                         label="Categoría"
                         name="category"
@@ -141,10 +136,11 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
                             label: cat.name,
                         }))}
                         required
+                        loading={loadingCategories}
                     />
 
                     <div className="flex justify-between mt-4">
-                        {/* Botón de eliminar */}
+                        {/* 🔹 Botón de eliminar */}
                         <button
                             type="button"
                             onClick={() => setShowConfirmDialog(true)}
@@ -172,12 +168,12 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave }) => {
                     </div>
                 </form>
 
-                {successMessage && (
-                    <SuccessMessage message={successMessage} onClose={() => setSuccessMessage('')} />
+                {showSuccess && (
+                    <SuccessMessage message="¡Tipo actualizado con éxito!" onClose={() => setShowSuccess(false)} />
                 )}
             </Modal>
 
-            {/* Modal de confirmación de eliminación */}
+            {/* 🔹 Modal de confirmación de eliminación */}
             {showConfirmDialog && (
                 <ConfirmDialog
                     message="¿Estás seguro de que deseas eliminar este tipo?"
