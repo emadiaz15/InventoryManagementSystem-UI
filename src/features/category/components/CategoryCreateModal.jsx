@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { createCategory } from '../services/createCategory'; // Importa el servicio para crear categorías
-import SuccessMessage from '../../../components/common/SuccessMessage'; // Importa el componente de mensaje de éxito
+import { createCategory } from '../services/createCategory'; // Servicio de creación de categoría
+import SuccessMessage from '../../../components/common/SuccessMessage'; // Mensaje de éxito
+import ErrorMessage from '../../../components/common/ErrorMessage'; // Mensaje de error
 
 const CategoryCreateModal = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +12,6 @@ const CategoryCreateModal = ({ onClose }) => {
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Manejar cambios en los inputs del formulario
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -19,22 +19,26 @@ const CategoryCreateModal = ({ onClose }) => {
     });
   };
 
-  // Manejar el envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      await createCategory(formData); // Llama al servicio para crear la categoría
-      setShowSuccess(true); // Mostrar mensaje de éxito
+      await createCategory(formData);
+      setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
-        window.location.reload(); // Recargar la página después de unos segundos
+        window.location.reload();
       }, 4000);
     } catch (error) {
       console.error('Error al crear la categoría:', error);
-      setError('Hubo un problema al crear la categoría. Inténtalo de nuevo.');
+
+      if (error.response && error.response.data && error.response.data.name) {
+        setError('El nombre de la categoría ya existe. Debe ser único.');
+      } else {
+        setError('Hubo un problema al crear la categoría. Inténtalo de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -45,7 +49,7 @@ const CategoryCreateModal = ({ onClose }) => {
       <div className="bg-white p-6 rounded-lg shadow-md w-1/3">
         <h2 className="text-2xl mb-4 text-text-primary">Crear Nueva Categoría</h2>
 
-        {error && <p className="text-error-500 mb-4">{error}</p>}
+        {error && <ErrorMessage message={error} shouldReload={false} />}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -91,7 +95,6 @@ const CategoryCreateModal = ({ onClose }) => {
           </div>
         </form>
 
-        {/* Mostrar el mensaje de éxito si está activo */}
         {showSuccess && (
           <SuccessMessage
             message="¡Categoría creada con éxito!"

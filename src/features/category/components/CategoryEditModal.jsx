@@ -5,7 +5,6 @@ import SuccessMessage from '../../../components/common/SuccessMessage';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 
 const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
-  // Incluimos el campo status en el estado del formulario
   const [formData, setFormData] = useState({
     name: category.name,
     description: category.description || "",
@@ -35,18 +34,25 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    console.log("Datos a enviar:", formData); // Verifica que aquí venga la nueva descripción
+
     try {
-      await onSave(category.id, formData); // Envia { name, description, status }
+      await onSave(category.id, formData);
       setSuccessMessage("Categoría actualizada con éxito");
-      setTimeout(() => setSuccessMessage(""), 3000);
-      onClose();
+      setTimeout(() => {
+        setSuccessMessage("");
+        onClose();
+      }, 3000);
     } catch (err) {
-      setError(err.message || "Error al actualizar la categoría");
+      console.error("Error al actualizar la categoría:", err);
+
+      if (err.response && err.response.data && err.response.data.name) {
+        setError("El nombre de la categoría ya existe. Debe ser único.");
+      } else {
+        setError("Hubo un problema al actualizar la categoría. Inténtalo de nuevo.");
+      }
     }
   };
 
-  // Llamamos a onDelete para cambiar el status a false (simulando eliminación)
   const handleDelete = () => {
     if (onDelete) {
       onDelete(category);
@@ -74,7 +80,6 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
             onChange={handleChange}
           />
           <div className="flex justify-between mt-4">
-            {/* Botón de Eliminar */}
             <button
               type="button"
               onClick={handleDelete}

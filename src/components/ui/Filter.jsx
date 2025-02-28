@@ -1,4 +1,3 @@
-// src/components/common/Filter.jsx
 import React, { useState } from "react";
 
 const Filter = ({ columns, onFilterChange }) => {
@@ -85,7 +84,7 @@ const Filter = ({ columns, onFilterChange }) => {
                                                     ? "Filtrar por nombre/apellido"
                                                     : col.key === "dni"
                                                         ? "Filtrar por DNI"
-                                                        : `Filter ${col.label}`
+                                                        : `Filtrar ${col.label}`
                                             }
                                             value={filters[col.key]}
                                             onChange={(e) => handleInputChange(col.key, e.target.value)}

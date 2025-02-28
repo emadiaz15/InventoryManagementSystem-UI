@@ -1,24 +1,26 @@
-// src/features/user/components/UserEditModal.jsx
 import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import FormCheckbox from '../../../components/ui/form/FormCheckbox';
 import SuccessMessage from '../../../components/common/SuccessMessage';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 import PasswordResetModal from './PasswordResetModal';
 
 const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
   const [formData, setFormData] = useState({
-    username: user.username,
-    name: user.name,
-    last_name: user.last_name,
-    email: user.email,
-    dni: user.dni,
-    is_active: user.is_active,
-    is_staff: user.is_staff,
-    image: null, // Inicialmente null para no enviar nada si no se selecciona archivo
+    username: '',
+    name: '',
+    last_name: '',
+    email: '',
+    dni: '',
+    is_active: true,
+    is_staff: false,
+    image: null, // Se inicia en null
   });
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
 
   // Actualiza el formulario cuando cambia el usuario
@@ -32,52 +34,70 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
         dni: user.dni,
         is_active: user.is_active,
         is_staff: user.is_staff,
-        image: null, // Reseteamos a null al cargar el usuario
+        image: null, // Se resetea a null para evitar cambios no intencionales
       });
     }
   }, [user]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox'
+        ? checked
+        : type === 'file'
+          ? files[0]
+          : value,
     }));
-  };
-
-  // Manejador para el input de archivo
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prevData) => ({
-        ...prevData,
-        image: e.target.files[0],
-      }));
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setValidationErrors({});
+
+    // Validaciones en el front antes de enviar
+    let errors = {};
+    if (!formData.username) {
+      errors.username = 'El nombre de usuario es obligatorio.';
+    }
+    if (!formData.email) {
+      errors.email = 'El email es obligatorio.';
+    }
+    if (!formData.dni.match(/^\d{7,11}$/)) {
+      errors.dni = 'El DNI debe tener entre 7 y 11 dígitos numéricos.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
     try {
       let dataToSend;
-      // Si se seleccionó un archivo para la imagen, usar FormData
+      // Si hay una imagen, usar FormData
       if (formData.image instanceof File) {
         dataToSend = new FormData();
-        for (const key in formData) {
-          // Agrega todos los campos al FormData
+        Object.keys(formData).forEach((key) => {
           dataToSend.append(key, formData[key]);
-        }
+        });
       } else {
-        // Si no se seleccionó imagen, omite el campo "image"
+        // Si no se seleccionó imagen, omitir ese campo
         const { image, ...rest } = formData;
         dataToSend = rest;
       }
-      // Se llama al onSave con los datos adecuados
+
       await onSave(user.id, dataToSend);
       setSuccessMessage('Usuario actualizado con éxito');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError(err.message || 'Error al actualizar el usuario');
+      console.error('❌ Error al actualizar usuario:', err);
+
+      if (err.response?.data) {
+        setValidationErrors(err.response.data); // Mostrar errores específicos del backend
+      } else {
+        setError(err.message || 'Error al actualizar el usuario.');
+      }
     }
   };
 
@@ -100,7 +120,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Editar Usuario">
         <form onSubmit={handleSubmit} encType="multipart/form-data">
-          {error && <p className="text-error-500 mb-4">{error}</p>}
+          {error && <ErrorMessage message={error} shouldReload={false} />}
 
           <FormInput
             label="Nombre de usuario"
@@ -108,6 +128,8 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             name="username"
             value={formData.username}
             onChange={handleChange}
+            required
+            error={validationErrors.username}
           />
           <FormInput
             label="Nombre"
@@ -115,6 +137,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             name="name"
             value={formData.name}
             onChange={handleChange}
+            required
           />
           <FormInput
             label="Apellido"
@@ -122,6 +145,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             name="last_name"
             value={formData.last_name}
             onChange={handleChange}
+            required
           />
           <FormInput
             label="Email"
@@ -129,6 +153,8 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             name="email"
             value={formData.email}
             onChange={handleChange}
+            required
+            error={validationErrors.email}
           />
           <FormInput
             label="DNI"
@@ -136,6 +162,8 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             name="dni"
             value={formData.dni}
             onChange={handleChange}
+            required
+            error={validationErrors.dni}
           />
 
           <FormCheckbox
@@ -157,7 +185,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             label="Imagen"
             type="file"
             name="image"
-            onChange={handleFileChange}
+            onChange={handleChange}
           />
 
           {/* Botón para cambiar contraseña */}
@@ -182,7 +210,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
             </button>
             <button
               type="submit"
-              className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors"
+              className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors`}
             >
               Guardar
             </button>
