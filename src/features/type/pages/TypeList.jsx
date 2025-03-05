@@ -134,16 +134,17 @@ const TypesList = () => {
 
 
 
-  // Crear filas para la tabla
+  // Función para obtener el nombre de la categoría en mayúsculas
   const getCategoryName = (categoryId) => {
     const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : "Sin Categoría";
+    return category ? category.name.toUpperCase() : "SIN CATEGORÍA";
   };
 
+  // Crear filas para la tabla asegurando que todos los datos sean cadenas y se conviertan a mayúsculas
   const rows = types.map((type) => ({
-    "Categoría": getCategoryName(type.category),  // ✅ Busca el nombre basado en el ID
-    "Nombre de Tipo": type.name || "Sin nombre",
-    "Descripción": type.description || "Sin descripción",
+    "Categoría": getCategoryName(type.category),
+    "Nombre de Tipo": (type.name || "SIN NOMBRE").toUpperCase(),
+    "Descripción": (type.description || "SIN DESCRIPCIÓN").toUpperCase(),
     "Acciones": (
       <div className="flex space-x-2">
         <button
@@ -156,6 +157,7 @@ const TypesList = () => {
       </div>
     ),
   }));
+
 
 
 

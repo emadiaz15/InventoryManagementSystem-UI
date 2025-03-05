@@ -85,7 +85,7 @@ const TypeCreateModal = ({ isOpen, onClose, onSave }) => {
           name="category"
           value={formData.category}
           onChange={handleChange}
-          options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+          options={categories.map(cat => ({ value: cat.id, label: cat.name.toUpperCase() }))}
           required
           loading={loadingCategories}
         />

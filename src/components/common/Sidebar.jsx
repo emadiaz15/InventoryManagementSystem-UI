@@ -58,15 +58,15 @@ const Sidebar = () => {
       bgClass: 'bg-primary-700 hover:bg-primary-600'
     },
     {
-      label: 'Categorías',
-      icon: Squares2X2Icon,
-      onClick: () => navigate('/categories'),
-      bgClass: 'bg-primary-700 hover:bg-primary-600'
-    },
-    {
       label: 'Tipos',
       icon: TagIcon,
       onClick: () => navigate('/types'),
+      bgClass: 'bg-primary-700 hover:bg-primary-600'
+    },
+    {
+      label: 'Categorías',
+      icon: Squares2X2Icon,
+      onClick: () => navigate('/categories'),
       bgClass: 'bg-primary-700 hover:bg-primary-600'
     }
   ];

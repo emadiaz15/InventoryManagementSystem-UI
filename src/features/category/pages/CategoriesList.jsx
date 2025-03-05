@@ -113,10 +113,10 @@ const CategoryList = () => {
     setShowConfirmDialog(false);
   };
 
-  // Crear filas para la tabla
+  // Crear filas para la tabla con datos en mayúsculas y prevenir valores nulos
   const rows = categories.map((category) => ({
-    "Nombre de Categoría": category.name,
-    "Descripción": category.description,
+    "Nombre de Categoría": (category.name || "").toUpperCase(),
+    "Descripción": (category.description || "Sin descripción").toUpperCase(),
     "Acciones": (
       <button
         onClick={() => {
