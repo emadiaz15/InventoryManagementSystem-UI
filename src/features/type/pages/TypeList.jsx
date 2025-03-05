@@ -95,19 +95,15 @@ const TypesList = () => {
   };
 
   // Confirmar eliminación/restauración de un tipo
-  const confirmDelete = async () => {
-    if (typeToDelete) {
-      try {
-        // Enviar solo el campo `status`
-        await updateType(typeToDelete.id, { status: false });
-
-        fetchTypes();
-        setShowConfirmDialog(false);
-        setShowEditModal(false); // Cerrar modal de edición si está abierto
-        handleShowSuccess("Tipo eliminado correctamente.");
-      } catch (error) {
-        setError("Error al cambiar el estado del tipo.");
-      }
+  const handleDeleteType = async (id, dataToSend) => {
+    try {
+      console.log("🛠️ Enviando solicitud de eliminación desde handleDeleteType:", dataToSend);
+      await updateType(id, dataToSend);
+      fetchTypes(); // Recargar la lista de tipos después de eliminar
+      handleShowSuccess("Tipo eliminado correctamente.");
+    } catch (error) {
+      console.error("❌ Error al eliminar el tipo:", error.response?.data || error.message);
+      setError("No se pudo eliminar el tipo.");
     }
   };
 
@@ -210,13 +206,14 @@ const TypesList = () => {
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
           onSave={() => handleShowSuccess("Tipo editado correctamente.")}
+          onDelete={handleDeleteType}  // 🔥 PASA LA FUNCIÓN CORRECTAMENTE
         />
       )}
 
       {showConfirmDialog && (
         <ConfirmDialog
           message="¿Estás seguro de que deseas eliminar este tipo?"
-          onConfirm={confirmDelete}
+          onConfirm={onDeleteType}
           onCancel={cancelDelete}
         />
       )}
