@@ -4,10 +4,10 @@ import { listSubproducts } from '../services/listSubproducts';
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
-import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
 import SuccessMessage from '../../../components/common/SuccessMessage';
 import SubproductFormModal from '../components/SubproductFormModal';
+import Card from '../../../components/cards/Card'; // Importamos el componente Card
 
 const SubproductList = () => {
   const { productId } = useParams();
@@ -23,7 +23,7 @@ const SubproductList = () => {
   const fetchSubproducts = async (url) => {
     setLoading(true);
     try {
-      const data = await listSubprod(productId, url);
+      const data = await listSubproducts(productId, url);
       setSubproducts(data.results || []);
       setNextPage(data.next);
       setPreviousPage(data.previous);
@@ -52,21 +52,6 @@ const SubproductList = () => {
     fetchSubproducts();
   };
 
-  const headers = ['Nombre', 'Código', 'Descripción', 'Acciones'];
-  const rows = subproducts.map(subproduct => ({
-    Nombre: subproduct.name,
-    Código: subproduct.code,
-    Descripción: subproduct.description,
-    Acciones: (
-      <button
-        onClick={() => setShowModal(true)}
-        className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
-      >
-        Editar
-      </button>
-    ),
-  }));
-
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -78,8 +63,16 @@ const SubproductList = () => {
           {loading ? (
             <div className="text-center">Cargando subproductos...</div>
           ) : (
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-              <Table headers={headers} rows={rows} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
+              {subproducts.map((subproduct) => (
+                <Card
+                  key={subproduct.id}
+                  imageUrl={subproduct.image || '/placeholder.png'}
+                  title={subproduct.name}
+                  stock={subproduct.stock}
+                  onAddToCart={() => console.log(`Agregado ${subproduct.name} al carrito`)}
+                />
+              ))}
             </div>
           )}
           {error && <div className="text-red-500">{error}</div>}
