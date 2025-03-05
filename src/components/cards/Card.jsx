@@ -2,7 +2,7 @@ import React from "react";
 
 const Card = ({ image, title, stock, onAddToOrder }) => {
     return (
-        <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700">
             <a href="#">
                 <img className="p-8 rounded-t-lg" src={image} alt={title} />
             </a>
