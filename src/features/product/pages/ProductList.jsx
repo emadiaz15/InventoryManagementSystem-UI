@@ -10,7 +10,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import ProductFormModal from "../components/ProductFormModal";
 import ProductFilter from "../components/ProductFilter";
 import { listProducts } from "../services/listProducts";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon } from "@heroicons/react/24/outline";
 
 const ProductsList = () => {
   const navigate = useNavigate();
@@ -97,15 +97,6 @@ const ProductsList = () => {
           className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
         >
           <PencilIcon className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={() => {
-            setSelectedProduct(product);
-            setShowDeleteConfirm(true);
-          }}
-          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
-        >
-          <TrashIcon className="w-5 h-5 text-white" />
         </button>
       </div>
     ),
