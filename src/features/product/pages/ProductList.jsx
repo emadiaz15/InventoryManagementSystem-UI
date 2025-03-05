@@ -10,7 +10,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import ProductFormModal from "../components/ProductFormModal";
 import ProductFilter from "../components/ProductFilter";
 import { listProducts } from "../services/listProducts";
-import { PencilIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, EyeIcon } from "@heroicons/react/24/outline"; // Importar el ícono "Eye"
 
 const ProductsList = () => {
   const navigate = useNavigate();
@@ -27,32 +27,9 @@ const ProductsList = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const getFiltersFromURL = () => {
-    const params = new URLSearchParams(location.search);
-    return {
-      name: params.get("name") || "",
-      category: params.get("category") || "",
-      status: params.get("status") === "true" ? "Disponible" : "Agotado",
-    };
-  };
-
-  const [filters, setFilters] = useState({
-    name: "",
-    category: "",
-    status: "true",
-  });
-
-  const buildQueryString = (filterObj) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(filterObj).forEach(([key, value]) => {
-      if (value) {
-        if (key === "status")
-          value = value === "Disponible" ? "true" : value === "Agotado" ? "false" : "";
-        queryParams.append(key, value);
-      }
-    });
-    return queryParams.toString() ? `?${queryParams.toString()}` : "";
-  };
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -69,37 +46,41 @@ const ProductsList = () => {
     }
   };
 
-  useEffect(() => {
-    const query = buildQueryString(filters);
-    navigate({ search: query });
-    fetchProducts();
-  }, [filters]);
-
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+  const handleViewSubproducts = (productId) => {
+    if (!productId) {
+      console.error("Error: El productId es undefined.");
+      return;
+    }
+    navigate(`/products/${productId}`);
   };
 
-  const rows = products.map((product) => {
-    return {
-      "Código": product.code,
-      "Tipo": product.type?.name || "Sin tipo",
-      "Nombre": product.name,
-      "Stock": product.total_stock !== undefined ? product.total_stock : "N/A", // Muestra el stock correcto
-      "Acciones": (
-        <div className="flex space-x-2">
-          <button
-            onClick={() => {
-              setSelectedProduct(product);
-              setShowEditModal(true);
-            }}
-            className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
-          >
-            <PencilIcon className="w-5 h-5 text-white" />
-          </button>
-        </div>
-      ),
-    };
-  });
+  const rows = products.map((product) => ({
+    "Código": product.code,
+    "Tipo": product.type?.name || "Sin tipo",
+    "Nombre": product.name,
+    "Stock": product.total_stock !== undefined ? product.total_stock : "N/A",
+    "Acciones": (
+      <div className="flex space-x-2">
+        <button
+          onClick={() => {
+            setSelectedProduct(product);
+            setShowEditModal(true);
+          }}
+          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
+        >
+          <PencilIcon className="w-5 h-5 text-white" />
+        </button>
+
+        {/* Botón para Ver Subproductos */}
+        <button
+          onClick={() => handleViewSubproducts(product.id)}
+          className="bg-secondary-500 p-2 rounded hover:bg-secondary-600 transition-colors"
+        >
+          <EyeIcon className="w-5 h-5 text-white" />
+        </button>
+      </div>
+    ),
+  }));
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -108,7 +89,7 @@ const ProductsList = () => {
         <Sidebar />
         <div className="flex-1 p-2 mt-14 ml-64">
           <Toolbar title="Lista de Productos" buttonText="Crear Producto" onButtonClick={() => setShowCreateModal(true)} />
-          <ProductFilter onFilterChange={handleFilterChange} />
+          <ProductFilter onFilterChange={() => { }} />
           <Table headers={["Código", "Tipo", "Nombre", "Stock", "Acciones"]} rows={rows} />
           <Pagination
             onNext={() => nextPage && fetchProducts(nextPage)}

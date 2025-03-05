@@ -7,7 +7,7 @@ import SubproductList from '../pages/SubproductList';
 
 const productRoutes = [
   <Route key="product-list" path="/product-list" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />,
-  <Route key="subproduct-list" path="/products/:id" element={<ProtectedRoute><SubproductList /></ProtectedRoute>} />,
+  <Route key="subproduct-list" path="/products/:productId" element={<ProtectedRoute><SubproductList /></ProtectedRoute>} />,
 ];
 
 export default productRoutes;
