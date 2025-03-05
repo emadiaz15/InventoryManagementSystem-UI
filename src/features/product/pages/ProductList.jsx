@@ -23,7 +23,6 @@ const ProductsList = () => {
   const [previousPage, setPreviousPage] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -40,14 +39,15 @@ const ProductsList = () => {
   const [filters, setFilters] = useState({
     name: "",
     category: "",
-    status: "true", // Change to "true" to get active products
+    status: "true",
   });
 
   const buildQueryString = (filterObj) => {
     const queryParams = new URLSearchParams();
     Object.entries(filterObj).forEach(([key, value]) => {
       if (value) {
-        if (key === "status") value = value === "Disponible" ? "true" : value === "Agotado" ? "false" : "";
+        if (key === "status")
+          value = value === "Disponible" ? "true" : value === "Agotado" ? "false" : "";
         queryParams.append(key, value);
       }
     });
@@ -57,9 +57,7 @@ const ProductsList = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      console.log("Fetching ALL products without filters...");
-      const data = await listProducts(`/inventory/products/`); // Remove query params
-      console.log("Products fetched:", data.results);
+      const data = await listProducts(`/inventory/products/`);
       setProducts(data.results);
       setNextPage(data.next);
       setPreviousPage(data.previous);
@@ -71,7 +69,6 @@ const ProductsList = () => {
     }
   };
 
-
   useEffect(() => {
     const query = buildQueryString(filters);
     navigate({ search: query });
@@ -82,27 +79,27 @@ const ProductsList = () => {
     setFilters(newFilters);
   };
 
-  const rows = products.map((product) => ({
-    "Código": product.code,
-    "Tipo": product.type?.name || "Sin tipo",
-    "Nombre": product.name,
-    "Stock": product.subproducts.length > 0 ? "Tiene subproductos" : "Stock independiente",
-    "Acciones": (
-      <div className="flex space-x-2">
-        <button
-          onClick={() => {
-            setSelectedProduct(product);
-            setShowEditModal(true);
-          }}
-          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
-        >
-          <PencilIcon className="w-5 h-5 text-white" />
-        </button>
-      </div>
-    ),
-  }));
-
-  console.log("Rendering rows:", rows);
+  const rows = products.map((product) => {
+    return {
+      "Código": product.code,
+      "Tipo": product.type?.name || "Sin tipo",
+      "Nombre": product.name,
+      "Stock": product.total_stock !== undefined ? product.total_stock : "N/A", // Muestra el stock correcto
+      "Acciones": (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => {
+              setSelectedProduct(product);
+              setShowEditModal(true);
+            }}
+            className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
+          >
+            <PencilIcon className="w-5 h-5 text-white" />
+          </button>
+        </div>
+      ),
+    };
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
