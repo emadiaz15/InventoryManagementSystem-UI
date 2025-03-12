@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   server: {
     // El puerto es configurado por Railway en la variable de entorno PORT
-    port: import.meta.env.PORT || 5174, // Si el entorno no define el puerto, usa 5174 por defecto
+    port: import.meta.env.PORT, // Si el entorno no define el puerto, usa 5174 por defecto
     strictPort: true, // Evita cambiar de puerto automáticamente si está ocupado
     proxy: {
       '/api': {
