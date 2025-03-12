@@ -11,7 +11,7 @@ import CategoryEditModal from "../components/CategoryEditModal";
 import { listCategories } from "../services/listCategory";
 import { updateCategory } from "../services/updateCategory"; // Solo usar este servicio
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
-import { PencilIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline"; // Importamos los íconos que necesitamos
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -73,14 +73,6 @@ const CategoryList = () => {
     fetchCategories();
   };
 
-  // Función de búsqueda
-  const handleSearch = (query) => {
-    const filtered = categories.filter((category) =>
-      category.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setCategories(filtered);
-  };
-
   // Mostrar el modal de eliminación
   const handleToggleStatus = (category) => {
     setCategoryToDelete(category);
@@ -99,8 +91,6 @@ const CategoryList = () => {
         await updateCategory(categoryToDelete.id, dataToSend);
         fetchCategories();
         setShowConfirmDialog(false);
-        // Además, si se muestra el modal de edición, se cierra:
-        setShowEditModal(false);
         handleShowSuccess("Categoría eliminada correctamente.");
       } catch (error) {
         setError("Error al cambiar el estado de la categoría.");
@@ -118,16 +108,35 @@ const CategoryList = () => {
     "Nombre de Categoría": (category.name || "").toUpperCase(),
     "Descripción": (category.description || "Sin descripción").toUpperCase(),
     "Acciones": (
-      <button
-        onClick={() => {
-          setSelectedCategory(category);
-          setShowEditModal(true);
-        }}
-        className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
-        aria-label="Editar categoría"
-      >
-        <PencilIcon className="w-5 h-5 text-text-white" />
-      </button>
+      <div className="flex space-x-2">
+        <button
+          onClick={() => {
+            setSelectedCategory(category);
+            setShowViewModal(true);
+          }}
+          className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
+          aria-label="Ver detalles"
+        >
+          <EyeIcon className="w-5 h-5 text-white" />
+        </button>
+        <button
+          onClick={() => {
+            setSelectedCategory(category);
+            setShowEditModal(true);
+          }}
+          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
+          aria-label="Editar categoría"
+        >
+          <PencilIcon className="w-5 h-5 text-white" />
+        </button>
+        <button
+          onClick={() => handleToggleStatus(category)}
+          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
+          aria-label="Eliminar categoría"
+        >
+          <TrashIcon className="w-5 h-5 text-white" />
+        </button>
+      </div>
     ),
   }));
 
@@ -186,7 +195,7 @@ const CategoryList = () => {
         />
       )}
 
-      {/* Modal de confirmación, con z-index alto para asegurarse de que esté encima */}
+      {/* Modal de confirmación */}
       {showConfirmDialog && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
