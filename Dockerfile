@@ -1,5 +1,5 @@
 # Usar una imagen oficial de Node.js como base
-FROM node:16-alpine
+FROM node:18-alpine
 
 # Establecer el directorio de trabajo en el contenedor
 WORKDIR /src
@@ -9,6 +9,8 @@ COPY package.json package-lock.json /src/
 
 # Instalar las dependencias de Node.js
 RUN npm install
+RUN npm install crypto
+
 
 # Copiar el resto del código al contenedor
 COPY . /src
