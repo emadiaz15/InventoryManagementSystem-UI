@@ -7,7 +7,7 @@ export default defineConfig({
     host: '0.0.0.0',  // Permite que Vite acepte conexiones de cualquier red
     proxy: {
       '/api': {
-        target: 'http://django-backend:8000',  // URL del backend en Docker
+        target: process.env.VITE_API_URL || 'http://localhost:8000',  // Usa la variable de entorno o un valor por defecto
         changeOrigin: true,
         secure: false,  // Permite peticiones a HTTP sin SSL en desarrollo
         rewrite: (path) => path.replace(/^\/api/, ''),
