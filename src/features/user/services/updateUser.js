@@ -8,7 +8,7 @@ export const updateUser = async (userId, userData) => {
       dataToSend = new FormData();
       // Añade todos los campos al FormData
       for (const key in userData) {
-        if (userData.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(userData, key)) {
           dataToSend.append(key, userData[key]);
         }
       }

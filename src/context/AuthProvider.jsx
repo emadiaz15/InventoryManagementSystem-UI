@@ -1,8 +1,8 @@
-import { createContext, useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import { useNavigate } from "react-router-dom";
-import { axiosInstance } from "../services/api";
-import { logoutHelper } from "./authHelpers";
+import { createContext, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../services/api';
+import { logoutHelper } from './authHelpers';
 
 const AuthContext = createContext(null);
 
@@ -20,7 +20,6 @@ export const AuthProvider = ({ children }) => {
                 setLoading(false);
                 return;
             }
-
             try {
                 const { data } = await axiosInstance.get("/users/profile/");
                 setUser(data);
