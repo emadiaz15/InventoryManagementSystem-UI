@@ -4,18 +4,18 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL, // Esto asegura que todas las peticiones se envíen a https://inventoryapi.up.railway.app
 });
 
 // Lee el token de sessionStorage
 const getAccessToken = () => sessionStorage.getItem("accessToken");
 
-// Limpia el token si se desea (también se hace en logout)
+// Limpia el token (para logout)
 const clearTokens = () => {
   sessionStorage.removeItem("accessToken");
 };
 
-// Interceptor REQUEST: inyecta el Bearer token, si existe
+// Interceptor REQUEST: inyecta el token Bearer si existe
 axiosInstance.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
@@ -24,7 +24,7 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor RESPONSE: si hay un 401, limpia tokens y lanza evento
+// Interceptor RESPONSE: si se recibe 401, limpia los tokens y lanza un evento
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,8 +36,6 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// Exportación por defecto (para `import api from '...'`)
+// Exportaciones
 export default axiosInstance;
-
-// Exportaciones nombradas
 export { axiosInstance, getAccessToken, clearTokens };
