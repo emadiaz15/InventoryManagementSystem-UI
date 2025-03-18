@@ -2,21 +2,22 @@
 FROM node:18-alpine
 
 # Establecer el directorio de trabajo en el contenedor
-WORKDIR /src
+WORKDIR /app
 
 # Copiar los archivos de package.json y package-lock.json
-COPY package.json package-lock.json /src/
+COPY package.json package-lock.json ./
 
-# Instalar las dependencias de Node.js
+# Instalar las dependencias
 RUN npm install
-RUN npm install crypto
-
 
 # Copiar el resto del código al contenedor
-COPY . /src
+COPY . .
 
-# Exponer el puerto que usará Vite.js (por defecto 5173)
-EXPOSE 5173
+# Ejecutar el build de Vite
+RUN npm run build
 
-# Iniciar Vite.js en modo desarrollo
-CMD ["npm", "run", "dev"]
+# Exponer el puerto asignado por Railway (Railway inyecta la variable PORT)
+EXPOSE $PORT
+
+# Iniciar el servidor para servir la carpeta dist en producción
+CMD ["npx", "serve", "dist", "-s", "-n", "-L", "-p", "${PORT:-5000}"]
