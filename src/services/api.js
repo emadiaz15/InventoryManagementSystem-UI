@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+// Obtiene la URL base desde la variable de entorno de Vite
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -35,13 +36,8 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// 1) Exportación por defecto (para `import api from '...'`)
+// Exportación por defecto (para `import api from '...'`)
 export default axiosInstance;
 
-// 2) Exportaciones nombradas (para `import { axiosInstance } from '...'`)
-//    y para las funciones getAccessToken, clearTokens
-export {
-  axiosInstance,
-  getAccessToken,
-  clearTokens
-};
+// Exportaciones nombradas
+export { axiosInstance, getAccessToken, clearTokens };
