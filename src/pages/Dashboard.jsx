@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
 import DashboardCard from "../components/DashboardCard";
 import Footer from "../components/common/Footer";
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/AuthProvider';
 
 const Dashboard = () => {
   const { isAuthenticated } = useAuth();
