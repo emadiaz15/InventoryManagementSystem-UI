@@ -91,7 +91,7 @@ const ProductsList = () => {
           {error ? (
             <div className="text-red-500 text-center mt-4">{error}</div>
           ) : (
-            <Table headers={["Código", "Tipo", "Nombre/Medida", "Stock", "Acciones"]} rows={rows} />
+            <Table headers={["Código", "Tipo", "Nombre / Medida", "Stock", "Acciones"]} rows={rows} />
           )}
         </div>
       </div>
