@@ -1,36 +1,37 @@
-# 🛠 Usar una imagen ligera de Node.js basada en Alpine
+# 🛠 Etapa 1: Construcción del Frontend
 FROM node:18-alpine AS build  
 
 # 📂 Establecer el directorio de trabajo en el contenedor
 WORKDIR /app  
 
-# 📦 Copiar los archivos de dependencias primero para aprovechar la caché
+# 📦 Copiar archivos esenciales para instalar dependencias
 COPY package.json package-lock.json ./  
 
-# 📥 Instalar las dependencias en modo producción
-RUN npm install --production  
+# 📥 Instalar TODAS las dependencias (dev y prod) para el build
+RUN npm ci  
 
-# 📂 Copiar el resto del código fuente al contenedor
+# 📂 Copiar el resto del código fuente
 COPY . .  
 
 # ⚙️ Generar el build de Vite
 RUN npm run build  
 
 # ----------------------------------------
-# 🔥 Segunda etapa para producción (solo archivos necesarios)
+# 🔥 Etapa 2: Producción (solo archivos necesarios)
 FROM node:18-alpine AS production  
 
 WORKDIR /app  
 
-# Copiar solo la carpeta "dist" desde la imagen anterior
+# Copiar solo la carpeta "dist" y las dependencias necesarias
 COPY --from=build /app/dist ./dist  
+COPY --from=build /app/node_modules ./node_modules  
 COPY package.json package-lock.json ./  
 COPY server.js ./  
 
-# 📥 Instalar solo las dependencias necesarias para producción
-RUN npm install --production  
+# Definir entorno de producción
+ENV NODE_ENV=production  
 
-# 🚀 Exponer el puerto que usará Railway o localhost
+# 🚀 Exponer el puerto (Railway o localhost)
 EXPOSE 3000  
 
 # 🎯 Iniciar el servidor Express para servir "dist"
