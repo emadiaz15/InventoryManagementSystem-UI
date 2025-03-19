@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../services/api";
@@ -73,3 +73,4 @@ AuthProvider.propTypes = {
 };
 
 export default AuthProvider;
+export const useAuth = () => useContext(AuthContext);
