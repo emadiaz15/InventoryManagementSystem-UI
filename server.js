@@ -18,7 +18,7 @@ app.get("*", (req, res) => {
 });
 
 // 🚀 Usar el puerto correcto
-const PORT = process.env.PORT || 5173;
+const PORT = process.env.VITE_PORT || 5173;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

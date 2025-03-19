@@ -5,12 +5,12 @@ import Sidebar from "../../../components/common/Sidebar";
 import Footer from "../../../components/common/Footer";
 import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
+import ProductFilter from "../components/ProductFilter";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import CreateProductFormModal from "../components/CreateProductFormModal";
-import ProductFilter from "../components/ProductFilter";
 import { listProducts } from "../services/listProducts";
-import { PencilIcon, EyeIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
+import ActionsButtons from "../../../components/ui/ActionsButtons";
 
 const ProductsList = () => {
   const navigate = useNavigate();
@@ -37,13 +37,18 @@ const ProductsList = () => {
     }
   };
 
-  const handleViewSubproducts = (productId) => {
-    navigate(`/products/${productId}`);
+  const handleViewSubproducts = (product) => {
+    navigate(`/products/${product.id}`);
   };
 
   const handleEditProduct = (product) => {
     setSelectedProduct(product);
     setShowCreateModal(true);
+  };
+
+  const handleDeleteProduct = (product) => {
+    console.log("Eliminar producto:", product);
+    // Aquí puedes agregar la lógica para eliminar el producto si es necesario.
   };
 
   const handleCloseModal = () => {
@@ -57,27 +62,23 @@ const ProductsList = () => {
     setTimeout(() => setShowSuccess(false), 2000);
   };
 
-  const rows = products.length > 0 ? (
-    products.map((product) => ({
-      Código: product.code,
-      Tipo: product.type?.name || "Sin tipo",
-      Nombre: product.name,
-      Stock: product.total_stock !== undefined ? product.total_stock : "N/A",
-      Acciones: (
-        <div className="flex space-x-2">
-          {/* Botón de Ver Subproductos */}
-          <button onClick={() => handleViewSubproducts(product.id)} className="bg-secondary-500 p-2 rounded hover:bg-secondary-600">
-            <EyeIcon className="w-5 h-5 text-white" />
-          </button>
-
-          {/* Botón de Editar Producto */}
-          <button onClick={() => handleEditProduct(product)} className="bg-primary-500 p-2 rounded hover:bg-primary-600">
-            <PencilIcon className="w-5 h-5 text-white" />
-          </button>
-        </div>
-      ),
-    }))
-  ) : [];
+  const rows =
+    products.length > 0
+      ? products.map((product) => ({
+        Código: product.code,
+        Tipo: product.type?.name || "Sin tipo",
+        Nombre: product.name,
+        Stock: product.total_stock !== undefined ? product.total_stock : "N/A",
+        Acciones: (
+          <ActionsButtons
+            type={product}
+            onView={handleViewSubproducts}
+            onEdit={handleEditProduct}
+            onDelete={handleDeleteProduct}
+          />
+        ),
+      }))
+      : [];
 
   return (
     <div className="flex flex-col min-h-screen">
