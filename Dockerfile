@@ -20,4 +20,4 @@ RUN npm run build
 EXPOSE $PORT
 
 # Iniciar el servidor para servir la carpeta dist en producción
-CMD ["npx", "serve", "dist", "-s", "-n", "-L", "-p", "${PORT:-5000}"]
+CMD ["npx", "serve", "dist", "-s", "-n", "-L", "-p", "${PORT:-3000}"]
