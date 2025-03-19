@@ -1,0 +1,5 @@
+.env merge=keep
+vite.config.js merge=keep
+Dockerfile merge=keep
+package-lock.json merge=keep
+server.js merge=keep

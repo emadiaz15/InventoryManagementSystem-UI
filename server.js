@@ -14,7 +14,7 @@ app.get("*", (req, res) => {
 });
 
 // 🚀 Usar el puerto asignado por Railway
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.VITE_PORT;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
