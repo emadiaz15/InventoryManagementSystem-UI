@@ -198,31 +198,10 @@ const CreateProductFormModal = ({ product = null, isOpen, onClose, onSave }) => 
                         disabled={!formData.category}
                     />
 
-                    <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required />
+                    <FormInput label="Medida" name="name" value={formData.name} onChange={handleChange} required />
                     <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
+                    <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
 
-                    <FormSelect
-                        label="¿Tiene Subproductos?"
-                        name="hasSubproducts"
-                        value={formData.hasSubproducts.toString()}
-                        onChange={handleSubproductChange}
-                        options={[
-                            { value: "true", label: "Sí" },
-                            { value: "false", label: "No" },
-                        ]}
-                        required
-                    />
-
-                    {!formData.hasSubproducts && (
-                        <FormInput
-                            label="Cantidad de Stock"
-                            name="stock_quantity"
-                            type="number"
-                            value={formData.stock_quantity}
-                            onChange={handleChange}
-                            min="0"
-                        />
-                    )}
 
                     <button type="submit" className="bg-primary-500 text-white py-2 px-4 rounded">
                         {loading ? "Guardando..." : buttonLabel}
