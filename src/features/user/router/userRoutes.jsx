@@ -4,7 +4,6 @@ import { Route } from 'react-router-dom';
 import ProtectedRoute from '../../../components/common/ProtectedRoute';
 import MyProfile from '../pages/MyProfile';
 import UserList from '../pages/UserList';
-import UserProfile from '../pages/UserProfile';
 
 const userRoutes = [
   <Route
@@ -22,15 +21,6 @@ const userRoutes = [
     element={
       <ProtectedRoute>
         <UserList />
-      </ProtectedRoute>
-    }
-  />,
-  <Route
-    key="user-profile"
-    path="/users/:id"
-    element={
-      <ProtectedRoute>
-        <UserProfile />
       </ProtectedRoute>
     }
   />,
