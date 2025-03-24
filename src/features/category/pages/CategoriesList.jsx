@@ -8,10 +8,11 @@ import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import CategoryCreateModal from "../components/CategoryCreateModal";
 import CategoryEditModal from "../components/CategoryEditModal";
+import CategoryViewModal from "../components/CategoryViewModal";
 import { listCategories } from "../services/listCategory";
-import { updateCategory } from "../services/updateCategory"; // Solo usar este servicio
+import { updateCategory } from "../services/updateCategory";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
-import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline"; // Importamos los íconos que necesitamos
+import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -25,6 +26,7 @@ const CategoryList = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false); // <-- Agregado para mostrar el modal de vista
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null); // Guardar la categoría a eliminar
@@ -112,7 +114,7 @@ const CategoryList = () => {
         <button
           onClick={() => {
             setSelectedCategory(category);
-            setShowViewModal(true);
+            setShowViewModal(true); // Mostrar modal de vista
           }}
           className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
           aria-label="Ver detalles"
@@ -173,7 +175,9 @@ const CategoryList = () => {
         </div>
       </div>
 
-      {showCreateModal && <CategoryCreateModal onClose={() => setShowCreateModal(false)} />}
+      {showCreateModal && (
+        <CategoryCreateModal onClose={() => setShowCreateModal(false)} />
+      )}
       {showEditModal && selectedCategory && (
         <CategoryEditModal
           category={selectedCategory}
@@ -185,6 +189,13 @@ const CategoryList = () => {
             setShowEditModal(false);
           }}
           onDelete={handleToggleStatus} // Al presionar eliminar en el EditModal se llamará a handleToggleStatus
+        />
+      )}
+
+      {showViewModal && selectedCategory && (  // <-- Renderizado del modal de vista
+        <CategoryViewModal
+          category={selectedCategory}
+          onClose={() => setShowViewModal(false)}
         />
       )}
 
