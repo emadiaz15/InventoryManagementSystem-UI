@@ -9,11 +9,13 @@ import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import UserRegisterModal from "../components/UserRegisterModal";
 import UserEditModal from "../components/UserEditModal";
+import UserModalView from "../components/UserModalView";
 import { listUsers } from "../services/listUsers";
-import { updateUser } from "../services/updateUser"; // Servicio de actualización
+import { updateUser } from "../services/updateUser";
 import { useAuth } from "../../../context/AuthProvider";
-import Filter from "../../../components/ui/Filter"; // 📌 Componente global
-import { PencilIcon } from "@heroicons/react/24/outline";
+import Filter from "../../../components/ui/Filter";
+import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -27,6 +29,11 @@ const UserList = () => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false); // Estado para modal de vista
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false); // Estado para confirmación de eliminación
+  const [userToDelete, setUserToDelete] = useState(null); // Usuario a eliminar
+  const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
 
   const [filters, setFilters] = useState({
     full_name: "",
@@ -34,9 +41,6 @@ const UserList = () => {
     is_active: "Activo",
     is_staff: ""
   });
-
-  const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
 
   const headers = [
     "Nombre de usuario",
@@ -64,7 +68,12 @@ const UserList = () => {
           value = value.toLowerCase() === "activo" ? "true" : "false";
         }
         if (key === "is_staff") {
-          value = value.toLowerCase() === "sí" ? "true" : value.toLowerCase() === "no" ? "false" : "";
+          value =
+            value.toLowerCase() === "sí"
+              ? "true"
+              : value.toLowerCase() === "no"
+                ? "false"
+                : "";
         }
         queryParams.append(key, value);
       }
@@ -107,6 +116,35 @@ const UserList = () => {
     setFilters(newFilters);
   };
 
+  // Función para iniciar el proceso de eliminación: abre el confirm dialog
+  const handleRequestDeleteUser = (user) => {
+    setUserToDelete(user);
+    setShowConfirmDialog(true);
+  };
+
+  // Función para confirmar eliminación (soft delete)
+  const handleConfirmDeleteUser = async () => {
+    if (userToDelete) {
+      try {
+        await updateUser(userToDelete.id, { is_active: false });
+        handleShowSuccess("Usuario eliminado correctamente.");
+      } catch (err) {
+        console.error("Error al eliminar el usuario:", err);
+        setError("No se pudo eliminar el usuario.");
+      } finally {
+        setUserToDelete(null);
+        setShowConfirmDialog(false);
+      }
+    }
+  };
+
+  // Cancelar eliminación
+  const cancelDelete = () => {
+    setUserToDelete(null);
+    setShowConfirmDialog(false);
+  };
+
+  // Crear filas para la tabla
   const rows = users.map((user) => ({
     "Nombre de usuario": user.username,
     "Nombre": `${user.name} ${user.last_name}`,
@@ -126,15 +164,35 @@ const UserList = () => {
     "Administrador": user.is_staff ? "Sí" : "No",
     "Acciones": (
       <div className="flex space-x-2">
+        {/* Botón para ver detalles */}
+        <button
+          onClick={() => {
+            setSelectedUser(user);
+            setShowViewModal(true);
+          }}
+          className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
+          aria-label="View user"
+        >
+          <EyeIcon className="w-5 h-5 text-white" />
+        </button>
+        {/* Botón para editar */}
         <button
           onClick={() => {
             setSelectedUser(user);
             setShowEditModal(true);
           }}
           className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
-          aria-label="Editar usuario"
+          aria-label="Edit user"
         >
-          <PencilIcon className="w-5 h-5 text-text-white" />
+          <PencilIcon className="w-5 h-5 text-white" />
+        </button>
+        {/* Botón para eliminar */}
+        <button
+          onClick={() => handleRequestDeleteUser(user)}
+          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
+          aria-label="Delete user"
+        >
+          <TrashIcon className="w-5 h-5 text-white" />
         </button>
       </div>
     )
@@ -157,6 +215,8 @@ const UserList = () => {
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             {loadingUsers ? (
               <p className="p-6">Cargando usuarios...</p>
+            ) : error ? (
+              <p className="p-6 text-red-500">{error}</p>
             ) : (
               <Table headers={headers} rows={rows} />
             )}
@@ -170,7 +230,12 @@ const UserList = () => {
         </div>
       </div>
       <Footer />
-      {showSuccess && <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />}
+      {showSuccess && (
+        <SuccessMessage
+          message={successMessage}
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
       {showRegisterModal && (
         <UserRegisterModal
           onClose={() => setShowRegisterModal(false)}
@@ -194,6 +259,22 @@ const UserList = () => {
           onPasswordReset={(id, newPasswordData) => {
             console.log("Restableciendo contraseña para", id, newPasswordData);
           }}
+        />
+      )}
+      {/* Modal para ver detalles del usuario */}
+      {showViewModal && selectedUser && (
+        <UserModalView
+          user={selectedUser}
+          isOpen={showViewModal}
+          onClose={() => setShowViewModal(false)}
+        />
+      )}
+      {/* Confirm dialog para eliminar usuario */}
+      {showConfirmDialog && (
+        <ConfirmDialog
+          message="¿Estás seguro de que deseas eliminar este usuario?"
+          onConfirm={handleConfirmDeleteUser}
+          onCancel={cancelDelete}
         />
       )}
     </div>
