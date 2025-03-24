@@ -7,12 +7,13 @@ import Table from "../../../components/common/Table";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import TypeCreateModal from "../components/TypeCreateModal";
-import TypeEditModal from "../components/TypeEditModal"; // Importa el modal de edición
+import TypeEditModal from "../components/TypeEditModal";
+import TypeViewModal from "../components/TypeViewModal"; // <-- Importamos el nuevo modal de vista
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { listTypes } from "../services/listType";
 import { updateType } from "../services/updateType";
 import { useAuth } from '../../../context/AuthProvider';
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/outline"; // <-- Agregamos EyeIcon
 import { listCategories } from "../../category/services/listCategory";
 
 const TypesList = () => {
@@ -26,9 +27,11 @@ const TypesList = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false); // <-- Estado para mostrar/ocultar modal de vista
   const [selectedType, setSelectedType] = useState(null);
   const [typeToDelete, setTypeToDelete] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
   const { isAuthenticated, loading: authLoading } = useAuth();
 
   const headers = ["Categoría", "Nombre de Tipo", "Descripción", "Acciones"];
@@ -88,6 +91,12 @@ const TypesList = () => {
     setShowEditModal(true);
   };
 
+  // Abrir modal para ver detalles de un tipo
+  const handleViewType = (type) => {
+    setSelectedType(type);
+    setShowViewModal(true);
+  };
+
   // Mostrar confirmación antes de cambiar el estado de un tipo
   const handleToggleStatus = (type) => {
     setTypeToDelete(type);
@@ -112,7 +121,7 @@ const TypesList = () => {
     setShowConfirmDialog(false);
   };
 
-
+  // Obtener categorías para mostrar su nombre
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -128,8 +137,6 @@ const TypesList = () => {
     fetchCategories();
   }, []);
 
-
-
   // Función para obtener el nombre de la categoría en mayúsculas
   const getCategoryName = (categoryId) => {
     const category = categories.find(cat => cat.id === categoryId);
@@ -143,6 +150,16 @@ const TypesList = () => {
     "Descripción": (type.description || "SIN DESCRIPCIÓN").toUpperCase(),
     "Acciones": (
       <div className="flex space-x-2">
+        {/* Botón para ver detalles */}
+        <button
+          onClick={() => handleViewType(type)}
+          className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
+          aria-label="Ver detalles"
+        >
+          <EyeIcon className="w-5 h-5 text-white" />
+        </button>
+
+        {/* Botón para editar */}
         <button
           onClick={() => handleEditType(type)}
           className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
@@ -150,13 +167,18 @@ const TypesList = () => {
         >
           <PencilIcon className="w-5 h-5 text-text-white" />
         </button>
+
+        {/* Botón para cambiar estado/eliminar */}
+        <button
+          onClick={() => handleToggleStatus(type)}
+          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
+          aria-label="Eliminar tipo"
+        >
+          <TrashIcon className="w-5 h-5 text-text-white" />
+        </button>
       </div>
     ),
   }));
-
-
-
-
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -174,6 +196,8 @@ const TypesList = () => {
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             {loading ? (
               <p className="p-6">Cargando tipos...</p>
+            ) : error ? (
+              <p className="p-6 text-red-500">{error}</p>
             ) : (
               <Table headers={headers} rows={rows} />
             )}
@@ -206,7 +230,16 @@ const TypesList = () => {
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
           onSave={() => handleShowSuccess("Tipo editado correctamente.")}
-          onDelete={handleDeleteType}  // 🔥 PASA LA FUNCIÓN CORRECTAMENTE
+          onDelete={handleDeleteType}
+        />
+      )}
+
+      {/* Modal para ver detalles del tipo */}
+      {showViewModal && selectedType && (
+        <TypeViewModal
+          type={selectedType}
+          isOpen={showViewModal}
+          onClose={() => setShowViewModal(false)}
         />
       )}
 
