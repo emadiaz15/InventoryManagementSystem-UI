@@ -1,38 +1,22 @@
-# 🛠 Etapa 1: Construcción del Frontend
-FROM node:18-alpine AS build  
+# Dockerfile.dev
 
-# 📂 Establecer el directorio de trabajo en el contenedor
-WORKDIR /app  
+# Usamos Node 18 en Alpine para un contenedor ligero
+FROM node:18-alpine
 
-# 📦 Copiar archivos esenciales para instalar dependencias
-COPY package.json package-lock.json ./  
+# Establecer el directorio de trabajo en el contenedor
+WORKDIR /app
 
-# 📥 Instalar TODAS las dependencias (dev y prod) para el build
-RUN npm ci  
+# Copiar los archivos esenciales para instalar dependencias
+COPY package.json package-lock.json ./
 
-# 📂 Copiar el resto del código fuente
-COPY . .  
+# Instalar las dependencias (dev y prod)
+RUN npm ci
 
-# ⚙️ Generar el build de Vite
-RUN npm run build  
+# Copiar el resto del código fuente
+COPY . .
 
-# ----------------------------------------
-# 🔥 Etapa 2: Producción (solo archivos necesarios)
-FROM node:18-alpine AS production  
+# Exponer el puerto en el que Vite se ejecuta (según tu script, 5173)
+EXPOSE 5173
 
-WORKDIR /app  
-
-# Copiar solo la carpeta "dist" y las dependencias necesarias
-COPY --from=build /app/dist ./dist  
-COPY --from=build /app/node_modules ./node_modules  
-COPY package.json package-lock.json ./  
-COPY server.js ./  
-
-# Definir entorno de producción
-ENV NODE_ENV=production  
-
-# 🚀 Exponer el puerto (Railway o localhost)
-EXPOSE 3000  
-
-# 🎯 Iniciar el servidor Express para servir "dist"
-CMD ["node", "server.js"]
+# Iniciar el servidor de desarrollo con hot-reload
+CMD ["npm", "run", "dev"]
