@@ -36,13 +36,7 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-<<<<<<< HEAD
-// Exportación por defecto (para `import api from '...'`)
-export default axiosInstance;
 
-// Exportaciones nombradas
-=======
 // Exportaciones
 export default axiosInstance;
->>>>>>> master
 export { axiosInstance, getAccessToken, clearTokens };
