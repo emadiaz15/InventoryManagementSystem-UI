@@ -1,22 +1,26 @@
-# Dockerfile.dev
+# 🛠 Usar una imagen ligera de Node.js basada en Alpine
+FROM node:18-alpine  
 
-# Usamos Node 18 en Alpine para un contenedor ligero
-FROM node:18-alpine
+# 📂 Establecer el directorio de trabajo en el contenedor
+WORKDIR /app  
 
-# Establecer el directorio de trabajo en el contenedor
-WORKDIR /app
+# 📦 Copiar los archivos de dependencias primero para aprovechar la caché
+COPY package.json package-lock.json ./  
 
-# Copiar los archivos esenciales para instalar dependencias
-COPY package.json package-lock.json ./
+# 📥 Instalar las dependencias del proyecto
+RUN npm install  
 
-# Instalar las dependencias (dev y prod)
-RUN npm ci
+# 📂 Copiar el resto del código fuente al contenedor
+COPY . .  
 
-# Copiar el resto del código fuente
-COPY . .
+# ⚙️ Ejecutar el build de Vite para generar la carpeta "dist"
+RUN npm run build  
 
-# Exponer el puerto en el que Vite se ejecuta (según tu script, 5173)
-EXPOSE 5173
+# 🔥 Instalar Express para servir los archivos estáticos
+RUN npm install express  
 
-# Iniciar el servidor de desarrollo con hot-reload
-CMD ["npm", "run", "dev"]
+# 🚀 Copiar el archivo del servidor Express
+COPY server.js .
+
+# 🎯 Iniciar el servidor Express para servir "dist"
+CMD ["node", "server.js"]
