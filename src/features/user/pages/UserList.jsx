@@ -44,7 +44,7 @@ const UserList = () => {
 
   const headers = [
     "Nombre de usuario",
-    "Nombre",
+    "Nombre Completo",
     "Email",
     "DNI",
     "Imagen",

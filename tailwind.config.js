@@ -38,6 +38,7 @@ module.exports = {
         },
         error: {
           500: '#dc3545', // Error
+          600: '#c82333', // Error para hover
         },
         info: {
           500: '#17a2b8', // Información

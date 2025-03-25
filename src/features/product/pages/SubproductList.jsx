@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { listSubproducts } from "../services/listSubproducts";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../../components/common/Navbar";
 import Sidebar from "../../../components/common/Sidebar";
 import Footer from "../../../components/common/Footer";
+import Toolbar from "../../../components/common/Toolbar";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import SubproductFormModal from "../components/SubproductFormModal";
-import Card from "../../../components/cards/Card"; // Componente de tarjetas
+import SubproductCard from "../components/SubproductCard"; // Componente de tarjetas
+import { listSubproducts } from "../services/listSubproducts";
 
 const SubproductList = () => {
   const { productId } = useParams();
+  const navigate = useNavigate();
   const [subproducts, setSubproducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,16 +22,7 @@ const SubproductList = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  useEffect(() => {
-    if (!productId) {
-      setError("ID de producto no válido.");
-      setLoading(false);
-      return;
-    }
-    fetchSubproducts();
-  }, [productId]);
-
-  const fetchSubproducts = async (url = null) => {
+  const fetchSubproducts = async (url = `/inventory/products/${productId}/subproducts/`) => {
     setLoading(true);
     setError(null);
     try {
@@ -49,6 +42,15 @@ const SubproductList = () => {
     }
   };
 
+  useEffect(() => {
+    if (productId) {
+      fetchSubproducts();
+    } else {
+      setError("ID de producto no válido.");
+      setLoading(false);
+    }
+  }, [productId]);
+
   const handleNextPage = () => {
     if (nextPage) fetchSubproducts(nextPage);
   };
@@ -64,26 +66,40 @@ const SubproductList = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background-100">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />
-        <div className="flex-1 mt-14 p-4 ml-64">
+        <div className="flex-1 p-4 ml-64 mt-14">
+          <Toolbar
+            title="Subproductos"
+            extraButtons={
+              <button
+                onClick={() => navigate(`/products/${productId}/create-subproduct`)}
+                className="ml-2 text-white bg-secondary-500 hover:bg-secondary-600 px-4 py-2 rounded"
+              >
+                Crear nuevo subproducto
+              </button>
+            }
+          />
           {loading ? (
-            <div className="text-center">Cargando subproductos...</div>
+            <p className="text-center">Cargando subproductos...</p>
           ) : error ? (
-            <div className="text-red-500 text-center">{error}</div>
+            <p className="text-center text-red-500">{error}</p>
           ) : subproducts.length === 0 ? (
-            <div className="text-center text-gray-500">No hay subproductos disponibles.</div>
+            <p className="text-center text-gray-500">No hay subproductos disponibles.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 p-4">
               {subproducts.map((subproduct) => (
-                <Card
+                <SubproductCard
                   key={subproduct.id}
-                  imageUrl={subproduct.image || "/placeholder.png"}
-                  title={subproduct.name}
-                  stock={subproduct.stock ?? "No disponible"}
-                  onAddToCart={() => console.log(`Agregado ${subproduct.name} al carrito`)}
+                  subproduct={subproduct}
+                  onAddToOrder={() =>
+                    console.log(`Agregado ${subproduct.name} al carrito`)
+                  }
+                  onEdit={() => console.log("Editar subproducto", subproduct)}
+                  onDelete={() => console.log("Eliminar subproducto", subproduct)}
+                  onViewComments={() => navigate(`/subproducts/${subproduct.id}/comments`)}
                 />
               ))}
             </div>
@@ -96,7 +112,9 @@ const SubproductList = () => {
           />
         </div>
       </div>
-      {showSuccess && <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />}
+      {showSuccess && (
+        <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+      )}
       {showModal && (
         <SubproductFormModal
           parentProduct={{ id: productId }}
