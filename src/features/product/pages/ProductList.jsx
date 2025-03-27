@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
-import ProductFilter from "../components/ProductFilter";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import CreateProductFormModal from "../components/CreateProductFormModal";
+import ProductFilter from "../components/ProductFilter";
 import { listProducts } from "../services/listProducts";
+
 import { listTypes } from "../../type/services/listType";
 import { listCategories } from "../../category/services/listCategory";
 import { useAuth } from "../../../context/AuthProvider";
@@ -20,6 +21,7 @@ import {
 import ProductViewModal from "../components/ProductViewModal";
 import ProductCarouselOverlay from "../components/ProductCarouselOverlay";
 import Layout from "../../../pages/Layout";
+
 
 const ProductsList = () => {
   const navigate = useNavigate();
@@ -91,7 +93,7 @@ const ProductsList = () => {
   };
 
   const handleViewSubproducts = (product) => {
-    navigate(`/products/${product.id}/subproducts`);
+    navigate(`/products/${product.id}/subproducts`)
   };
 
   const handleEditProduct = (product) => {
@@ -118,7 +120,7 @@ const ProductsList = () => {
     fetchProducts();
     setTimeout(() => { }, 2000);
   };
-
+  
   const rows =
     products.length > 0
       ? products.map((product) => ({
@@ -182,6 +184,7 @@ const ProductsList = () => {
           {error ? (
             <div className="text-red-500 text-center mt-4">{error}</div>
           ) : (
+            
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
               <Table
                 headers={[
