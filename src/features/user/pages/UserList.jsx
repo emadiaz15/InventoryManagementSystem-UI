@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../../components/common/Navbar";
-import Sidebar from "../../../components/common/Sidebar";
-import Footer from "../../../components/common/Footer";
 import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
 import Pagination from "../../../components/ui/Pagination";
@@ -16,6 +13,7 @@ import { useAuth } from "../../../context/AuthProvider";
 import Filter from "../../../components/ui/Filter";
 import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
+import Layout from "../../../pages/Layout";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -30,7 +28,7 @@ const UserList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false); // Estado para modal de vista
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false); // Estado para confirmación de eliminación
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false); // Confirmación de eliminación
   const [userToDelete, setUserToDelete] = useState(null); // Usuario a eliminar
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
@@ -44,7 +42,7 @@ const UserList = () => {
 
   const headers = [
     "Nombre de usuario",
-    "Nombre",
+    "Nombre Completo",
     "Email",
     "DNI",
     "Imagen",
@@ -81,11 +79,12 @@ const UserList = () => {
     return queryParams.toString() ? `?${queryParams.toString()}` : "";
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (url) => {
     setLoadingUsers(true);
     try {
       const query = buildQueryString(filters);
-      const data = await listUsers(`/users/list/${query}`);
+      const endpoint = url || `/users/list/${query}`;
+      const data = await listUsers(endpoint);
       if (data && Array.isArray(data.results)) {
         setUsers(data.results);
         setNextPage(data.next);
@@ -116,13 +115,13 @@ const UserList = () => {
     setFilters(newFilters);
   };
 
-  // Función para iniciar el proceso de eliminación: abre el confirm dialog
+  // Solicitar eliminación del usuario
   const handleRequestDeleteUser = (user) => {
     setUserToDelete(user);
     setShowConfirmDialog(true);
   };
 
-  // Función para confirmar eliminación (soft delete)
+  // Confirmar eliminación (soft delete)
   const handleConfirmDeleteUser = async () => {
     if (userToDelete) {
       try {
@@ -138,7 +137,6 @@ const UserList = () => {
     }
   };
 
-  // Cancelar eliminación
   const cancelDelete = () => {
     setUserToDelete(null);
     setShowConfirmDialog(false);
@@ -151,20 +149,26 @@ const UserList = () => {
     "Email": user.email,
     "DNI": user.dni || "Sin DNI",
     "Imagen": user.image ? (
-      <img className="w-10 h-10 rounded-full" src={user.image} alt={`${user.name} profile`} />
+      <img
+        className="w-10 h-10 rounded-full"
+        src={user.image}
+        alt={`${user.name} profile`}
+      />
     ) : (
       "Sin imagen"
     ),
     "Estado": (
       <div className="flex items-center">
-        <div className={`h-2.5 w-2.5 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-red-500'} me-2`}></div>
+        <div
+          className={`h-2.5 w-2.5 rounded-full ${user.is_active ? "bg-green-500" : "bg-red-500"
+            } me-2`}
+        ></div>
         {user.is_active ? "Activo" : "Inactivo"}
       </div>
     ),
     "Administrador": user.is_staff ? "Sí" : "No",
     "Acciones": (
       <div className="flex space-x-2">
-        {/* Botón para ver detalles */}
         <button
           onClick={() => {
             setSelectedUser(user);
@@ -175,7 +179,6 @@ const UserList = () => {
         >
           <EyeIcon className="w-5 h-5 text-white" />
         </button>
-        {/* Botón para editar */}
         <button
           onClick={() => {
             setSelectedUser(user);
@@ -186,7 +189,6 @@ const UserList = () => {
         >
           <PencilIcon className="w-5 h-5 text-white" />
         </button>
-        {/* Botón para eliminar */}
         <button
           onClick={() => handleRequestDeleteUser(user)}
           className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
@@ -199,12 +201,8 @@ const UserList = () => {
   }));
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-64">
-          <Sidebar />
-        </div>
+    <>
+      <Layout>
         <div className="flex-1 flex flex-col p-2 mt-14">
           <Toolbar
             title="Lista de Usuarios"
@@ -228,8 +226,8 @@ const UserList = () => {
             hasPrevious={Boolean(previousPage)}
           />
         </div>
-      </div>
-      <Footer />
+      </Layout>
+
       {showSuccess && (
         <SuccessMessage
           message={successMessage}
@@ -261,7 +259,6 @@ const UserList = () => {
           }}
         />
       )}
-      {/* Modal para ver detalles del usuario */}
       {showViewModal && selectedUser && (
         <UserModalView
           user={selectedUser}
@@ -269,7 +266,6 @@ const UserList = () => {
           onClose={() => setShowViewModal(false)}
         />
       )}
-      {/* Confirm dialog para eliminar usuario */}
       {showConfirmDialog && (
         <ConfirmDialog
           message="¿Estás seguro de que deseas eliminar este usuario?"
@@ -277,7 +273,7 @@ const UserList = () => {
           onCancel={cancelDelete}
         />
       )}
-    </div>
+    </>
   );
 };
 

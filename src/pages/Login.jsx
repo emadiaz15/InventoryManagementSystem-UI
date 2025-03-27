@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthProvider';
 import ErrorMessage from '../components/common/ErrorMessage';
 import InputField from '../components/ui/form/InputField';
-import Spinner from '../components/ui/Spinner'; // Corregido el path de la importación
+import Spinner from '../components/ui/Spinner';
+import PageWrapper from '../components/PageWrapper';
+import BackgroundCanvas from '../components/BackgroundCanvas';
 
-const Home = () => {
-  const { login, error, loading } = useAuth(); // Hook para login, error y loading
+const Login = () => {
+  const { login, error, loading } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Validar campos antes de enviar
     if (!username || !password) {
       console.log('Debe completar ambos campos');
       return;
@@ -21,65 +22,68 @@ const Home = () => {
     const credentials = { username, password };
     console.log('Datos enviados al backend:', credentials);
 
-    // Ejecutar la función de login del hook
     await login(credentials);
   };
 
   return (
-    <section className="h-screen bg-gradient-to-r from-cyan-900 to-blue-700">
-      <div className="h-full flex items-center justify-center">
-        <div className="flex h-full items-center justify-center lg:justify-between w-full max-w-5xl">
-          <div className="hidden lg:block lg:w-1/2">
-            <img src="/home-img.png" className="w-full" alt="Home" />
-          </div>
+    <PageWrapper>
+      <section className="relative h-screen overflow-hidden bg-gradient-to-r from-cyan-900 to-blue-700 text-white">
+        <BackgroundCanvas />
 
-          <div className="bg-neutral-light p-8 rounded-lg shadow-lg w-full max-w-md lg:w-1/2">
-            <h2 className="text-black font-sans font-semibold pb-0.5 text-center">
-              Sistema de gestión de stock
-            </h2>
-            <form onSubmit={handleLogin}>
-              {/* Campo de entrada para el nombre de usuario */}
-              <InputField
-                label="Usuario"
-                type="text"
-                name="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ingrese su usuario"
-                disabled={loading}
-                aria-label="Usuario"
-              />
+        <div className="relative z-10 h-full flex items-center justify-center px-4">
+          <div className="flex flex-col lg:flex-row items-center justify-center w-full max-w-5xl gap-6">
+            {/* Logo / imagen lateral */}
+            <div className="hidden lg:block lg:w-1/2">
+              <img src="/home-img.png" alt="Home" className="w-full" />
+            </div>
 
-              {/* Campo de entrada para la contraseña */}
-              <InputField
-                label="Contraseña"
-                type="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Ingrese su contraseña"
-                disabled={loading}
-                aria-label="Contraseña"
-              />
+            {/* Formulario */}
+            <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-md w-full max-w-md border text-black border-white/20">
+              <h2 className="text-2xl font-bold mb-6 text-center text-white">
+                Sistema de gestión de stock
+              </h2>
 
-              {/* Mostrar mensaje de error si ocurre */}
-              {error && <ErrorMessage message={error} />}
-
-              <div className="text-center lg:text-left">
-                <button
-                  type="submit"
-                  className="w-full rounded bg-accent-dark px-4 py-2 font-sans font-semibold text-white shadow-md transition duration-150 ease-in-out hover:bg-blue-700 focus:bg-blue-700 focus:outline-none"
+              <form onSubmit={handleLogin}>
+                <InputField
+                  label="Usuario"
+                  type="text"
+                  name="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Ingrese su usuario"
                   disabled={loading}
-                >
-                  {loading ? <Spinner size="5" color="text-white" /> : 'Ingresar'}
-                </button>
-              </div>
-            </form>
+                  aria-label="Usuario"
+                />
+
+                <InputField
+                  label="Contraseña"
+                  type="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Ingrese su contraseña"
+                  disabled={loading}
+                  aria-label="Contraseña"
+                />
+
+                {error && <ErrorMessage message={error} />}
+
+                <div className="mt-6">
+                  <button
+                    type="submit"
+                    className="w-full rounded-md bg-primary-500 px-4 py-2 font-semibold text-white shadow-md transition-colors hover:bg-primary-600 focus:outline-none"
+                    disabled={loading}
+                  >
+                    {loading ? <Spinner size="5" color="text-white" /> : 'Ingresar'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </PageWrapper>
   );
 };
 
-export default Home;
+export default Login;

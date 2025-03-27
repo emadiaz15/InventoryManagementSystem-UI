@@ -5,12 +5,12 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
     if (!user) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="User Details">
+        <Modal isOpen={isOpen} onClose={onClose} title="Datalles de Usuario">
             <div className="p-4 space-y-3">
                 <p><strong>ID:</strong> {user.id}</p>
                 <p><strong>Nombre de usuario:</strong> {user.username}</p>
                 <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Nombre:</strong> {user.name} {user.last_name}</p>
+                <p><strong>Nombre completo:</strong> {user.name} {user.last_name}</p>
                 <p><strong>DNI:</strong> {user.dni}</p>
                 <p><strong>Estado:</strong> {user.is_active ? "Active" : "Inactive"}</p>
                 <p><strong>Administrador:</strong> {user.is_staff ? "Yes" : "No"}</p>

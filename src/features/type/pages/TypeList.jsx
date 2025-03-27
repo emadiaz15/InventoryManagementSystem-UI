@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../../../components/common/Navbar";
-import Sidebar from "../../../components/common/Sidebar";
-import Footer from "../../../components/common/Footer";
 import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import TypeCreateModal from "../components/TypeCreateModal";
 import TypeEditModal from "../components/TypeEditModal";
-import TypeViewModal from "../components/TypeViewModal"; // <-- Importamos el nuevo modal de vista
+import TypeViewModal from "../components/TypeViewModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { listTypes } from "../services/listType";
 import { updateType } from "../services/updateType";
-import { useAuth } from '../../../context/AuthProvider';
-import { PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/outline"; // <-- Agregamos EyeIcon
+import { useAuth } from "../../../context/AuthProvider";
+import { PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { listCategories } from "../../category/services/listCategory";
+import Layout from "../../../pages/Layout";
 
 const TypesList = () => {
   const [types, setTypes] = useState([]);
@@ -27,7 +25,7 @@ const TypesList = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false); // <-- Estado para mostrar/ocultar modal de vista
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedType, setSelectedType] = useState(null);
   const [typeToDelete, setTypeToDelete] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -97,27 +95,33 @@ const TypesList = () => {
     setShowViewModal(true);
   };
 
-  // Mostrar confirmación antes de cambiar el estado de un tipo
+  // Mostrar confirmación antes de eliminar un tipo
   const handleToggleStatus = (type) => {
     setTypeToDelete(type);
     setShowConfirmDialog(true);
   };
 
   // Confirmar eliminación/restauración de un tipo
-  const handleDeleteType = async (id, dataToSend) => {
-    try {
-      console.log("🛠️ Enviando solicitud de eliminación desde handleDeleteType:", dataToSend);
-      await updateType(id, dataToSend);
-      fetchTypes(); // Recargar la lista de tipos después de eliminar
-      handleShowSuccess("Tipo eliminado correctamente.");
-    } catch (error) {
-      console.error("❌ Error al eliminar el tipo:", error.response?.data || error.message);
-      setError("No se pudo eliminar el tipo.");
+  const handleDeleteType = async () => {
+    if (typeToDelete) {
+      try {
+        // Se envía la actualización del status a false para eliminar lógicamente el tipo
+        await updateType(typeToDelete.id, { status: false });
+        fetchTypes();
+        handleShowSuccess("Tipo eliminado correctamente.");
+      } catch (error) {
+        console.error("Error al eliminar el tipo:", error.response?.data || error.message);
+        setError("No se pudo eliminar el tipo.");
+      } finally {
+        setTypeToDelete(null);
+        setShowConfirmDialog(false);
+      }
     }
   };
 
   // Cancelar eliminación
   const cancelDelete = () => {
+    setTypeToDelete(null);
     setShowConfirmDialog(false);
   };
 
@@ -130,7 +134,7 @@ const TypesList = () => {
         const data = await listCategories();
         setCategories(data.results || []);
       } catch (error) {
-        console.error('❌ Error al obtener las categorías:', error);
+        console.error("Error al obtener las categorías:", error);
       }
     };
 
@@ -139,7 +143,7 @@ const TypesList = () => {
 
   // Función para obtener el nombre de la categoría en mayúsculas
   const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
+    const category = categories.find((cat) => cat.id === categoryId);
     return category ? category.name.toUpperCase() : "SIN CATEGORÍA";
   };
 
@@ -168,7 +172,7 @@ const TypesList = () => {
           <PencilIcon className="w-5 h-5 text-text-white" />
         </button>
 
-        {/* Botón para cambiar estado/eliminar */}
+        {/* Botón para eliminar */}
         <button
           onClick={() => handleToggleStatus(type)}
           className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
@@ -181,12 +185,8 @@ const TypesList = () => {
   }));
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-64">
-          <Sidebar />
-        </div>
+    <>
+      <Layout>
         <div className="flex-1 flex flex-col p-2 mt-14">
           <Toolbar
             title="Lista de Tipos"
@@ -209,8 +209,7 @@ const TypesList = () => {
             hasPrevious={Boolean(previousPage)}
           />
         </div>
-      </div>
-      <Footer />
+      </Layout>
 
       {showSuccess && (
         <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
@@ -234,7 +233,6 @@ const TypesList = () => {
         />
       )}
 
-      {/* Modal para ver detalles del tipo */}
       {showViewModal && selectedType && (
         <TypeViewModal
           type={selectedType}
@@ -246,11 +244,11 @@ const TypesList = () => {
       {showConfirmDialog && (
         <ConfirmDialog
           message="¿Estás seguro de que deseas eliminar este tipo?"
-          onConfirm={onDeleteType}
+          onConfirm={handleDeleteType}
           onCancel={cancelDelete}
         />
       )}
-    </div>
+    </>
   );
 };
 
