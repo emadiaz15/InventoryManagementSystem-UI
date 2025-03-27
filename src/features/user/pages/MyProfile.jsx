@@ -1,9 +1,6 @@
-// src/features/user/pages/MyProfile.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthProvider';
-import Navbar from '../../../components/common/Navbar';
-import Sidebar from '../../../components/common/Sidebar';
-import Footer from '../../../components/common/Footer';
+import Layout from '../../../pages/Layout';
 import ProfileImage from '../components/ProfileImage';
 import UserInfoSection from '../components/UserInfoSection';
 import SuccessMessage from '../../../components/common/SuccessMessage';
@@ -19,11 +16,9 @@ const MyProfile = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen font-sans mt-12 bg-background-100">
-      <Navbar />
-      <div className="flex flex-1">
-        <Sidebar className="w-64" />
-        <div className="flex-1 p-6">
+    <>
+      <Layout>
+        <div className="flex-1 p-12">
           <div className="max-w-4xl mx-auto bg-neutral-500 rounded-lg shadow-sm p-6 text-center text-primary-500">
             {user && (
               <>
@@ -36,8 +31,7 @@ const MyProfile = () => {
             )}
           </div>
         </div>
-      </div>
-      <Footer />
+      </Layout>
 
       {showSuccess && (
         <SuccessMessage
@@ -46,7 +40,7 @@ const MyProfile = () => {
         />
       )}
       {showError && <ErrorMessage message="Error al actualizar el perfil." />}
-    </div>
+    </>
   );
 };
 

@@ -1,10 +1,9 @@
-// src/features/cuttingOrder/services/listCuttingOrders.js
 import api from '../../../services/api';
 
-export const listCuttingOrders = async (url = '/cutting/orders/') => {
+export const listCuttingOrders = async (url = '/cutting/cutting-orders/') => {
   try {
-    // url puede ser la paginación (ej. 'http://localhost:8000/api/v1/cutting/orders/?page=2')
-    // si tu baseURL = 'http://localhost:8000/api/v1', concatenará => http://localhost:8000/api/v1 + /cutting/orders/
+    // La URL por defecto es "/cutting/cutting-orders/". 
+    // Si se pasa otra URL (por ejemplo, para paginación) se utilizará esa.
     const response = await api.get(url);
     return response.data;
   } catch (error) {

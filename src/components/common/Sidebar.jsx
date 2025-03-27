@@ -52,12 +52,6 @@ const Sidebar = () => {
       bgClass: 'bg-primary-700 hover:bg-primary-600'
     },
     {
-      label: 'Comentarios',
-      icon: ChatBubbleLeftEllipsisIcon,
-      onClick: () => navigate('/comments'),
-      bgClass: 'bg-primary-700 hover:bg-primary-600'
-    },
-    {
       label: 'Tipos',
       icon: TagIcon,
       onClick: () => navigate('/types'),
@@ -93,7 +87,7 @@ const Sidebar = () => {
       {/* Botón de logout al final */}
       <button
         onClick={handleLogout}
-        className="w-full text-left flex items-center py-2 px-4 bg-accent-500 rounded hover:bg-accent-400 transition-all"
+        className="w-full text-left flex items-center py-2 px-4 bg-accent-500 rounded hover:bg-accent-400 transition-all mt-56"
       >
         <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
         Cerrar Sesión

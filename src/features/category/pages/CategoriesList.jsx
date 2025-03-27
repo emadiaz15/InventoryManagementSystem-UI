@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../../../components/common/Navbar";
-import Sidebar from "../../../components/common/Sidebar";
-import Footer from "../../../components/common/Footer";
 import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
 import Pagination from "../../../components/ui/Pagination";
@@ -11,8 +8,8 @@ import CategoryEditModal from "../components/CategoryEditModal";
 import CategoryViewModal from "../components/CategoryViewModal";
 import { listCategories } from "../services/listCategory";
 import { updateCategory } from "../services/updateCategory";
-import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
+import Layout from "../../../pages/Layout";
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -26,14 +23,14 @@ const CategoryList = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false); // <-- Agregado para mostrar el modal de vista
+  const [showViewModal, setShowViewModal] = useState(false); // Para mostrar modal de vista
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState(null); // Guardar la categoría a eliminar
+  const [categoryToDelete, setCategoryToDelete] = useState(null); // Categoría a eliminar
 
   const headers = ["Nombre de Categoría", "Descripción", "Acciones"];
 
-  // Obtener categorías activas con paginación
+  // Función para obtener las categorías activas con paginación
   const fetchCategories = async (url = "/inventory/categories/") => {
     setLoadingCategories(true);
     try {
@@ -68,20 +65,20 @@ const CategoryList = () => {
     }
   };
 
-  // Función de éxito para mostrar mensajes
+  // Función para mostrar mensajes de éxito
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
     fetchCategories();
   };
 
-  // Mostrar el modal de eliminación
+  // Abrir modal para eliminación
   const handleToggleStatus = (category) => {
     setCategoryToDelete(category);
     setShowConfirmDialog(true);
   };
 
-  // Confirmar eliminación: enviar todos los campos obligatorios, cambiando status a false
+  // Confirmar eliminación (cambio de estado a false)
   const confirmDelete = async () => {
     if (categoryToDelete) {
       try {
@@ -105,7 +102,7 @@ const CategoryList = () => {
     setShowConfirmDialog(false);
   };
 
-  // Crear filas para la tabla con datos en mayúsculas y prevenir valores nulos
+  // Crear filas para la tabla (convertir datos a mayúsculas y controlar valores nulos)
   const rows = categories.map((category) => ({
     "Nombre de Categoría": (category.name || "").toUpperCase(),
     "Descripción": (category.description || "Sin descripción").toUpperCase(),
@@ -114,7 +111,7 @@ const CategoryList = () => {
         <button
           onClick={() => {
             setSelectedCategory(category);
-            setShowViewModal(true); // Mostrar modal de vista
+            setShowViewModal(true);
           }}
           className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
           aria-label="Ver detalles"
@@ -143,12 +140,8 @@ const CategoryList = () => {
   }));
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <div className="flex flex-1">
-        <div className="w-64">
-          <Sidebar />
-        </div>
+    <>
+      <Layout>
         <div className="flex-1 mt-14 rounded-lg">
           <div className="p-2 border-gray-200 rounded-lg dark:border-gray-700">
             <Toolbar
@@ -173,7 +166,7 @@ const CategoryList = () => {
             hasPrevious={Boolean(previousPage)}
           />
         </div>
-      </div>
+      </Layout>
 
       {showCreateModal && (
         <CategoryCreateModal onClose={() => setShowCreateModal(false)} />
@@ -188,25 +181,21 @@ const CategoryList = () => {
             handleShowSuccess("Categoría actualizada correctamente.");
             setShowEditModal(false);
           }}
-          onDelete={handleToggleStatus} // Al presionar eliminar en el EditModal se llamará a handleToggleStatus
+          onDelete={handleToggleStatus}
         />
       )}
-
-      {showViewModal && selectedCategory && (  // <-- Renderizado del modal de vista
+      {showViewModal && selectedCategory && (
         <CategoryViewModal
           category={selectedCategory}
           onClose={() => setShowViewModal(false)}
         />
       )}
-
       {showSuccess && (
         <SuccessMessage
           message={successMessage}
           onClose={() => setShowSuccess(false)}
         />
       )}
-
-      {/* Modal de confirmación */}
       {showConfirmDialog && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
@@ -233,9 +222,7 @@ const CategoryList = () => {
           </div>
         </div>
       )}
-
-      <Footer />
-    </div>
+    </>
   );
 };
 

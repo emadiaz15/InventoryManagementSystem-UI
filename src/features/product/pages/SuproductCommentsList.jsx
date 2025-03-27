@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import Navbar from "../../../components/common/Navbar";
-import Sidebar from "../../../components/common/Sidebar";
-import Footer from "../../../components/common/Footer";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
-import ProductCommentCard from "../components/ProductCommentCard"; // Usamos el mismo componente de comentario
+import ProductCommentCard from "../components/ProductCommentCard"; // Componente de comentarios
 import { listSubproductComments } from "../services/listSubproductComments"; // Servicio para obtener comentarios de subproducto
+import Layout from "../../../pages/Layout";
 
 const SubproductCommentsList = () => {
     const { prod_pk, subp_pk } = useParams();
@@ -45,6 +43,9 @@ const SubproductCommentsList = () => {
     useEffect(() => {
         if (prod_pk && subp_pk) {
             fetchComments();
+        } else {
+            setError("ID de producto o subproducto no válido.");
+            setLoading(false);
         }
     }, [prod_pk, subp_pk]);
 
@@ -63,11 +64,9 @@ const SubproductCommentsList = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="flex flex-1">
-                <Sidebar />
-                <div className="flex-1 p-4 ml-64 mt-14">
+        <>
+            <Layout>
+                <div className="flex-1 p-4 mt-14">
                     <h1 className="text-2xl font-bold mb-4">
                         Comentarios del Subproducto
                     </h1>
@@ -76,7 +75,9 @@ const SubproductCommentsList = () => {
                     ) : error ? (
                         <p className="text-center text-red-500">{error}</p>
                     ) : comments.length === 0 ? (
-                        <p className="text-center text-gray-500">No hay comentarios disponibles.</p>
+                        <p className="text-center text-gray-500">
+                            No hay comentarios disponibles.
+                        </p>
                     ) : (
                         // Se usa flex-col-reverse para que el comentario más reciente aparezca en la parte superior
                         <div className="flex flex-col-reverse gap-4">
@@ -92,15 +93,14 @@ const SubproductCommentsList = () => {
                         hasPrevious={Boolean(previousPage)}
                     />
                 </div>
-            </div>
+            </Layout>
             {showSuccess && (
                 <SuccessMessage
                     message={successMessage}
                     onClose={() => setShowSuccess(false)}
                 />
             )}
-            <Footer />
-        </div>
+        </>
     );
 };
 

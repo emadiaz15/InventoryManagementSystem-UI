@@ -1,53 +1,147 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from "../components/common/Navbar";
-import Sidebar from "../components/common/Sidebar";
-import DashboardCard from "../components/DashboardCard";
-import Footer from "../components/common/Footer";
-import { useAuth } from '../context/AuthProvider';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Layout from "../pages/Layout";
+import { useAuth } from "../context/AuthProvider";
+import KanbanCard from "../components/kanban/KanbanCard";
+import KanbanColumn from "../components/kanban/KanbanColumn";
+
+const dummyCuttingOrders = [
+  {
+    id: 1,
+    state: "Orden Asignada",
+    subproduct: 101,
+    type: "Tipo A",
+    name: "Subproducto A",
+    description: "Descripción de Subproducto A",
+    customer: "Cliente A",
+    cutting_quantity: "100",
+    assigned_to: "Operador 1",
+    created_by: "Admin",
+    created_at: "2025-03-26T23:58:48.661Z",
+    modified_at: "2025-03-26T23:58:48.661Z",
+  },
+  {
+    id: 2,
+    state: "Orden en Proceso",
+    subproduct: 102,
+    type: "Tipo B",
+    name: "Subproducto B",
+    description: "Descripción de Subproducto B",
+    customer: "Cliente B",
+    cutting_quantity: "200",
+    assigned_to: "Operador 2",
+    created_by: "Admin",
+    created_at: "2025-03-26T23:58:48.661Z",
+    modified_at: "2025-03-26T23:58:48.661Z",
+  },
+  {
+    id: 3,
+    state: "Orden Completada",
+    subproduct: 103,
+    type: "Tipo C",
+    name: "Subproducto C",
+    description: "Descripción de Subproducto C",
+    customer: "Cliente C",
+    cutting_quantity: "150",
+    assigned_to: "Operador 3",
+    created_by: "Admin",
+    created_at: "2025-03-26T23:58:48.661Z",
+    modified_at: "2025-03-26T23:58:48.661Z",
+  },
+];
 
 const Dashboard = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [cuttingOrders, setCuttingOrders] = useState([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login'); // Redirigir a login si no está autenticado
+      navigate("/login");
+      return;
     }
+    setCuttingOrders(dummyCuttingOrders);
   }, [isAuthenticated, navigate]);
 
+  const ordersAsignada = cuttingOrders.filter(
+    (order) => order.state === "Orden Asignada"
+  );
+  const ordersEnProceso = cuttingOrders.filter(
+    (order) => order.state === "Orden en Proceso"
+  );
+  const ordersCompletada = cuttingOrders.filter(
+    (order) => order.state === "Orden Completada"
+  );
+
   return (
-    <div className="flex flex-col min-h-screen bg-background-100 text-text-primary">
-      {/* Navbar */}
-      <Navbar />
+    <Layout>
+      <div className="p-6 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <KanbanColumn
+            title="Orden Asignada"
+            count={ordersAsignada.length}
+            color="warning"
+          >
+            {ordersAsignada.length > 0 ? (
+              ordersAsignada.map((order) => (
+                <KanbanCard
+                  key={order.id}
+                  order={order}
+                  onAddToOrder={() => console.log("Agregar orden", order)}
+                  onEdit={() => console.log("Editar orden", order)}
+                  onDelete={() => console.log("Eliminar orden", order)}
+                  onViewComments={() => console.log("Ver comentarios", order)}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No hay órdenes asignadas.</p>
+            )}
+          </KanbanColumn>
 
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <div className="w-64 bg-background-200 shadow-md">
-          <Sidebar />
-        </div>
+          <KanbanColumn
+            title="Orden en Proceso"
+            count={ordersEnProceso.length}
+            color="success"
+          >
+            {ordersEnProceso.length > 0 ? (
+              ordersEnProceso.map((order) => (
+                <KanbanCard
+                  key={order.id}
+                  order={order}
+                  onAddToOrder={() => console.log("Agregar orden", order)}
+                  onEdit={() => console.log("Editar orden", order)}
+                  onDelete={() => console.log("Eliminar orden", order)}
+                  onViewComments={() => console.log("Ver comentarios", order)}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No hay órdenes en proceso.</p>
+            )}
+          </KanbanColumn>
 
-        {/* Contenido principal */}
-        <div className="flex-1 p-6">
-          <div className="p-6 border border-background-200 rounded-lg mt-16 shadow-lg">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              {/* Tarjetas del Dashboard */}
-              <DashboardCard icon={<svg className="w-6 h-6 text-primary-500" aria-hidden="true"><path d="M9 1v16M1 9h16" /></svg>} title="Card 1" />
-              <DashboardCard icon={<svg className="w-6 h-6 text-primary-500" aria-hidden="true"><path d="M9 1v16M1 9h16" /></svg>} title="Card 2" />
-              <DashboardCard icon={<svg className="w-6 h-6 text-primary-500" aria-hidden="true"><path d="M9 1v16M1 9h16" /></svg>} title="Card 3" />
-            </div>
-
-            {/* Tarjeta grande */}
-            <div className="flex items-center justify-center h-48 mb-6 rounded-lg bg-background-200 shadow-md">
-              <p className="text-2xl text-primary-200">Big Card</p>
-            </div>
-          </div>
+          <KanbanColumn
+            title="Orden Completada"
+            count={ordersCompletada.length}
+            color="primary"
+          >
+            {ordersCompletada.length > 0 ? (
+              ordersCompletada.map((order) => (
+                <KanbanCard
+                  key={order.id}
+                  order={order}
+                  onAddToOrder={() => console.log("Agregar orden", order)}
+                  onEdit={() => console.log("Editar orden", order)}
+                  onDelete={() => console.log("Eliminar orden", order)}
+                  onViewComments={() => console.log("Ver comentarios", order)}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500">No hay órdenes completadas.</p>
+            )}
+          </KanbanColumn>
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
-    </div>
+    </Layout>
   );
 };
 

@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../../components/common/Navbar";
-import Sidebar from "../../../components/common/Sidebar";
-import Footer from "../../../components/common/Footer";
 import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
-// Si tienes un modal para crear órdenes, por ejemplo
-// import CuttingOrderCreateModal from "../components/create/CuttingOrderCreateModal";
 import { listCuttingOrders } from "../services/listCuttingOrders";
 import { useAuth } from "../../../context/AuthProvider";
+import Layout from "../../../pages/Layout";
+import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
+import OrderFilter from "../components/OrderFilter";
 
 const CuttingOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -20,56 +18,55 @@ const CuttingOrders = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
-
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  // const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filters, setFilters] = useState({});
+  const [selectedDate, setSelectedDate] = useState(null);
 
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
 
-  // Definimos los encabezados de la tabla para Órdenes de Corte
   const headers = [
-    "ID",
+    "ID subproduct",
+    "Tipo",
+    "Medida",
     "Cliente",
-    "Producto",
-    "Cantidad a Cortar",
+    "Cantidad a cortar",
+    "Nro de Pedido",
+    "Asignado a",
+    "Creado por",
     "Estado",
-    "Acciones"
+    "Acciones",
   ];
 
-  // Función para cargar órdenes de corte de una página específica
-  const fetchOrders = async (url = "/cutting/orders/") => {
+  const fetchOrders = async (baseUrl = "/cutting/cutting-orders/") => {
     setLoadingOrders(true);
     try {
-      const data = await listCuttingOrders(url);
+      const queryParams = new URLSearchParams();
 
-      /**
-       * Suponiendo que tu backend devuelve:
-       * {
-       *   results: [...],
-       *   next: 'http://...',
-       *   previous: 'http://...',
-       *   count: 42
-       * }
-       *
-       * Si tu backend no tiene esa paginación, ajusta este bloque.
-       */
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value) queryParams.append(key, value);
+        });
+      }
+
+      if (selectedDate) {
+        queryParams.append("created_at", selectedDate); // Cambia esto si tu API espera otro campo
+      }
+
+      const finalUrl = `${baseUrl}?${queryParams.toString()}`;
+      const data = await listCuttingOrders(finalUrl);
+
       if (data && Array.isArray(data.results)) {
         setOrders(data.results);
         setNextPage(data.next);
         setPreviousPage(data.previous);
-        // Ejemplo: cada página tiene 10 items => totalPages
         setTotalPages(Math.ceil(data.count / 10));
-      }
-      else if (Array.isArray(data)) {
-        // Caso alternativo: si solo recibes array sin paginación
+      } else if (Array.isArray(data)) {
         setOrders(data);
-      }
-      else {
+      } else {
         setError(new Error("Formato de datos inválido en la respuesta de la API"));
       }
-
     } catch (err) {
       setError(err);
     } finally {
@@ -87,7 +84,6 @@ const CuttingOrders = () => {
     }
   }, [isAuthenticated, loading, navigate]);
 
-  // Funciones para manejar la paginación
   const handleNextPage = () => {
     if (nextPage) {
       fetchOrders(nextPage);
@@ -102,60 +98,60 @@ const CuttingOrders = () => {
     }
   };
 
-  // Muestra un mensaje de éxito y recarga la lista
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
     fetchOrders();
   };
 
-  // Lógica para crear orden (si tuvieras un modal)
-  // const handleCreateOrder = () => {
-  //   setShowCreateModal(true);
-  // };
-
-  // Lógica para búsqueda (placeholder)
-  const handleSearch = (query) => {
-    console.log("Buscar órdenes con el término:", query);
-    // Aquí podrías filtrar localmente o llamar a la API con query param
+  const handleView = (order) => {
+    console.log("Ver detalles de la orden:", order);
   };
 
-  // Lógica para editar / borrar (placeholder)
   const handleEdit = (order) => {
     console.log("Editar orden:", order);
   };
 
   const handleDelete = (orderId) => {
     console.log("Borrar orden:", orderId);
-    // Luego llamas a tu servicio para borrar y actualizas la lista
     handleShowSuccess(`Orden #${orderId} eliminada con éxito`);
   };
 
-  // Configuración de las filas para la tabla
   const rows = orders.map((order) => ({
-    "ID": order.id,
-    "Cliente": order.customer,
-    "Producto": String(order.product), // O si tienes más datos del producto
-    "Cantidad a Cortar": order.cutting_quantity,
-    "Estado": order.status,
-    "Acciones": (
-      <div className="space-x-2">
+    "ID subproduct": order.subproduct,
+    Tipo: order.type || "Sin tipo",
+    Medida: order.measure || "Sin medida",
+    Cliente: order.customer || "Sin cliente",
+    "Cantidad a cortar": order.cutting_quantity,
+    "Nro de Pedido": order.id,
+    "Asignado a": order.assigned_to || "Sin asignación",
+    "Creado por": order.created_by || "N/A",
+    Estado: order.status || "N/A",
+    Acciones: (
+      <div className="flex space-x-2">
+        <button
+          onClick={() => handleView(order)}
+          className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
+          aria-label="Ver detalles de la orden"
+        >
+          <EyeIcon className="w-5 h-5 text-white" />
+        </button>
         <button
           onClick={() => handleEdit(order)}
-          className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
+          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
           aria-label="Editar orden"
         >
-          Editar
+          <PencilIcon className="w-5 h-5 text-white" />
         </button>
         <button
           onClick={() => handleDelete(order.id)}
-          className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
+          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
           aria-label="Eliminar orden"
         >
-          Borrar
+          <TrashIcon className="w-5 h-5 text-white" />
         </button>
       </div>
-    )
+    ),
   }));
 
   if (error) {
@@ -163,21 +159,29 @@ const CuttingOrders = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-64">
-          <Sidebar />
-        </div>
-        <div className="flex-1 flex flex-col p-2 mt-14">
-          {/* Toolbar con búsqueda y botón de creación (si aplica) */}
-          <Toolbar
-            onSearch={handleSearch}
-            // onCreate={handleCreateOrder}
-            createButtonText="Nueva Orden"
-          />
+    <>
+      <Layout>
+        <div className="flex-1 flex flex-col p-1 mt-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
 
-          {/* Contenedor principal donde va la tabla */}
+
+            <OrderFilter
+              onFilterChange={(updatedFilters) => {
+                setFilters(updatedFilters);
+                fetchOrders();
+              }}
+              onDateChange={(date) => {
+                setSelectedDate(date);
+                fetchOrders();
+              }}
+            />
+            <Toolbar
+              onSearch={(query) => console.log("Buscar órdenes:", query)}
+              buttonText="Crear Order de Corte"
+            />
+          </div>
+
+          {/* 📋 Tabla */}
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             {loadingOrders ? (
               <p className="p-6">Cargando órdenes...</p>
@@ -186,7 +190,7 @@ const CuttingOrders = () => {
             )}
           </div>
 
-          {/* Paginación (si tu backend devuelve next/previous) */}
+          {/* 📄 Paginación */}
           <Pagination
             onNext={handleNextPage}
             onPrevious={handlePreviousPage}
@@ -194,9 +198,7 @@ const CuttingOrders = () => {
             hasPrevious={Boolean(previousPage)}
           />
         </div>
-      </div>
-
-      <Footer />
+      </Layout>
 
       {showSuccess && (
         <SuccessMessage
@@ -204,18 +206,7 @@ const CuttingOrders = () => {
           onClose={() => setShowSuccess(false)}
         />
       )}
-
-      {/* {showCreateModal && (
-        <CuttingOrderCreateModal
-          onClose={() => setShowCreateModal(false)}
-          onSave={(newOrder) => {
-            // Lógica para guardar la nueva orden y refrescar lista
-            handleShowSuccess("¡Orden de corte creada con éxito!");
-            setShowCreateModal(false);
-          }}
-        />
-      )} */}
-    </div>
+    </>
   );
 };
 

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../../../components/common/Navbar";
-import Sidebar from "../../../components/common/Sidebar";
-import Footer from "../../../components/common/Footer";
 import Toolbar from "../../../components/common/Toolbar";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import CommentCard from "../components/CommentCard"; // Componente de comentarios
 import { listProductComments } from "../services/listProductComments"; // Servicio para obtener comentarios
+import Layout from "../../../pages/Layout";
 
 const ProductCommentsList = () => {
     const { prod_pk } = useParams();
@@ -20,7 +18,9 @@ const ProductCommentsList = () => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
 
-    const fetchComments = async (url = `/inventory/products/${prod_pk}/comments/`) => {
+    const fetchComments = async (
+        url = `/inventory/products/${prod_pk}/comments/`
+    ) => {
         setLoading(true);
         setError(null);
         try {
@@ -68,11 +68,9 @@ const ProductCommentsList = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="flex flex-1">
-                <Sidebar />
-                <div className="flex-1 p-4 ml-64 mt-14">
+        <>
+            <Layout>
+                <div className="flex-1 p-4 mt-14">
                     <Toolbar
                         title="Comentarios del Producto"
                         extraButtons={
@@ -89,7 +87,9 @@ const ProductCommentsList = () => {
                     ) : error ? (
                         <p className="text-center text-red-500">{error}</p>
                     ) : comments.length === 0 ? (
-                        <p className="text-center text-gray-500">No hay comentarios disponibles.</p>
+                        <p className="text-center text-gray-500">
+                            No hay comentarios disponibles.
+                        </p>
                     ) : (
                         // Usamos flex-col-reverse para que el comentario más reciente aparezca en la parte superior
                         <div className="flex flex-col-reverse gap-4">
@@ -105,15 +105,14 @@ const ProductCommentsList = () => {
                         hasPrevious={Boolean(previousPage)}
                     />
                 </div>
-            </div>
+            </Layout>
             {showSuccess && (
                 <SuccessMessage
                     message={successMessage}
                     onClose={() => setShowSuccess(false)}
                 />
             )}
-            <Footer />
-        </div>
+        </>
     );
 };
 
