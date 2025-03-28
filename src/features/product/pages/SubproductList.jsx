@@ -4,7 +4,7 @@ import Toolbar from "../../../components/common/Toolbar";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import SubproductFormModal from "../components/SubproductFormModal";
-import SubproductCard from "../components/SubproductCard"; // Componente de tarjetas
+import SubproductCard from "../components/SubproductCard";
 import { listSubproducts } from "../services/listSubproducts";
 import Layout from "../../../pages/Layout";
 
@@ -73,8 +73,8 @@ const SubproductList = () => {
               <button
                 onClick={() => navigate(`/products/${productId}/create-subproduct`)}
                 className="ml-2 text-white bg-secondary-500 hover:bg-secondary-600 px-4 py-2 rounded"
-                buttonText="Crear Subproducto"
               >
+                Crear Subproducto
               </button>
             }
           />
@@ -90,12 +90,11 @@ const SubproductList = () => {
                 <SubproductCard
                   key={subproduct.id}
                   subproduct={subproduct}
-                  onAddToOrder={() =>
-                    console.log(`Agregado ${subproduct.name} al carrito`)
-                  }
+                  onAddToOrder={() => console.log(`Agregado ${subproduct.name} al carrito`)}
                   onEdit={() => console.log("Editar subproducto", subproduct)}
                   onDelete={() => console.log("Eliminar subproducto", subproduct)}
-                  onViewComments={() => navigate(`/subproducts/${subproduct.id}/comments`)}
+                  onViewDetails={() => console.log("Ver detalles", subproduct)}
+                  onViewStock={() => navigate(`/subproducts/${subproduct.id}/stock-history`)}
                 />
               ))}
             </div>
