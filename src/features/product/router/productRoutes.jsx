@@ -4,7 +4,8 @@ import ProtectedRoute from '../../../components/common/ProtectedRoute';
 
 import ProductList from '../pages/ProductList';
 import SubproductList from '../pages/SubproductList';
-import ProductCommentsList from '../pages/ProductCommentsList';
+import ProductStockEvent from '../pages/ProductStockEvent';
+import SubproductStockEvent from '../pages/SubproductStockEvent';
 
 const productRoutes = [
   <Route
@@ -26,14 +27,23 @@ const productRoutes = [
     }
   />,
   <Route
-    key="product-comments-list"
-    path="/products/:prod_pk/comments"
+    key="product-stock-events"
+    path="/product-stock-history/:productId"
     element={
       <ProtectedRoute>
-        <ProductCommentsList />
+        <ProductStockEvent />
       </ProtectedRoute>
     }
   />,
+  <Route
+    key="subproduct-stock-history"
+    path="/subproducts/:subproductId/stock-history"
+    element={
+      <ProtectedRoute>
+        <SubproductStockEvent />
+      </ProtectedRoute>
+    }
+  />
 ];
 
 export default productRoutes;

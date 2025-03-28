@@ -17,6 +17,7 @@ import {
   TrashIcon,
   FolderIcon,
   ChatBubbleLeftIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import ProductViewModal from "../components/ProductViewModal";
 import ProductCarouselOverlay from "../components/ProductCarouselOverlay";
@@ -120,7 +121,7 @@ const ProductsList = () => {
     fetchProducts();
     setTimeout(() => { }, 2000);
   };
-  
+
   const rows =
     products.length > 0
       ? products.map((product) => ({
@@ -153,11 +154,11 @@ const ProductsList = () => {
               <PencilIcon className="w-5 h-5 text-white" />
             </button>
             <button
-              onClick={() => handleViewComments(product)}
-              className="bg-green-500 p-2 rounded hover:bg-green-600 transition-colors"
-              aria-label="View product comments"
+              onClick={() => navigate(`/product-stock-history/${product.id}`)}
+              className="bg-yellow-500 p-2 rounded hover:bg-yellow-600 transition-colors"
+              aria-label="Ver historial de stock"
             >
-              <ChatBubbleLeftIcon className="w-5 h-5 text-white" />
+              <ClockIcon className="w-5 h-5 text-white" />
             </button>
             <button
               onClick={() => handleDeleteProduct(product)}
@@ -184,14 +185,14 @@ const ProductsList = () => {
           {error ? (
             <div className="text-red-500 text-center mt-4">{error}</div>
           ) : (
-            
+
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
               <Table
                 headers={[
                   "Código",
                   "Tipo",
                   "Nombre",
-                  "Cantidad",
+                  "Stock",
                   "Categoría",
                   "Acciones",
                 ]}

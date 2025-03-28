@@ -74,11 +74,16 @@ const Dashboard = () => {
   );
 
   return (
+    // Dentro del return de Dashboard
     <Layout>
-      <div className="p-6 mt-16">
+      <div className="p-10 mt-4">
+        <h1 className="text-2xl font-bold text-start mb-6 text-gray-800">
+          Órdenes de Corte
+        </h1>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KanbanColumn
-            title="Orden Asignada"
+            title="Pendiente"
             count={ordersAsignada.length}
             color="warning"
           >
@@ -99,7 +104,7 @@ const Dashboard = () => {
           </KanbanColumn>
 
           <KanbanColumn
-            title="Orden en Proceso"
+            title="En Proceso"
             count={ordersEnProceso.length}
             color="success"
           >
@@ -120,7 +125,7 @@ const Dashboard = () => {
           </KanbanColumn>
 
           <KanbanColumn
-            title="Orden Completada"
+            title="Completada"
             count={ordersCompletada.length}
             color="primary"
           >
@@ -142,6 +147,7 @@ const Dashboard = () => {
         </div>
       </div>
     </Layout>
+
   );
 };
 
