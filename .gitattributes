@@ -1,8 +1,0 @@
-.env merge=keep
-vite.config.js merge=keep
-Dockerfile merge=keep
-package-lock.json merge=keep
-server.js merge=keep
-src/services/api.js merge=keep
-package.json merge=keep
-nginx.conf merge=keep
