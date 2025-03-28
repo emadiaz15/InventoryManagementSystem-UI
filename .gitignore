@@ -136,7 +136,6 @@ dist
 .pnp.*
 node_modules
 
-
 .env
 vite.config.js
 Dockerfile
@@ -145,3 +144,4 @@ server.js
 src/services/api.js
 package.json
 nginx.conf
+.vite/
