@@ -1,6 +1,8 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  plugins: [react()],
   server: {
     // El puerto es configurado por Railway en la variable de entorno PORT
     port: process.env.PORT || 3000,  // Usa el puerto de Railway, o 3000 por defecto
