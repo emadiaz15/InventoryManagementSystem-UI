@@ -1,13 +1,13 @@
 import React from "react";
+import Modal from '../../../components/ui/Modal'; // Asegúrate de que la ruta sea correcta
 
 const CategoryViewModal = ({ category, onClose }) => {
     if (!category) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h2 className="text-xl font-bold mb-4">Detalles de la Categoría</h2>
-                <div className="space-y-2">
+        <Modal isOpen={true} onClose={onClose} title="Detalles de la Categoría">
+            <div className="flex flex-col h-full"> {/* Contenedor principal con Flexbox */}
+                <div className="space-y-2 flex-grow"> {/* Contenedor para el contenido principal */}
                     <p>
                         <strong>ID:</strong> {category.id}
                     </p>
@@ -44,7 +44,7 @@ const CategoryViewModal = ({ category, onClose }) => {
                         {category.deleted_by ? category.deleted_by : "N/A"}
                     </p>
                 </div>
-                <div className="mt-4 flex justify-end">
+                <div className="flex justify-end mt-4"> {/* Contenedor para el botón "Cerrar" */}
                     <button
                         onClick={onClose}
                         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
@@ -53,7 +53,7 @@ const CategoryViewModal = ({ category, onClose }) => {
                     </button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 

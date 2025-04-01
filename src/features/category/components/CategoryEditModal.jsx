@@ -3,8 +3,9 @@ import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import SuccessMessage from '../../../components/common/SuccessMessage';
 import ErrorMessage from '../../../components/common/ErrorMessage';
+import { listCategories } from '../services/listCategory'; // Importa listCategories
 
-const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
+const CategoryEditModal = ({ category, isOpen, onClose, onSaveSuccess }) => {
   const [formData, setFormData] = useState({
     name: category.name,
     description: category.description || "",
@@ -12,6 +13,7 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
   });
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [categories, setCategories] = useState([]); // Almacena todas las categorías
 
   useEffect(() => {
     if (category) {
@@ -22,6 +24,18 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
       });
     }
   }, [category]);
+
+  useEffect(() => {
+    const fetchAllCategories = async () => {
+      try {
+        const response = await listCategories();
+        setCategories(response.results || []);
+      } catch (err) {
+        console.error("Error al obtener las categorías:", err);
+      }
+    };
+    fetchAllCategories();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,28 +49,31 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
     e.preventDefault();
     setError("");
 
+    // Verificar si el nombre ya existe (excluyendo la categoría actual)
+    const nameExists = categories.some(
+      (cat) => cat.name === formData.name && cat.id !== category.id
+    );
+
+    if (nameExists) {
+      setError("El nombre de la categoría ya existe. Debe ser único.");
+      return;
+    }
+
     try {
-      await onSave(category.id, formData);
+      await onSaveSuccess(formData);
       setSuccessMessage("Categoría actualizada con éxito");
       setTimeout(() => {
         setSuccessMessage("");
         onClose();
       }, 3000);
     } catch (err) {
-      console.error("Error al actualizar la categoría:", err);
-
-      if (err.response && err.response.data && err.response.data.name) {
-        setError("El nombre de la categoría ya existe. Debe ser único.");
-      } else {
-        setError("Hubo un problema al actualizar la categoría. Inténtalo de nuevo.");
-      }
+      handleError(err);
     }
   };
 
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete(category);
-    }
+  const handleError = (err) => {
+    console.error("Error al actualizar la categoría:", err);
+    setError("Hubo un problema al actualizar la categoría. Inténtalo de nuevo.");
   };
 
   return (
@@ -79,14 +96,7 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSave, onDelete }) => {
             value={formData.description}
             onChange={handleChange}
           />
-          <div className="flex justify-between mt-4">
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
-            >
-              Eliminar
-            </button>
+          <div className="flex justify-end mt-4">
             <div className="flex space-x-2">
               <button
                 type="button"

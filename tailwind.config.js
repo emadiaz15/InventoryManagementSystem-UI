@@ -20,7 +20,7 @@ module.exports = {
           200: '#aeb6bf', // Fondo secundario
         },
         text: {
-          primary: '#17202a ', // Texto principal
+          primary: '#17202a', // Texto principal
           secondary: '#1c2638', // Texto secundario
           white: '#f4f6f7', // Texto blanco
         },

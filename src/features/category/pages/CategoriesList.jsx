@@ -1,227 +1,152 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Toolbar from "../../../components/common/Toolbar";
-import Table from "../../../components/common/Table";
-import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
-import CategoryCreateModal from "../components/CategoryCreateModal";
-import CategoryEditModal from "../components/CategoryEditModal";
-import CategoryViewModal from "../components/CategoryViewModal";
+import ErrorMessage from "../../../components/common/ErrorMessage";
 import { listCategories } from "../services/listCategory";
 import { updateCategory } from "../services/updateCategory";
-import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
+import Filter from "../../../components/ui/Filter";
 import Layout from "../../../pages/Layout";
+import Spinner from "../../../components/ui/Spinner";
+import CategoryTable from "../components/CategoryTable";
+import CategoryModals from "../components/CategoryModals";
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1); // Página actual
-  const [totalPages, setTotalPages] = useState(1);
-  const [nextPage, setNextPage] = useState(null);
-  const [previousPage, setPreviousPage] = useState(null);
+  const [nextPageUrl, setNextPageUrl] = useState(null);
+  const [previousPageUrl, setPreviousPageUrl] = useState(null);
+  const [currentPageUrl, setCurrentPageUrl] = useState("/inventory/categories/");
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false); // Para mostrar modal de vista
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState(null); // Categoría a eliminar
+  const [modalState, setModalState] = useState({ type: null, category: null });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const [filters, setFilters] = useState({ name: "" });
 
-  const headers = ["Nombre de Categoría", "Descripción", "Acciones"];
-
-  // Función para obtener las categorías activas con paginación
-  const fetchCategories = async (url = "/inventory/categories/") => {
-    setLoadingCategories(true);
+  const fetchCategories = useCallback(async (url) => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await listCategories(url);
-      setCategories(response.results);
-      setNextPage(response.next);
-      setPreviousPage(response.previous);
-      setTotalPages(Math.ceil(response.count / 10));
-    } catch (error) {
-      setError("Error al obtener las categorías.");
+      setCategories(response.results || []); // Asegúrate de actualizar el estado con los nuevos resultados
+      setNextPageUrl(response.next);
+      setPreviousPageUrl(response.previous);
+      setCurrentPageUrl(url);
+    } catch (err) {
+      setError(err.message || "Error al obtener las categorías.");
     } finally {
-      setLoadingCategories(false);
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchCategories();
   }, []);
 
-  // Funciones de paginación
-  const handleNextPage = () => {
-    if (nextPage) {
-      fetchCategories(nextPage);
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  useEffect(() => {
+    fetchCategories(currentPageUrl);
+  }, [fetchCategories, currentPageUrl]);
 
-  const handlePreviousPage = () => {
-    if (previousPage) {
-      fetchCategories(previousPage);
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  // Función para mostrar mensajes de éxito
-  const handleShowSuccess = (message) => {
+  const handleActionSuccess = useCallback((message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
-    fetchCategories();
-  };
+    closeModal();
+    fetchCategories(currentPageUrl);
+    setTimeout(() => setShowSuccess(false), 3000);
+  }, [currentPageUrl]);
 
-  // Abrir modal para eliminación
-  const handleToggleStatus = (category) => {
-    setCategoryToDelete(category);
-    setShowConfirmDialog(true);
-  };
-
-  // Confirmar eliminación (cambio de estado a false)
-  const confirmDelete = async () => {
-    if (categoryToDelete) {
-      try {
-        const dataToSend = {
-          name: categoryToDelete.name,
-          description: categoryToDelete.description,
-          status: false,
-        };
-        await updateCategory(categoryToDelete.id, dataToSend);
-        fetchCategories();
-        setShowConfirmDialog(false);
-        handleShowSuccess("Categoría eliminada correctamente.");
-      } catch (error) {
-        setError("Error al cambiar el estado de la categoría.");
-      }
+  const handleDeleteCategory = useCallback(async (category) => {
+    if (!category) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await updateCategory(category.id, { ...category, status: false });
+      handleActionSuccess(`Categoría "${category.name}" eliminada (desactivada).`);
+    } catch (err) {
+      setDeleteError(err.message || "Error al eliminar la categoría.");
+    } finally {
+      setIsDeleting(false);
     }
+  }, [currentPageUrl]);
+
+  const handleUpdateCategory = useCallback(async (categoryId, updatedData) => {
+    try {
+      await updateCategory(categoryId, updatedData);
+      handleActionSuccess(`Categoría "${updatedData.name}" actualizada.`);
+    } catch (err) {
+      setError(err.message || "Error al actualizar la categoría.");
+    }
+  }, [currentPageUrl]);
+
+  const openCreateModal = useCallback(() => setModalState({ type: 'create', category: null }), []);
+  const openEditModal = useCallback((category) => setModalState({ type: 'edit', category }), []);
+  const openViewModal = useCallback((category) => setModalState({ type: 'view', category }), []);
+  const openDeleteConfirmModal = useCallback((category) => setModalState({ type: 'deleteConfirm', category }), []);
+  const closeModal = useCallback(() => setModalState({ type: null, category: null }), []);
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
   };
 
-  // Cancelar eliminación
-  const cancelDelete = () => {
-    setShowConfirmDialog(false);
+  const columns = useMemo(() => [{ key: "name", label: "Nombre", filterable: true }], []);
+
+  const buildQueryString = (filterObj) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(filterObj).forEach(([key, value]) => {
+      if (value) {
+        queryParams.append(key, value);
+      }
+    });
+    return queryParams.toString() ? `?${queryParams.toString()}` : "";
   };
 
-  // Crear filas para la tabla (convertir datos a mayúsculas y controlar valores nulos)
-  const rows = categories.map((category) => ({
-    "Nombre de Categoría": (category.name || "").toUpperCase(),
-    "Descripción": (category.description || "Sin descripción").toUpperCase(),
-    "Acciones": (
-      <div className="flex space-x-2">
-        <button
-          onClick={() => {
-            setSelectedCategory(category);
-            setShowViewModal(true);
-          }}
-          className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
-          aria-label="Ver detalles"
-        >
-          <EyeIcon className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={() => {
-            setSelectedCategory(category);
-            setShowEditModal(true);
-          }}
-          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
-          aria-label="Editar categoría"
-        >
-          <PencilIcon className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={() => handleToggleStatus(category)}
-          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
-          aria-label="Eliminar categoría"
-        >
-          <TrashIcon className="w-5 h-5 text-white" />
-        </button>
-      </div>
-    ),
-  }));
+  const fetchFilteredCategories = useCallback(async () => {
+    const query = buildQueryString(filters);
+    const url = `/inventory/categories/${query ? `?${query}` : ''}`;
+    fetchCategories(url);
+  }, [filters, fetchCategories]);
+
+  useEffect(() => {
+    fetchFilteredCategories();
+  }, [fetchFilteredCategories]);
 
   return (
     <>
       <Layout>
-        <div className="flex-1 mt-14 rounded-lg">
-          <div className="p-2 border-gray-200 rounded-lg dark:border-gray-700">
-            <Toolbar
-              title="Lista de Categorías"
-              onButtonClick={() => setShowCreateModal(true)}
-              buttonText="Crear Categoría"
+        {showSuccess && <div className="fixed top-20 right-5 z-[10000]"><SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} /></div>}
+        <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
+          <Toolbar title="Lista de Categorías" onButtonClick={openCreateModal} buttonText="Nueva Categoría" />
+          <Filter columns={columns} onFilterChange={handleFilterChange} />
+          {error && <div className="my-4"><ErrorMessage message={error} onClose={() => setError(null)} /></div>}
+          {loading && <div className="flex justify-center items-center h-64"> <Spinner /> </div>}
+          {!loading && !error && categories.length === 0 && (
+            <div className="text-center py-10 px-4 bg-background-50 rounded-lg shadow-sm">
+              <p className="text-text-secondary">No se encontraron categorías.</p>
+              <button onClick={openCreateModal} className="mt-4 bg-primary-500 text-white py-2 px-4 rounded-md hover:bg-primary-600">Crear la Primera Categoría</button>
+            </div>
+          )}
+          {!loading && !error && categories.length > 0 && (
+            <CategoryTable
+              categories={categories}
+              openViewModal={openViewModal}
+              openEditModal={openEditModal}
+              openDeleteConfirmModal={openDeleteConfirmModal}
+              goToNextPage={() => nextPageUrl && fetchCategories(nextPageUrl)}
+              goToPreviousPage={() => previousPageUrl && fetchCategories(previousPageUrl)}
+              nextPageUrl={nextPageUrl}
+              previousPageUrl={previousPageUrl}
             />
-            {error ? (
-              <p className="text-red-500">{error}</p>
-            ) : loadingCategories ? (
-              <p>Cargando...</p>
-            ) : (
-              <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
-                <Table headers={headers} rows={rows} />
-              </div>
-            )}
-          </div>
-          <Pagination
-            onNext={handleNextPage}
-            onPrevious={handlePreviousPage}
-            hasNext={Boolean(nextPage)}
-            hasPrevious={Boolean(previousPage)}
-          />
+          )}
         </div>
       </Layout>
-
-      {showCreateModal && (
-        <CategoryCreateModal onClose={() => setShowCreateModal(false)} />
-      )}
-      {showEditModal && selectedCategory && (
-        <CategoryEditModal
-          category={selectedCategory}
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          onSave={async (id, updatedData) => {
-            await updateCategory(id, updatedData);
-            handleShowSuccess("Categoría actualizada correctamente.");
-            setShowEditModal(false);
-          }}
-          onDelete={handleToggleStatus}
-        />
-      )}
-      {showViewModal && selectedCategory && (
-        <CategoryViewModal
-          category={selectedCategory}
-          onClose={() => setShowViewModal(false)}
-        />
-      )}
-      {showSuccess && (
-        <SuccessMessage
-          message={successMessage}
-          onClose={() => setShowSuccess(false)}
-        />
-      )}
-      {showConfirmDialog && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-          style={{ zIndex: 9999 }}
-        >
-          <div className="bg-white p-6 rounded shadow-lg transition-all">
-            <h3 className="text-lg font-semibold text-text-primary">
-              ¿Estás seguro de que deseas eliminar esta categoría?
-            </h3>
-            <div className="mt-4 flex justify-end space-x-4">
-              <button
-                className="px-4 py-2 bg-warning-500 text-white rounded-lg hover:bg-warning-600 transition-colors"
-                onClick={cancelDelete}
-              >
-                Cancelar
-              </button>
-              <button
-                className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-error-600 transition-colors"
-                onClick={confirmDelete}
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CategoryModals
+        modalState={modalState}
+        closeModal={closeModal}
+        handleUpdateCategory={handleUpdateCategory}
+        handleDeleteCategory={handleDeleteCategory}
+        isDeleting={isDeleting}
+        deleteError={deleteError}
+        clearDeleteError={() => setDeleteError(null)}
+        handleActionSuccess={handleActionSuccess}
+        fetchCategories={fetchCategories}
+      />
     </>
   );
 };
