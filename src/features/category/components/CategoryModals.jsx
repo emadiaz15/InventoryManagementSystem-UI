@@ -24,12 +24,10 @@ const CategoryModals = ({
         <>
             {modalState.type === "create" && (
                 <CategoryCreateModal
-                    {...commonProps}
+                    isOpen={modalState.type === "create"}
+                    onClose={closeModal}
                     onCreateSuccess={(message) => {
                         handleActionSuccess(message || "Categoría creada con éxito.");
-                        if (fetchCategories) {
-                            fetchCategories("/inventory/categories/");
-                        }
                     }}
                 />
             )}

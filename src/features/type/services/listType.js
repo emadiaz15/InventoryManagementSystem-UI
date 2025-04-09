@@ -1,21 +1,23 @@
-import { axiosInstance } from '../../../services/api'; // Asegúrate de usar tu instancia configurada de Axios
+// src/features/type/services/listType.js (Versión que devuelve datos crudos)
+import { axiosInstance } from "/src/services/api.js"; // Ajusta ruta si es necesario
 
-export const listTypes = async (url = '/inventory/types/') => {  // Aquí agregamos el prefijo '/api/v1'
+export const listTypes = async (url = '/inventory/types/') => {
   try {
-    const response = await axiosInstance.get(url);  // Axios ya maneja automáticamente el token
-    console.log('Respuesta de la API:', response.data);  // Verifica que la respuesta sea correcta
-
-    const activeTypes = response.data.results.filter((type) => type.status);
-
-    return {
-      activeTypes,
-      nextPage: response.data.next,
-      previousPage: response.data.previous,
-    };
+    const response = await axiosInstance.get(url);
+    console.log('Respuesta de la API (listTypes - raw data):', response.data);
+    // Devuelve directamente la data de la respuesta (results, next, previous, count)
+    return response.data;
   } catch (error) {
-    console.error('Error al obtener la lista de tipos:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.detail || 'Error al obtener la lista de tipos.');
+    console.error('Error en listTypes (raw data):', error.response?.data || error.message);
+    if (error.response) {
+      if (error.response.status === 404) throw new Error('Tipos no encontrados.');
+      if (error.response.status === 500) throw new Error('Error interno del servidor.');
+      throw new Error(error.response.data?.detail || 'Error al obtener la lista de tipos.');
+    } else if (error.request) {
+      throw new Error('No se pudo conectar con el servidor.');
+    } else {
+      throw new Error('Error en la configuración de la solicitud.');
+    }
   }
 };
-
-export default listTypes;
+// No necesita export default

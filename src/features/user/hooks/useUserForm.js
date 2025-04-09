@@ -1,123 +1,107 @@
-import { useState } from 'react';
-import { registerUser } from '../services/registerUser';
+// ============== ARCHIVO REFACTORIZADO: src/hooks/useUserForm.js ==============
+import { useState, useCallback } from 'react'; // Quitamos useEffect si no se usa
+import { registerUser } from '../services/registerUser'; // Importamos el servicio
 
-const useUserForm = (onSave, showSuccessPrompt) => {
+// Acepta un callback onSuccess en lugar de onSave y showSuccessPrompt
+const useUserForm = (onSuccess = () => {}) => { // Default a función vacía
   const [formData, setFormData] = useState({
-    username: '',
-    name: '',
-    last_name: '',
-    email: '',
-    dni: '',
-    image: null,
-    is_active: true,
-    is_staff: false,
-    password: '',
-    confirmPassword: '',
+    username: '', name: '', last_name: '', email: '', dni: '',
+    image: null, is_active: true, is_staff: false, password: '', confirmPassword: '',
   });
-
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [validationErrors, setValidationErrors] = useState({});
+  const [error, setError] = useState(null); // Para errores generales/API
+  const [validationErrors, setValidationErrors] = useState({}); // Para errores de campo
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value, type, checked, files } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === 'checkbox'
-        ? checked
-        : type === 'file'
-        ? files[0]
-        : value,
+      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value,
     }));
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Función para resetear el formulario
+   const resetForm = useCallback(() => {
+     setFormData({
+       username: '', name: '', last_name: '', email: '', dni: '',
+       image: null, is_active: true, is_staff: false, password: '', confirmPassword: '',
+     });
+     setError(null);
+     setValidationErrors({});
+   }, []);
 
-    // Reset errores anteriores
+  const handleSubmit = useCallback(async (e) => {
+    if (e) e.preventDefault(); // Prevenir default si se pasa evento
+
     setError(null);
     setValidationErrors({});
 
-    // **📌 Validaciones en el frontend antes de enviar la solicitud**
+    // Validaciones frontend (como las tenías)
     let errors = {};
+    if (!formData.username) errors.username = 'El nombre de usuario es obligatorio.';
+    if (!formData.email) errors.email = 'El email es obligatorio.';
+    if (!formData.dni.match(/^\d{7,11}$/)) errors.dni = 'El DNI debe tener entre 7 y 11 dígitos numéricos.';
+    if (formData.password.length < 4) errors.password = ['La contraseña debe tener al menos 4 caracteres.']; // Array para consistencia con backend
+    if (formData.password !== formData.confirmPassword) errors.confirmPassword = ['Las contraseñas no coinciden.']; // Array
 
-    if (!formData.username) {
-      errors.username = 'El nombre de usuario es obligatorio.';
-    }
-
-    if (!formData.email) {
-      errors.email = 'El email es obligatorio.';
-    }
-
-    if (!formData.dni.match(/^\d{7,11}$/)) {
-      errors.dni = 'El DNI debe tener entre 7 y 11 dígitos numéricos.';
-    }
-
-    if (formData.password.length < 4) {
-      errors.password = 'La contraseña debe tener al menos 4 caracteres.';
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Las contraseñas no coinciden.';
-    }
-
-    // Si hay errores, los mostramos y detenemos el registro
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      return;
+      throw new Error("Errores de validación en el formulario."); // Lanzar error para que el modal lo sepa
     }
 
     setLoading(true);
 
-    try {
-      let dataToSend = { ...formData };
-
-      // **Si hay imagen, usar FormData**
-      if (formData.image instanceof File) {
-        const formDataObj = new FormData();
-        Object.keys(dataToSend).forEach((key) => {
-          formDataObj.append(key, dataToSend[key]);
-        });
-        dataToSend = formDataObj;
-      }
-
-      // **Envío de datos al backend**
-      await registerUser(dataToSend);
-
-      if (showSuccessPrompt) {
-        showSuccessPrompt('¡Usuario registrado con éxito!');
-      }
-
-      // **Reiniciar formulario tras éxito**
-      setFormData({
-        username: '',
-        name: '',
-        last_name: '',
-        email: '',
-        dni: '',
-        image: null,
-        is_active: true,
-        is_staff: false,
-        password: '',
-        confirmPassword: '',
+    // Prepara datos para enviar (FormData si hay imagen)
+    let dataToSend;
+    if (formData.image instanceof File) {
+      dataToSend = new FormData();
+      Object.keys(formData).forEach((key) => {
+          // No enviar confirmPassword al backend
+          if (key !== 'confirmPassword') {
+              // Convertir booleanos a string 'true'/'false' si el backend lo espera así para FormData
+              let value = formData[key];
+              if (typeof value === 'boolean') {
+                  value = value ? 'true' : 'false';
+              }
+              dataToSend.append(key, value);
+          }
       });
+    } else {
+      // Enviar JSON si no hay imagen
+      const { image, confirmPassword, ...rest } = formData; // Excluir imagen y confirmPassword
+      dataToSend = rest;
+    }
 
-      onSave();
+
+    try {
+      // Envío al backend usando el servicio importado
+      const createdUser = await registerUser(dataToSend); // Llama al servicio
+
+      // --- ÉXITO ---
+      // Llama al callback onSuccess pasado como prop
+      onSuccess(createdUser); // Pasa el usuario creado al callback
+      // resetForm(); // El componente padre decidirá si resetear o no después del éxito
+
+      return createdUser; // Devolver usuario por si el caller lo necesita
+
     } catch (error) {
-      console.error('❌ Error al registrar usuario:', error);
-
-      // **Si el backend devuelve errores específicos, los mostramos**
-      if (error.response?.data) {
+      console.error('❌ Error al registrar usuario (hook):', error);
+      // Manejo de errores (como lo tenías)
+      if (error.response?.data && typeof error.response.data === 'object') {
         setValidationErrors(error.response.data);
+        setError("Por favor corrige los errores.");
       } else {
         setError(error.message || 'Error al registrar el usuario.');
       }
+      throw error; // Relanzar el error para que el componente lo capture
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData, onSuccess]); // Depende de formData y onSuccess
 
-  return { formData, handleChange, handleSubmit, loading, error, validationErrors };
+  // Devolvemos resetForm también
+  return { formData, handleChange, handleSubmit, loading, error, validationErrors, resetForm };
 };
 
 export default useUserForm;
+// ============== FIN useUserForm.js ==============

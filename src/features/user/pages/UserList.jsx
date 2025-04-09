@@ -1,278 +1,248 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useCallback, useMemo } from "react";
 import Toolbar from "../../../components/common/Toolbar";
-import Table from "../../../components/common/Table";
-import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
-import UserRegisterModal from "../components/UserRegisterModal";
-import UserEditModal from "../components/UserEditModal";
-import UserModalView from "../components/UserModalView";
-import { listUsers } from "../services/listUsers";
-import { updateUser } from "../services/updateUser";
-import { useAuth } from "../../../context/AuthProvider";
+import ErrorMessage from "../../../components/common/ErrorMessage";
 import Filter from "../../../components/ui/Filter";
-import { PencilIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
-import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import Layout from "../../../pages/Layout";
+import Spinner from "../../../components/ui/Spinner";
+import UserTable from "../components/UserTable";
+import UserModals from "../components/UserModals";
+
+// Servicios API
+import { registerUser } from "../services/registerUser";
+import { updateUser } from "../services/updateUser";
+import { resetUserPassword } from "../services/resetUserPassword";
+import { deleteUser } from "../services/deleteUser";
+
+// Hook useUsers
+import useUsers from "../hooks/useUsers";
 
 const UserList = () => {
-  const [users, setUsers] = useState([]);
-  const [error, setError] = useState(null);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [nextPage, setNextPage] = useState(null);
-  const [previousPage, setPreviousPage] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false); // Estado para modal de vista
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false); // Confirmación de eliminación
-  const [userToDelete, setUserToDelete] = useState(null); // Usuario a eliminar
-  const { isAuthenticated, loading } = useAuth();
-  const navigate = useNavigate();
-
   const [filters, setFilters] = useState({
     full_name: "",
     dni: "",
-    is_active: "Activo",
-    is_staff: ""
+    is_active: "true",
+    is_staff: "",
   });
 
-  const headers = [
-    "Nombre de usuario",
-    "Nombre Completo",
-    "Email",
-    "DNI",
-    "Imagen",
-    "Estado",
-    "Administrador",
-    "Acciones"
-  ];
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [modalState, setModalState] = useState({ type: null, userData: null });
 
-  const filterColumns = [
-    { key: "full_name", label: "Nombre y Apellido", filterable: true },
-    { key: "dni", label: "DNI", filterable: true },
-    { key: "is_active", label: "Estado", filterable: true },
-    { key: "is_staff", label: "Administrador", filterable: true }
-  ];
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [actionError, setActionError] = useState(null);
 
-  const buildQueryString = (filterObj) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(filterObj).forEach(([key, value]) => {
-      if (value) {
-        if (key === "is_active") {
-          value = value.toLowerCase() === "activo" ? "true" : "false";
-        }
-        if (key === "is_staff") {
-          value =
-            value.toLowerCase() === "sí"
-              ? "true"
-              : value.toLowerCase() === "no"
-                ? "false"
-                : "";
-        }
-        queryParams.append(key, value);
-      }
-    });
-    return queryParams.toString() ? `?${queryParams.toString()}` : "";
-  };
+  // Hook useUsers
+  const {
+    users,
+    loadingUsers,
+    error: fetchError,
+    nextPageUrl,
+    previousPageUrl,
+    fetchUsers,
+    next: goToNextPage,
+    previous: goToPreviousPage,
+    currentUrl: currentUsersUrl,
+  } = useUsers(filters);
 
-  const fetchUsers = async (url) => {
-    setLoadingUsers(true);
-    try {
-      const query = buildQueryString(filters);
-      const endpoint = url || `/users/list/${query}`;
-      const data = await listUsers(endpoint);
-      if (data && Array.isArray(data.results)) {
-        setUsers(data.results);
-        setNextPage(data.next);
-        setPreviousPage(data.previous);
-      } else {
-        setError("Error en el formato de los datos de la API");
-      }
-    } catch (error) {
-      setError(error.message || "Error al obtener los usuarios.");
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+  const filterColumns = useMemo(() => [
+    { key: "full_name", label: "Nombre y Apellido", filterType: "text" },
+    { key: "dni", label: "DNI", filterType: "text" },
+    {
+      key: "is_active",
+      label: "Estado",
+      filterType: "select",
+      options: [
+        { value: "", label: "Todos" },
+        { value: "true", label: "Activo" },
+        { value: "false", label: "Inactivo" },
+      ],
+    },
+    {
+      key: "is_staff",
+      label: "Rol",
+      filterType: "select",
+      options: [
+        { value: "", label: "Todos" },
+        { value: "true", label: "Admin" },
+        { value: "false", label: "Operario" },
+      ],
+    },
+  ], []);
 
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      fetchUsers();
-    }
-  }, [filters, isAuthenticated, loading]);
+  // Handlers para modales
+  const openCreateModal = useCallback(() => {
+    setModalState({ type: "create", userData: null });
+  }, []);
+  const openEditModal = useCallback((user) => {
+    setModalState({ type: "edit", userData: user });
+  }, []);
+  const openViewModal = useCallback((user) => {
+    setModalState({ type: "view", userData: user });
+  }, []);
+  const openDeleteConfirmModal = useCallback((user) => {
+    setModalState({ type: "deleteConfirm", userData: user });
+  }, []);
+  const closeModal = useCallback(() => {
+    setModalState({ type: null, userData: null });
+    setActionError(null);
+  }, []);
 
-  const handleShowSuccess = (message) => {
+  // Handler de éxito general
+  const handleActionSuccess = useCallback((message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
-    fetchUsers();
-  };
+    closeModal(); // Cierra modal
+    fetchUsers(currentUsersUrl); // Recarga la tabla
+    setTimeout(() => setShowSuccess(false), 3000);
+  }, [closeModal, fetchUsers, currentUsersUrl]);
 
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-  };
-
-  // Solicitar eliminación del usuario
-  const handleRequestDeleteUser = (user) => {
-    setUserToDelete(user);
-    setShowConfirmDialog(true);
-  };
-
-  // Confirmar eliminación (soft delete)
-  const handleConfirmDeleteUser = async () => {
-    if (userToDelete) {
-      try {
-        await updateUser(userToDelete.id, { is_active: false });
-        handleShowSuccess("Usuario eliminado correctamente.");
-      } catch (err) {
-        console.error("Error al eliminar el usuario:", err);
-        setError("No se pudo eliminar el usuario.");
-      } finally {
-        setUserToDelete(null);
-        setShowConfirmDialog(false);
-      }
+  // CREATE
+  const handleregisterUser = useCallback(async (newUserData) => {
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+    } catch (err) {
+      console.error("Error creating user (UserList):", err);
+      const errorMsg = err.response?.data?.detail || err.message || "Error al crear el usuario.";
+      setActionError({ message: errorMsg });
+      throw err;
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, []);
 
-  const cancelDelete = () => {
-    setUserToDelete(null);
-    setShowConfirmDialog(false);
-  };
+  // UPDATE
+  const handleUpdateUser = useCallback(async (userId, updatedData) => {
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+      const updatedResponse = await updateUser(userId, updatedData);
+      let username = updatedResponse.username || "desconocido";
+      if (updatedResponse.user && updatedResponse.user.username) {
+        username = updatedResponse.user.username;
+      }
+      handleActionSuccess(`Usuario "${username}" actualizado.`);
+    } catch (err) {
+      console.error("Error updating user (UserList):", err);
+      const errorMsg = err.response?.data?.detail || err.message || "Error al actualizar el usuario.";
+      setActionError({ message: errorMsg });
+      throw err;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [handleActionSuccess]);
 
-  // Crear filas para la tabla
-  const rows = users.map((user) => ({
-    "Nombre de usuario": user.username,
-    "Nombre": `${user.name} ${user.last_name}`,
-    "Email": user.email,
-    "DNI": user.dni || "Sin DNI",
-    "Imagen": user.image ? (
-      <img
-        className="w-10 h-10 rounded-full"
-        src={user.image}
-        alt={`${user.name} profile`}
-      />
-    ) : (
-      "Sin imagen"
-    ),
-    "Estado": (
-      <div className="flex items-center">
-        <div
-          className={`h-2.5 w-2.5 rounded-full ${user.is_active ? "bg-green-500" : "bg-red-500"
-            } me-2`}
-        ></div>
-        {user.is_active ? "Activo" : "Inactivo"}
-      </div>
-    ),
-    "Administrador": user.is_staff ? "Sí" : "No",
-    "Acciones": (
-      <div className="flex space-x-2">
-        <button
-          onClick={() => {
-            setSelectedUser(user);
-            setShowViewModal(true);
-          }}
-          className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
-          aria-label="View user"
-        >
-          <EyeIcon className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={() => {
-            setSelectedUser(user);
-            setShowEditModal(true);
-          }}
-          className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"
-          aria-label="Edit user"
-        >
-          <PencilIcon className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={() => handleRequestDeleteUser(user)}
-          className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
-          aria-label="Delete user"
-        >
-          <TrashIcon className="w-5 h-5 text-white" />
-        </button>
-      </div>
-    )
-  }));
+  // RESET PASSWORD
+  const handlePasswordReset = useCallback(async (userId, passwordData) => {
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+      await resetUserPassword(userId, passwordData);
+      handleActionSuccess(`Contraseña actualizada para el usuario ID ${userId}.`);
+    } catch (err) {
+      console.error("Error resetting password (UserList):", err);
+      const errorMsg = err.response?.data?.detail || err.message || "Error al cambiar contraseña.";
+      setActionError({ message: errorMsg });
+      throw err;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [handleActionSuccess]);
+
+  // DELETE (Soft Delete)
+  const handleDeleteUser = useCallback(async (userToDelete) => {
+    if (!userToDelete) return;
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+      await deleteUser(userToDelete.id);
+      handleActionSuccess(`Usuario "${userToDelete.username}" desactivado.`);
+    } catch (err) {
+      console.error("Error deactivating user (UserList):", err);
+      const errorMsg = err.response?.data?.detail || err.message || "Error al desactivar el usuario.";
+      setActionError({ message: errorMsg });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [handleActionSuccess]);
+
+  // Render
+  if (loadingUsers && users.length === 0) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-screen">
+          <Spinner />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <>
       <Layout>
-        <div className="flex-1 flex flex-col p-2 mt-14">
+        {showSuccess && (
+          <div className="fixed top-20 right-5 z-[10000]">
+            <SuccessMessage
+              message={successMessage}
+              onClose={() => setShowSuccess(false)}
+            />
+          </div>
+        )}
+        <div className="p-3 md:p-4 lg:p-6 mt-6">
           <Toolbar
             title="Lista de Usuarios"
+            onButtonClick={openCreateModal}
             buttonText="Crear Usuario"
-            onButtonClick={() => setShowRegisterModal(true)}
           />
-          <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
-          <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
-            {loadingUsers ? (
-              <p className="p-6">Cargando usuarios...</p>
-            ) : error ? (
-              <p className="p-6 text-red-500">{error}</p>
-            ) : (
-              <Table headers={headers} rows={rows} />
-            )}
-          </div>
-          <Pagination
-            onNext={() => nextPage && fetchUsers(nextPage)}
-            onPrevious={() => previousPage && fetchUsers(previousPage)}
-            hasNext={Boolean(nextPage)}
-            hasPrevious={Boolean(previousPage)}
-          />
+          <Filter columns={filterColumns} onFilterChange={setFilters} />
+
+          {fetchError && !loadingUsers && (
+            <div className="my-4">
+              <ErrorMessage
+                message={fetchError.message || "Error al cargar datos."}
+                onClose={() => setError(null)}
+              />
+            </div>
+          )}
+          {loadingUsers && (
+            <div className="my-4 flex justify-center">
+              <Spinner />
+            </div>
+          )}
+
+          {!loadingUsers && users.length > 0 && (
+            <UserTable
+              users={users}
+              openViewModal={openViewModal}
+              openEditModal={openEditModal}
+              openDeleteConfirmModal={openDeleteConfirmModal}
+              goToNextPage={nextPageUrl ? goToNextPage : null}
+              goToPreviousPage={previousPageUrl ? goToPreviousPage : null}
+              nextPageUrl={nextPageUrl}
+              previousPageUrl={previousPageUrl}
+            />
+          )}
+
+          {!loadingUsers && users.length === 0 && (
+            <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
+              <p className="text-gray-500">No se encontraron usuarios.</p>
+            </div>
+          )}
         </div>
       </Layout>
 
-      {showSuccess && (
-        <SuccessMessage
-          message={successMessage}
-          onClose={() => setShowSuccess(false)}
-        />
-      )}
-      {showRegisterModal && (
-        <UserRegisterModal
-          onClose={() => setShowRegisterModal(false)}
-          onSave={() => handleShowSuccess("¡Usuario registrado con éxito!")}
-        />
-      )}
-      {showEditModal && selectedUser && (
-        <UserEditModal
-          user={selectedUser}
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          onSave={async (id, updatedData) => {
-            try {
-              await updateUser(id, updatedData);
-              setShowEditModal(false);
-              handleShowSuccess("Usuario actualizado con éxito");
-            } catch (err) {
-              console.error("Error al actualizar:", err);
-            }
-          }}
-          onPasswordReset={(id, newPasswordData) => {
-            console.log("Restableciendo contraseña para", id, newPasswordData);
-          }}
-        />
-      )}
-      {showViewModal && selectedUser && (
-        <UserModalView
-          user={selectedUser}
-          isOpen={showViewModal}
-          onClose={() => setShowViewModal(false)}
-        />
-      )}
-      {showConfirmDialog && (
-        <ConfirmDialog
-          message="¿Estás seguro de que deseas eliminar este usuario?"
-          onConfirm={handleConfirmDeleteUser}
-          onCancel={cancelDelete}
-        />
-      )}
+      <UserModals
+        modalState={modalState}
+        closeModal={closeModal}
+        onregisterUser={handleregisterUser}
+        onUpdateUser={handleUpdateUser}
+        onDeleteUser={handleDeleteUser}
+        onPasswordReset={handlePasswordReset}
+        handleActionSuccess={handleActionSuccess}
+        isProcessing={isProcessing}
+        actionError={actionError}
+      />
     </>
   );
 };

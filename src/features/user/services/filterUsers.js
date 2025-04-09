@@ -1,4 +1,3 @@
-// src/features/user/services/filterUsers.js
 import { axiosInstance } from '../../../services/api';
 
 /**

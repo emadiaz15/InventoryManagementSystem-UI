@@ -37,7 +37,7 @@ const CategoryTable = ({ categories, openViewModal, openEditModal, openDeleteCon
         ),
     })), [categories, openViewModal, openEditModal, openDeleteConfirmModal]);
 
-    const tableHeaders = ["Nombre", "Descripción", "Acciones"];
+    const tableHeaders = ["Categoría", "Descripción", "Acciones"];
 
     return (
         <>

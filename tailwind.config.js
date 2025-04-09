@@ -59,5 +59,14 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addBase, theme }) {
+      addBase({
+        '::selection': {
+          'background-color': theme('colors.primary.500'),
+          'color': theme('colors.text.white'),
+        },
+      });
+    }
+  ],
 }
