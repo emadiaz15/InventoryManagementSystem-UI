@@ -4,25 +4,32 @@ import ErrorMessage from '../../../components/common/ErrorMessage';
 import Modal from '../../../components/ui/Modal';
 import useCategoryForm from '../hooks/useCategoryForm';
 
-const CategoryCreateModal = ({ isOpen, onClose, fetchCategories }) => {
+const CategoryCreateModal = ({ isOpen, onClose, onCreateSuccess }) => {
   const {
     formData,
     loading,
     error,
-    showSuccess,
     handleChange,
     handleSubmit,
     resetForm,
-  } = useCategoryForm(onClose);
+  } = useCategoryForm();
 
   if (!isOpen) return null;
 
   const handleCreateCategory = async (e) => {
     e.preventDefault();
-    await handleSubmit(e);
-
-    if (!error && fetchCategories) {
-      fetchCategories("/inventory/categories/");
+    try {
+      await handleSubmit(e);
+      // Si handleSubmit tuvo éxito, llama a la prop onCreateSuccess
+      if (onCreateSuccess) {
+        // Pasamos un mensaje para handleActionSuccess en CategoryList
+        onCreateSuccess(`Categoría "${formData.name || 'Nueva'}" creada con éxito.`);
+      }
+      // Ya no se recarga ni se cierra desde aquí
+    } catch (submitError) {
+      // El hook ya debería haber puesto el error en el estado 'error'
+      // que se muestra con <ErrorMessage />. Solo logueamos extra.
+      console.error("Error en submit capturado por handleCreateCategory:", submitError);
     }
   };
 
@@ -93,15 +100,6 @@ const CategoryCreateModal = ({ isOpen, onClose, fetchCategories }) => {
           </button>
         </div>
       </form>
-
-      {showSuccess && (
-        <div className="mt-4">
-          <SuccessMessage
-            message="¡Categoría creada con éxito!"
-            onClose={resetForm}
-          />
-        </div>
-      )}
     </Modal>
   );
 };

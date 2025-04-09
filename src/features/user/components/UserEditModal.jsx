@@ -2,233 +2,166 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import FormCheckbox from '../../../components/ui/form/FormCheckbox';
-import SuccessMessage from '../../../components/common/SuccessMessage';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 import PasswordResetModal from './PasswordResetModal';
+import ActionButtons from './ActionButtons';
 
-const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
+// Acepta onSaveSuccess, onSave sigue siendo la función que llama a updateUser
+const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswordReset }) => {
   const [formData, setFormData] = useState({
-    username: '',
-    name: '',
-    last_name: '',
-    email: '',
-    dni: '',
-    is_active: true,
-    is_staff: false,
-    image: null, // Se inicia en null
+    username: '', name: '', last_name: '', email: '', dni: '',
+    is_active: true, is_staff: false, image: null,
   });
-
+  const [loading, setLoading] = useState(false); // Añadido estado de carga interno
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [error, setError] = useState('');
-  const [validationErrors, setValidationErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
+  const [error, setError] = useState(''); // Error general del submit de este modal
+  const [validationErrors, setValidationErrors] = useState({}); // Errores específicos del backend
 
-  // Actualiza el formulario cuando cambia el usuario
+  // Rellena el form cuando cambia el usuario o se abre el modal
   useEffect(() => {
-    if (user) {
+    if (user && isOpen) {
       setFormData({
-        username: user.username,
-        name: user.name,
-        last_name: user.last_name,
-        email: user.email,
-        dni: user.dni,
-        is_active: user.is_active,
-        is_staff: user.is_staff,
-        image: null, // Se resetea a null para evitar cambios no intencionales
+        username: user.username || '',
+        name: user.name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        dni: user.dni || '',
+        is_active: user.is_active !== undefined ? user.is_active : true,
+        is_staff: user.is_staff || false,
+        image: null, // Resetear imagen en cada apertura
       });
+      setError(''); // Limpiar errores anteriores al abrir
+      setValidationErrors({});
     }
-  }, [user]);
+    if (!isOpen) {
+      // Limpiar al cerrar si es necesario (opcional)
+      // setTimeout(() => setFormData({...initial state...}), 300);
+    }
+  }, [user, isOpen]);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === 'checkbox'
-        ? checked
-        : type === 'file'
-          ? files[0]
-          : value,
+      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value,
     }));
   };
 
-  const handleSubmit = async (e) => {
+  // Wrapper para el submit
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setValidationErrors({});
+    setLoading(true); // Inicia carga
 
-    // Validaciones en el front antes de enviar
-    let errors = {};
-    if (!formData.username) {
-      errors.username = 'El nombre de usuario es obligatorio.';
-    }
-    if (!formData.email) {
-      errors.email = 'El email es obligatorio.';
-    }
-    if (!formData.dni.match(/^\d{7,11}$/)) {
-      errors.dni = 'El DNI debe tener entre 7 y 11 dígitos numéricos.';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
+    // Validaciones frontend básicas (opcional, el backend debería validar también)
+    let localErrors = {};
+    if (!formData.username) localErrors.username = 'Nombre de usuario obligatorio.';
+    // ... otras validaciones si quieres ...
+    if (Object.keys(localErrors).length > 0) {
+      setValidationErrors(localErrors);
+      setLoading(false);
       return;
     }
 
-    try {
-      let dataToSend;
-      // Si hay una imagen, usar FormData
-      if (formData.image instanceof File) {
-        dataToSend = new FormData();
-        Object.keys(formData).forEach((key) => {
+    // Prepara datos para enviar (FormData si hay imagen)
+    let dataToSend;
+    if (formData.image instanceof File) {
+      dataToSend = new FormData();
+      // Añade solo campos modificados o todos excepto la imagen null
+      Object.keys(formData).forEach((key) => {
+        if (key !== 'image' || formData[key] !== null) { // No enviar null para imagen
           dataToSend.append(key, formData[key]);
-        });
-      } else {
-        // Si no se seleccionó imagen, omitir ese campo
-        const { image, ...rest } = formData;
-        dataToSend = rest;
-      }
+        }
+      });
+    } else {
+      // Si no hay imagen nueva, envía JSON sin el campo image
+      const { image, ...rest } = formData;
+      dataToSend = rest;
+    }
 
-      await onSave(user.id, dataToSend);
-      setSuccessMessage('Usuario actualizado con éxito');
-      setTimeout(() => setSuccessMessage(''), 3000);
+    try {
+      // Llama a la función onSave pasada desde UserList (que llama a updateUser)
+      const updatedUser = await onSave(user.id, dataToSend);
+
+      // --- LLAMAR AL HANDLER DEL PADRE ---
+      // Si onSave tuvo éxito, llama a onSaveSuccess (que es handleActionSuccess)
+      if (onSaveSuccess) {
+        onSaveSuccess(`Usuario "${formData.username}" actualizado.`);
+      }
+      // --- FIN LLAMADA HANDLER ---
+
+      // NO necesitas cerrar aquí, lo hace handleActionSuccess
+
     } catch (err) {
       console.error('❌ Error al actualizar usuario:', err);
-
-      if (err.response?.data) {
-        setValidationErrors(err.response.data); // Mostrar errores específicos del backend
+      // Manejo de errores (como estaba, parece razonable)
+      if (err.response?.data && typeof err.response.data === 'object') {
+        setValidationErrors(err.response.data);
+        setError("Por favor corrige los errores."); // Mensaje genérico si hay errores de campo
       } else {
         setError(err.message || 'Error al actualizar el usuario.');
       }
+    } finally {
+      setLoading(false); // Termina carga
     }
   };
 
-  const handleRestorePassword = () => {
-    setShowPasswordModal(true);
-  };
-
+  const handleRestorePassword = () => setShowPasswordModal(true);
+  const handleClosePasswordModal = () => setShowPasswordModal(false);
   const handleSaveNewPassword = async (userId, newPasswordData) => {
     try {
-      await onPasswordReset(userId, newPasswordData);
-      setSuccessMessage('Contraseña cambiada exitosamente');
-      setShowPasswordModal(false);
-      setTimeout(() => setSuccessMessage(''), 4000);
+      await onPasswordReset(userId, newPasswordData); // Llama a la prop del padre
+      alert('Contraseña cambiada exitosamente'); // O usar un SuccessMessage temporal aquí
+      handleClosePasswordModal();
     } catch (err) {
-      setError('Error al cambiar la contraseña');
+      alert('Error al cambiar la contraseña'); // O mostrar error en modal de contraseña
     }
   };
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title="Editar Usuario">
-        <form onSubmit={handleSubmit} encType="multipart/form-data">
-          {error && <ErrorMessage message={error} shouldReload={false} />}
+      {/* // Usa el componente Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} title={`Editar Usuario: ${user?.username || ''}`}>
+        {/* Contenido del Modal */}
+        <>
+          {error && <ErrorMessage message={error} />}
+          {/* Mensaje de éxito interno ELIMINADO */}
+          {/* {successMessage && <SuccessMessage message={successMessage} onClose={() => setSuccessMessage('')}/>} */}
 
-          <FormInput
-            label="Nombre de usuario"
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-            error={validationErrors.username}
-          />
-          <FormInput
-            label="Nombre"
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-          <FormInput
-            label="Apellido"
-            type="text"
-            name="last_name"
-            value={formData.last_name}
-            onChange={handleChange}
-            required
-          />
-          <FormInput
-            label="Email"
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            error={validationErrors.email}
-          />
-          <FormInput
-            label="DNI"
-            type="text"
-            name="dni"
-            value={formData.dni}
-            onChange={handleChange}
-            required
-            error={validationErrors.dni}
-          />
+          <form onSubmit={handleFormSubmit} encType="multipart/form-data">
+            {/* Inputs del Formulario (Sin cambios) */}
+            <FormInput label="Nombre de usuario" name="username" value={formData.username} onChange={handleChange} required error={validationErrors.username} />
+            <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required error={validationErrors.name} />
+            <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} required error={validationErrors.last_name} />
+            <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required error={validationErrors.email} />
+            <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required error={validationErrors.dni} />
+            <FormCheckbox label="Activo" name="is_active" checked={formData.is_active} onChange={handleChange} />
+            <FormCheckbox label="Administrador" name="is_staff" checked={formData.is_staff} onChange={handleChange} />
+            <FormInput label="Cambiar Imagen" type="file" name="image" onChange={handleChange} error={validationErrors.image} />
+            {/* Fin Inputs */}
 
-          <FormCheckbox
-            label="Activo"
-            name="is_active"
-            checked={formData.is_active}
-            onChange={handleChange}
-          />
+            {/* Botón Cambiar Contraseña */}
+            <div className="mt-4">
+              <button type="button" onClick={handleRestorePassword} className="text-sm text-blue-600 hover:underline">
+                Restablecer Contraseña
+              </button>
+            </div>
 
-          <FormCheckbox
-            label="Administrador"
-            name="is_staff"
-            checked={formData.is_staff}
-            onChange={handleChange}
-          />
-
-          {/* Campo para seleccionar imagen */}
-          <FormInput
-            label="Imagen"
-            type="file"
-            name="image"
-            onChange={handleChange}
-          />
-
-          {/* Botón para cambiar contraseña */}
-          <div className="flex justify-end mt-4">
-            <button
-              type="button"
-              onClick={handleRestorePassword}
-              className="bg-warning-500 text-white py-2 px-4 rounded hover:bg-warning-600 transition-colors"
-            >
-              Cambiar Contraseña
-            </button>
-          </div>
-
-          {/* Botones de acción */}
-          <div className="flex justify-end space-x-2 mt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors`}
-            >
-              Guardar
-            </button>
-          </div>
-        </form>
+            {/* Botones de Acción */}
+            <ActionButtons onClose={onClose} loading={loading} />
+          </form>
+        </>
+        {/* Fin Contenido */}
       </Modal>
 
-      <SuccessMessage
-        message={successMessage}
-        onClose={() => setSuccessMessage('')}
-      />
-
+      {/* Modal de Contraseña (se mantiene separado) */}
       {showPasswordModal && (
         <PasswordResetModal
           userId={user.id}
           isOpen={showPasswordModal}
-          onClose={() => setShowPasswordModal(false)}
-          onSave={handleSaveNewPassword}
+          onClose={handleClosePasswordModal}
+          onSave={handleSaveNewPassword} // Pasa el handler correcto
         />
       )}
     </>

@@ -2,12 +2,11 @@ import React, { useState } from "react";
 
 const Filter = ({ columns, onFilterChange }) => {
     // Inicializa el estado de los filtros para cada columna.
+    // Para "is_active" se fija "true" por defecto (filtrar usuarios activos)
     const [filters, setFilters] = useState(
         columns.reduce((acc, col) => {
             if (col.key === "is_active") {
-                acc[col.key] = "Activo"; // Por defecto, filtra usuarios activos.
-            } else if (col.key === "is_staff") {
-                acc[col.key] = ""; // Por defecto, sin filtro para administradores.
+                acc[col.key] = "true"; // Filtra usuarios activos por defecto
             } else {
                 acc[col.key] = "";
             }
@@ -63,8 +62,8 @@ const Filter = ({ columns, onFilterChange }) => {
                                             onChange={(e) => handleInputChange(col.key, e.target.value)}
                                             className="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                                         >
-                                            <option value="Activo">Activo</option>
-                                            <option value="Inactivo">Inactivo</option>
+                                            <option value="true">Activo</option>
+                                            <option value="false">Inactivo</option>
                                         </select>
                                     ) : col.key === "is_staff" ? (
                                         <select
@@ -73,19 +72,13 @@ const Filter = ({ columns, onFilterChange }) => {
                                             className="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                                         >
                                             <option value="">-- Todos --</option>
-                                            <option value="Sí">Sí</option>
-                                            <option value="No">No</option>
+                                            <option value="true">Administrador</option>
+                                            <option value="false">Operario</option>
                                         </select>
                                     ) : (
                                         <input
                                             type="text"
-                                            placeholder={
-                                                col.key === "full_name"
-                                                    ? "Filtrar por nombre/apellido"
-                                                    : col.key === "dni"
-                                                        ? "Filtrar por DNI"
-                                                        : `Filtrar ${col.label}`
-                                            }
+                                            placeholder={`Filtrar ${col.label}`}
                                             value={filters[col.key]}
                                             onChange={(e) => handleInputChange(col.key, e.target.value)}
                                             className="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"

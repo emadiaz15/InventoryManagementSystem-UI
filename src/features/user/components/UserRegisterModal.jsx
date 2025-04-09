@@ -1,63 +1,163 @@
-import React, { useState } from 'react';
-import useUserForm from '../hooks/useUserForm';
+import React, { useEffect } from 'react';
+import useUserForm from '../hooks/useUserForm'; // Hook con la lógica del formulario
 import FormInput from '../../../components/ui/form/FormInput';
 import FormCheckbox from '../../../components/ui/form/FormCheckbox';
 import ActionButtons from './ActionButtons';
-import SuccessMessage from '../../../components/common/SuccessMessage';
 import ErrorMessage from '../../../components/common/ErrorMessage';
+import Modal from '../../../components/ui/Modal';
 
-const UserRegisterModal = ({ onClose, onSave }) => {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+const UserRegisterModal = ({ isOpen, onClose, onCreateSuccess }) => {
+  // Extraemos la lógica del hook del formulario
+  const {
+    formData,
+    handleChange,
+    handleSubmit,
+    loading,
+    error,
+    validationErrors,
+    resetForm
+  } = useUserForm();
 
-  const handleShowSuccess = () => {
-    setSuccessMessage('¡Usuario registrado con éxito!');
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 4000);
+  // Cada vez que el modal se cierra (isOpen=false), reseteamos el formulario
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeout(resetForm, 300);
+    }
+  }, [isOpen, resetForm]);
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Envía los datos al backend (registerUser). 
+      // Si el hook no lanza error, es éxito.
+      const createdUser = await handleSubmit(e);
+
+      // Notificamos al padre que un usuario se creó con éxito
+      if (onCreateSuccess) {
+        // Asumiendo que createdUser trae "username" directo 
+        // o lo manejes en useUserForm
+        onCreateSuccess(`Usuario "${formData.username}" registrado con éxito.`);
+      }
+
+    } catch (submitError) {
+      // El hook setea 'error' y 'validationErrors', 
+      // se mostrarán si usas <ErrorMessage> o error en cada FormInput
+      console.error("Error en submit capturado por UserRegisterModal:", submitError);
+    }
   };
 
-  const { formData, handleChange, handleSubmit, loading, error, validationErrors } = useUserForm(async () => {
-    handleShowSuccess();
-    await onSave();
-    onClose();
-  });
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded shadow-md w-1/2">
-        <h2 className="text-2xl mb-4 text-primary-700">Registrar Nuevo Usuario</h2>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Registrar Nuevo Usuario"
+      position="center"
+    >
+      {/* Muestra error general del hook (por ej: Error 500 del servidor) */}
+      {error && <ErrorMessage message={error} />}
 
-        {/* 🔴 Mostrar errores generales */}
-        {error && <ErrorMessage message={error} shouldReload={false} />}
+      <form onSubmit={handleFormSubmit} encType="multipart/form-data">
+        <FormInput
+          label="Nombre de usuario"
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
+          required
+          error={validationErrors.username}
+        />
 
-        <form onSubmit={handleSubmit} encType="multipart/form-data">
-          <FormInput label="Nombre de usuario" name="username" value={formData.username} onChange={handleChange} required error={validationErrors.username} />
-          <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required />
-          <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} required />
-          <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required error={validationErrors.email} />
-          <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required error={validationErrors.dni} />
+        <FormInput
+          label="Nombre"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+          error={validationErrors.name}
+        />
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Cargar Imagen</label>
-            <input type="file" name="image" onChange={handleChange} className="mt-1 block w-full" accept="image/*" />
-          </div>
+        <FormInput
+          label="Apellido"
+          name="last_name"
+          value={formData.last_name}
+          onChange={handleChange}
+          error={validationErrors.last_name}
+        />
 
-          <FormCheckbox label="Activo" name="is_active" checked={formData.is_active} onChange={handleChange} />
-          <FormCheckbox label="Administrador" name="is_staff" checked={formData.is_staff} onChange={handleChange} />
+        <FormInput
+          label="Email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+          error={validationErrors.email}
+        />
 
-          <FormInput label="Contraseña" name="password" type="password" value={formData.password} onChange={handleChange} required error={validationErrors.password} />
-          <FormInput label="Confirmar Contraseña" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required error={validationErrors.confirmPassword} />
+        <FormInput
+          label="DNI"
+          name="dni"
+          value={formData.dni}
+          onChange={handleChange}
+          required
+          error={validationErrors.dni}
+        />
 
-          <ActionButtons onClose={onClose} loading={loading} />
-        </form>
-      </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-text-secondary mb-1">
+            Cargar Imagen
+          </label>
+          <input
+            type="file"
+            name="image"
+            onChange={handleChange}
+            className="mt-1 block w-full"
+            accept="image/*"
+          />
+          {validationErrors.image && (
+            <p className="text-red-500 text-xs italic mt-1">
+              {validationErrors.image}
+            </p>
+          )}
+        </div>
 
-      {showSuccess && (
-        <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
-      )}
-    </div>
+        <FormCheckbox
+          label="Activo"
+          name="is_active"
+          checked={formData.is_active}
+          onChange={handleChange}
+        />
+
+        <FormCheckbox
+          label="Administrador"
+          name="is_staff"
+          checked={formData.is_staff}
+          onChange={handleChange}
+        />
+
+        <FormInput
+          label="Contraseña"
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+          error={validationErrors.password}
+        />
+
+        <FormInput
+          label="Confirmar Contraseña"
+          name="confirmPassword"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          required
+          error={validationErrors.confirmPassword}
+        />
+
+        {/* Botones Aceptar / Cancelar */}
+        <ActionButtons onClose={onClose} loading={loading} />
+      </form>
+    </Modal>
   );
 };
 

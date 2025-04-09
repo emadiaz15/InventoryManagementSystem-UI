@@ -1,58 +1,57 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createCategory } from '../services/createCategory';
 
-const useCategoryForm = (onClose) => {
+const useCategoryForm = (onSuccess = () => {}) => {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleChange = useCallback((e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  }, [formData]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const resetForm = useCallback(() => {
+    setFormData({ name: '', description: '' });
+    setError(null);
+    setValidationErrors({});
+  }, []);
+
+  const handleSubmit = useCallback(async (e) => {
+    if (e) e.preventDefault();
+    setError(null);
+    setValidationErrors({});
+
+    let errors = {};
+    if (!formData.name) {
+      errors.name = ['El nombre de la categoría es obligatorio.'];
+    }
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      throw new Error("Error de validación en el formulario.");
+    }
+
     setLoading(true);
-    setError('');
-
     try {
-      await createCategory(formData);
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        onClose();
-      }, 4000);
+      const createdCategory = await createCategory(formData);
+      onSuccess(createdCategory);
+      // El reset se realizará desde el componente padre si es necesario.
+      return createdCategory;
     } catch (error) {
-      console.error('Error al crear la categoría:', error);
-      setError(
-        error.response?.data?.name
-          ? 'El nombre de la categoría ya existe. Debe ser único.'
-          : 'Hubo un problema al crear la categoría. Inténtalo de nuevo.'
-      );
+      console.error('❌ Error al crear categoría (hook):', error);
+      if (error.response?.data && typeof error.response.data === 'object') {
+        setValidationErrors(error.response.data);
+        setError("Por favor corrige los errores indicados.");
+      } else {
+        setError(error.message || 'Error al crear la categoría.');
+      }
+      throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData, onSuccess]);
 
-  const resetForm = () => {
-    setFormData({ name: '', description: '' });
-    setError('');
-    setShowSuccess(false);
-  };
-
-  return {
-    formData,
-    loading,
-    error,
-    showSuccess,
-    handleChange,
-    handleSubmit,
-    resetForm,
-  };
+  return { formData, loading, error, validationErrors, handleChange, handleSubmit, resetForm };
 };
 
 export default useCategoryForm;

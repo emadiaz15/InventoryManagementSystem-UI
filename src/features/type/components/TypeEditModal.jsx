@@ -1,141 +1,98 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import FormSelect from '../../../components/ui/form/FormSelect';
-import SuccessMessage from '../../../components/common/SuccessMessage';
 import ErrorMessage from '../../../components/common/ErrorMessage';
-import ConfirmDialog from '../../../components/common/ConfirmDialog';
-import { updateType } from '../services/updateType';
-import { listCategories } from '../../category/services/listCategory';
 
-const TypeEditModal = ({ type, isOpen, onClose, onSave, onDelete }) => {
+const TypeEditModal = ({ type, isOpen, onClose, onSave, categories, loadingCategories }) => {
+    // Estado interno para el formulario, carga y error del modal
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        category: '',
-        status: type?.status || true,
+        category: '', // Guardará el ID de la categoría (string)
     });
+    const [internalLoading, setInternalLoading] = useState(false);
+    const [internalError, setInternalError] = useState('');
 
-    const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-    // 🔹 Cargar categorías desde el backend
+    // Efecto para inicializar el formulario cuando 'type' cambia o se abre el modal
     useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const data = await listCategories();
-                const activeCategories = data.results.filter(cat => cat.status);
-                setCategories(activeCategories);
-
-                // 🔥 Si el tipo ya tiene una categoría, establecerla en el select
-                if (type && type.category?.id) {
-                    setFormData(prevData => ({
-                        ...prevData,
-                        category: type.category.id
-                    }));
-                }
-            } catch (error) {
-                setError('Error al cargar categorías.');
-            }
-        };
-
-        fetchCategories();
-    }, [type]);
-
-    // 🔹 Cargar datos del tipo cuando el modal se abre
-    useEffect(() => {
-        if (type) {
+        if (isOpen && type) {
+            console.log("Initializing edit form with type:", type);
             setFormData({
-                name: type.name,
+                name: type.name || '',
                 description: type.description || '',
-                category: type.category?.id || '',
+                // Usa el ID de la categoría, convertido a string, si existe
+                category: type.category ? type.category.toString() : '',
             });
+            setInternalError('');
+            setInternalLoading(false);
         }
-    }, [type]);
+        if (!isOpen) {
+            setFormData({ name: '', description: '', category: '' });
+            setInternalError('');
+        }
+    }, [type, isOpen]);
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    // Handler para cambios en el formulario
+    const handleChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setFormData(prevData => ({ ...prevData, [name]: value }));
+    }, []);
 
-    const handleSubmit = async (e) => {
+    // Handler para el envío del formulario
+    const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
-        setLoading(true);
-        setError("");
-
-        try {
-            const dataToSend = {
-                name: formData.name,
-                description: formData.description,
-                category: parseInt(formData.category, 10),
-            };
-
-            console.log("📡 Enviando actualización:", dataToSend);
-            await onSave(type.id, dataToSend);
-
-            setSuccessMessage("Tipo actualizado correctamente");
-            setTimeout(() => {
-                setSuccessMessage("");
-                onClose();
-            }, 2000);
-        } catch (err) {
-            console.error("❌ Error al actualizar el tipo:", err);
-
-            if (err.response?.data?.name) {
-                setError("El nombre del tipo ya existe. Debe ser único.");
-            } else {
-                setError("Hubo un problema al actualizar el tipo. Inténtalo de nuevo.");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const confirmDelete = async () => {
-        if (!onDelete) {
-            console.error("❌ Error: onDelete no está definido");
-            setError("No se puede eliminar el tipo.");
+        if (!type?.id) {
+            setInternalError("No se puede guardar sin un ID de tipo válido.");
             return;
         }
+        setInternalLoading(true);
+        setInternalError('');
+
+        let categoryId = null;
+        if (formData.category) {
+            const parsedId = parseInt(formData.category, 10);
+            if (!isNaN(parsedId)) {
+                categoryId = parsedId;
+            } else {
+                setInternalError("El ID de la categoría seleccionada no es válido.");
+                setInternalLoading(false);
+                return;
+            }
+        }
+
+        const dataToSend = {
+            name: formData.name.trim(),
+            description: formData.description.trim(),
+            ...(categoryId !== null && { category: categoryId }),
+        };
+
+        console.log(`Datos a enviar desde TypeEditModal para ID ${type.id}:`, dataToSend);
 
         try {
-            setLoading(true);
-            const dataToSend = {
-                name: formData.name,
-                description: formData.description,
-                category: parseInt(formData.category, 10),
-                status: false, // Soft delete
-            };
-
-            console.log("🛠️ Enviando solicitud de eliminación:", dataToSend);
-
-            await onDelete(type.id, dataToSend);
-
-            console.log("✅ Eliminación exitosa!");
-
-            setSuccessMessage("Tipo eliminado correctamente");
-            setTimeout(() => {
-                setSuccessMessage("");
-                setShowConfirmDialog(false);
-                onClose();
-            }, 2000);
-        } catch (error) {
-            console.error("❌ Error al eliminar el tipo:", error.response?.data || error.message);
-            setError("No se pudo eliminar el tipo.");
+            await onSave(type.id, dataToSend);
+        } catch (err) {
+            console.error('❌ Error capturado en TypeEditModal:', err);
+            setInternalError(err.message || 'Hubo un problema al actualizar el tipo.');
         } finally {
-            setLoading(false);
+            setInternalLoading(false);
         }
-    };
+    }, [formData, type, onSave]);
 
+    // Genera opciones para el select sin placeholder duplicado
+    const categoryOptions = useMemo(() => {
+        const options = [];
+        categories.forEach(cat => {
+            options.push({ value: cat.id.toString(), label: cat.name });
+        });
+        return options;
+    }, [categories]);
 
     return (
         <>
-            <Modal isOpen={isOpen} onClose={onClose} title="Editar Tipo">
+            <Modal isOpen={isOpen} onClose={onClose} title={`Editar Tipo: ${type?.name || ''}`}>
                 <form onSubmit={handleSubmit}>
-                    {error && <ErrorMessage message={error} shouldReload={false} />}
-
+                    {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}
                     <FormInput
                         label="Nombre del Tipo"
                         type="text"
@@ -143,79 +100,47 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave, onDelete }) => {
                         value={formData.name}
                         onChange={handleChange}
                         required
+                        disabled={internalLoading}
                     />
-
                     <FormInput
                         label="Descripción"
                         type="text"
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
+                        disabled={internalLoading}
                     />
-
                     <FormSelect
                         label="Categoría"
                         name="category"
                         value={formData.category}
                         onChange={handleChange}
-                        options={categories.map(cat => ({
-                            value: cat.id,
-                            label: cat.name.toUpperCase()
-                        }))}
+                        options={categoryOptions}
                         required
+                        loading={loadingCategories}
+                        disabled={internalLoading || loadingCategories}
                     />
-
-                    <div className="flex justify-between mt-4">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                console.log("🛑 Abriendo confirmación de eliminación...");
-                                setShowConfirmDialog(true);
-                            }}
-                            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
-                        >
-                            Eliminar
-                        </button>
+                    <div className="flex justify-end mt-4">
                         <div className="flex space-x-2">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors"
+                                className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50"
+                                disabled={internalLoading}
                             >
                                 Cancelar
                             </button>
                             <button
                                 type="submit"
-                                className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors"
-                                disabled={loading}
+                                className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors ${internalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={internalLoading || loadingCategories}
                             >
-                                {loading ? 'Guardando...' : 'Guardar'}
+                                {internalLoading ? 'Guardando...' : 'Guardar Cambios'}
                             </button>
                         </div>
                     </div>
                 </form>
             </Modal>
-
-            {/* ✅ `ConfirmDialog` con `z-index` alto para que se muestre sobre el modal */}
-            {showConfirmDialog && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50">
-                    <ConfirmDialog
-                        message="¿Estás seguro de que deseas eliminar este tipo?"
-                        onConfirm={confirmDelete}
-                        onCancel={() => {
-                            console.log("🚫 Cancelando eliminación...");
-                            setShowConfirmDialog(false);
-                        }}
-                    />
-                </div>
-            )}
-
-            {successMessage && (
-                <SuccessMessage
-                    message={successMessage}
-                    onClose={() => setSuccessMessage("")}
-                />
-            )}
         </>
     );
 };
