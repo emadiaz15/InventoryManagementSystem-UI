@@ -1,4 +1,3 @@
-// ============== ARCHIVO CORREGIDO: src/hooks/useUsers.js ==============
 import { useState, useEffect, useCallback } from "react";
 import { listUsers } from "../services/listUsers"; // Ajusta la ruta si es necesario
 
@@ -105,4 +104,3 @@ const useUsers = (filters, initialUrl = "/users/list/") => {
 };
 
 export default useUsers;
-// ============== FIN useUsers.js ==============

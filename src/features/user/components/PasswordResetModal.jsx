@@ -1,5 +1,4 @@
-// ============== ARCHIVO EDITADO: PasswordResetModal.jsx ==============
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/ui/Modal'; // Usa tu Modal base
 import FormInput from '../../../components/ui/form/FormInput';
 import ErrorMessage from '../../../components/common/ErrorMessage'; // Para mostrar errores
@@ -135,4 +134,3 @@ const PasswordResetModal = ({ userId, isOpen, onClose, onSave }) => {
 };
 
 export default PasswordResetModal;
-// ============== FIN PasswordResetModal.jsx ==============

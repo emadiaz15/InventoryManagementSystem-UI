@@ -23,7 +23,6 @@ const FormSelect = ({
                     required={required}
                     className="mt-1 block w-full border border-gray-300 bg-white text-text-primary rounded-md shadow-sm p-2 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 appearance-none"
                 >
-                    <option value="">{loading ? "Cargando categorías..." : "Seleccione una categoría"}</option>
                     {options.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}

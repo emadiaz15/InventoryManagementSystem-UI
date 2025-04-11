@@ -23,7 +23,7 @@ const Navbar = () => {
             <a href="/dashboard" className="flex items-center">
               <img src="/home-img.png" className="h-8 me-3" alt="Logo" />
               <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-neutral-50">
-                Gestión de Stock
+                Inventario Web
               </span>
             </a>
           </div>

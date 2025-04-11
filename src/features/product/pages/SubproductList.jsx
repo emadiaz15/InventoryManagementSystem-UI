@@ -1,40 +1,36 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import Toolbar from "../../../components/common/Toolbar";
-import Pagination from "../../../components/ui/Pagination";
-import SuccessMessage from "../../../components/common/SuccessMessage";
-import SubproductFormModal from "../components/SubproductFormModal";
-import SubproductCard from "../components/SubproductCard";
-import { listSubproducts } from "../services/listSubproducts";
+import { useParams } from "react-router-dom";
 import Layout from "../../../pages/Layout";
+import Toolbar from "../../../components/common/Toolbar";
+import SuccessMessage from "../../../components/common/SuccessMessage";
+import ErrorMessage from "../../../components/common/ErrorMessage";
+import Spinner from "../../../components/ui/Spinner";
+import Pagination from "../../../components/ui/Pagination";
+import { listSubproducts } from "../services/listSubproducts";
+import SubproductModals from "../components/SubproductModals"; // 🆕 Centraliza los modales
 
 const SubproductList = () => {
   const { productId } = useParams();
-  const navigate = useNavigate();
+
   const [subproducts, setSubproducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [modalState, setModalState] = useState({ type: null, subproductData: null });
 
   const fetchSubproducts = async (url = `/inventory/products/${productId}/subproducts/`) => {
     setLoading(true);
     setError(null);
     try {
       const data = await listSubproducts(productId, url);
-      if (data?.results) {
-        setSubproducts(data.results);
-        setNextPage(data.next);
-        setPreviousPage(data.previous);
-      } else {
-        setSubproducts([]);
-        setError("No hay subproductos disponibles.");
-      }
-    } catch (error) {
-      setError("Error al cargar los subproductos.");
+      setSubproducts(data.results || []);
+      setNextPage(data.next);
+      setPreviousPage(data.previous);
+    } catch (err) {
+      setError("Error al obtener los subproductos.");
     } finally {
       setLoading(false);
     }
@@ -43,86 +39,80 @@ const SubproductList = () => {
   useEffect(() => {
     if (productId) {
       fetchSubproducts();
-    } else {
-      setError("ID de producto no válido.");
-      setLoading(false);
     }
   }, [productId]);
-
-  const handleNextPage = () => {
-    if (nextPage) fetchSubproducts(nextPage);
-  };
-
-  const handlePreviousPage = () => {
-    if (previousPage) fetchSubproducts(previousPage);
-  };
 
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
     fetchSubproducts();
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const handleCloseModal = () => {
+    setModalState({ type: null, subproductData: null });
   };
 
   return (
-    <>
-      <Layout>
-        <div className="flex-1 p-4 mt-14">
-          <Toolbar
-            title="Subproductos"
-            extraButtons={
-              <button
-                onClick={() => navigate(`/products/${productId}/create-subproduct`)}
-                className="ml-2 text-white bg-secondary-500 hover:bg-secondary-600 px-4 py-2 rounded"
-              >
-                Crear Subproducto
-              </button>
-            }
-          />
-          {loading ? (
-            <p className="text-center">Cargando subproductos...</p>
-          ) : error ? (
-            <p className="text-center text-red-500">{error}</p>
-          ) : subproducts.length === 0 ? (
-            <p className="text-center text-gray-500">No hay subproductos disponibles.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 p-4">
-              {subproducts.map((subproduct) => (
-                <SubproductCard
-                  key={subproduct.id}
-                  subproduct={subproduct}
-                  onAddToOrder={() => console.log(`Agregado ${subproduct.name} al carrito`)}
-                  onEdit={() => console.log("Editar subproducto", subproduct)}
-                  onDelete={() => console.log("Eliminar subproducto", subproduct)}
-                  onViewDetails={() => console.log("Ver detalles", subproduct)}
-                  onViewStock={() => navigate(`/subproducts/${subproduct.id}/stock-history`)}
-                />
-              ))}
-            </div>
-          )}
-          <Pagination
-            onNext={handleNextPage}
-            onPrevious={handlePreviousPage}
-            hasNext={Boolean(nextPage)}
-            hasPrevious={Boolean(previousPage)}
-          />
-        </div>
-      </Layout>
-
+    <Layout>
       {showSuccess && (
-        <SuccessMessage
-          message={successMessage}
-          onClose={() => setShowSuccess(false)}
-        />
+        <div className="fixed top-20 right-5 z-[10000]">
+          <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+        </div>
       )}
-      {showModal && (
-        <SubproductFormModal
-          parentProduct={{ id: productId }}
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          onSave={() => handleShowSuccess("Subproducto guardado correctamente.")}
+
+      <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
+        <Toolbar
+          title="Lista de Subproductos"
+          buttonText="Crear Subproducto ( Cables )"
+          onButtonClick={() => setModalState({ type: "create", subproductData: null })}
         />
-      )}
-    </>
+
+        {error && !loading && (
+          <div className="my-4">
+            <ErrorMessage message={error} onClose={() => setError(null)} />
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex justify-center items-center h-32">
+            <Spinner />
+          </div>
+        )}
+
+        {!loading && subproducts.length === 0 && (
+          <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
+            <p className="text-gray-500">No existen subproductos registrados para este producto.</p>
+          </div>
+        )}
+
+        {!loading && subproducts.length > 0 && (
+          <div className="text-center py-10 px-4 mt-4 bg-yellow-100 border border-yellow-300 rounded">
+            <p className="text-gray-700">Aquí se mostrará la tabla de subproductos.</p>
+          </div>
+        )}
+
+        <Pagination
+          onNext={() => nextPage && fetchSubproducts(nextPage)}
+          onPrevious={() => previousPage && fetchSubproducts(previousPage)}
+          hasNext={Boolean(nextPage)}
+          hasPrevious={Boolean(previousPage)}
+        />
+      </div>
+
+      {/* 🆕 Contenedor de modales */}
+      <SubproductModals
+        modalState={modalState}
+        closeModal={handleCloseModal}
+        onCreateSubproduct={() => handleShowSuccess("Subproducto creado exitosamente.")}
+        onUpdateSubproduct={() => handleShowSuccess("Subproducto actualizado exitosamente.")}
+        onDeleteSubproduct={() => handleShowSuccess("Subproducto eliminado exitosamente.")}
+        isDeleting={false}
+        deleteError={null}
+        clearDeleteError={() => { }}
+        parentProduct={{ id: productId }} // ✅ Esto es lo correcto
+      />
+    </Layout>
   );
 };
 

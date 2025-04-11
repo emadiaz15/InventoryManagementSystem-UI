@@ -11,7 +11,7 @@ import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
 import DateFilter from '../components/DateFilter';
 import Layout from '../../../pages/Layout';
-import { listSubproductStockEvents } from '../services/listSubproductStockEvents';
+import { listStockSubproductEvents } from '../services/listStockSubproductEvents';
 
 const mockSubproductEvents = [
     {
@@ -56,7 +56,7 @@ const SubproductStockEvent = () => {
     const fetchStockEvents = async (url = `/api/v1/stocks/subproducts/${subproductId}/stock/events/`) => {
         setLoading(true);
         try {
-            const data = await listSubproductStockEvents(url, startDate, endDate);
+            const data = await listStockSubproductEvents(url, startDate, endDate);
             setStockEvents(data.results || []);
             setNextPage(data.next);
             setPreviousPage(data.previous);

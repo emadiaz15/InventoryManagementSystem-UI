@@ -10,7 +10,7 @@ import Toolbar from '../../../components/common/Toolbar';
 import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
 import DateFilter from '../components/DateFilter';
-import { listStockEvents } from '../services/listStockEvents';
+import { listStockProductEvents } from '../services/listStockProductEvents';
 import Layout from '../../../pages/Layout';
 
 const mockEvents = [
@@ -56,7 +56,7 @@ const ProductStockEvent = () => {
     const fetchStockEvents = async (url = `/api/v1/stocks/products/${productId}/stock/events/`) => {
         setLoading(true);
         try {
-            const data = await listStockEvents(url, startDate, endDate);
+            const data = await listStockProductEvents(url, startDate, endDate);
             setStockEvents(data.results || []);
             setNextPage(data.next);
             setPreviousPage(data.previous);
