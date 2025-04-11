@@ -43,22 +43,19 @@ const CreateProductModal = ({
 
     useEffect(() => {
         if (!isOpen) return;
-
-        const fetchData = async () => {
             try {
-                const [catResp, typeResp, prodResp] = await Promise.all([
-                    listCategories("/inventory/categories/?limit=1000&status=true"),
-                    listTypes("/inventory/types/?limit=1000&status=true"),
-                    listProducts("/inventory/products/"),
-                ]);
-                setCategories(catResp.results || []);
-                setTypes(typeResp.results || []);
-                setProducts(prodResp.results || []);
+              const [catResp, typeResp, prodResp] = await Promise.all([
+                listCategories("/inventory/categories/?limit=1000&status=true"),
+                listTypes("/inventory/types/?limit=1000&status=true"),
+                listProducts("/inventory/products/"),  // 🔥 Este es el que lanza 500
+              ]);
+              setCategories(catResp.results || []);
+              setTypes(typeResp.results || []);
+              setProducts(prodResp.results || []);
             } catch (err) {
-                console.error("Error al cargar data inicial:", err);
-                setError("No se pudo cargar la información inicial de categorías o tipos.");
+              console.error("Error al cargar data inicial:", err);
+              setError("Error al cargar categorías, tipos o productos.");
             }
-        };
         fetchData();
 
         if (product) {
