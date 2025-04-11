@@ -1,6 +1,6 @@
 import axios from "../../../services/api";
 
-export const listSubproductStockEvents = async (productId, subproductId, startDate = null, endDate = null) => {
+export const listStockSubproductEvents = async (productId, subproductId, startDate = null, endDate = null) => {
   const params = {};
   if (startDate) params.start_date = startDate;
   if (endDate) params.end_date = endDate;
