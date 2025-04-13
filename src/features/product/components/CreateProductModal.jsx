@@ -7,8 +7,8 @@ import ErrorMessage from "../../../components/common/ErrorMessage";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 
 // Servicios
-import { createProduct } from "../services/createProduct";  // Debe aceptar FormData
-import { updateProduct } from "../services/updateProduct";  // También FormData
+import { createProduct } from "../services/createProduct";
+import { updateProduct } from "../services/updateProduct";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes } from "../../type/services/listType";
 import { listProducts } from "../services/listProducts";
@@ -43,19 +43,23 @@ const CreateProductModal = ({
 
     useEffect(() => {
         if (!isOpen) return;
+
+        const fetchData = async () => {
             try {
-              const [catResp, typeResp, prodResp] = await Promise.all([
-                listCategories("/inventory/categories/?limit=1000&status=true"),
-                listTypes("/inventory/types/?limit=1000&status=true"),
-                listProducts("/inventory/products/"),  // 🔥 Este es el que lanza 500
-              ]);
-              setCategories(catResp.results || []);
-              setTypes(typeResp.results || []);
-              setProducts(prodResp.results || []);
+                const [catResp, typeResp, prodResp] = await Promise.all([
+                    listCategories("/inventory/categories/?limit=1000&status=true"),
+                    listTypes("/inventory/types/?limit=1000&status=true"),
+                    listProducts("/inventory/products/"),
+                ]);
+                setCategories(catResp.results || []);
+                setTypes(typeResp.results || []);
+                setProducts(prodResp.results || []);
             } catch (err) {
-              console.error("Error al cargar data inicial:", err);
-              setError("Error al cargar categorías, tipos o productos.");
+                console.error("Error al cargar data inicial:", err);
+                setError("Error al cargar categorías, tipos o productos.");
             }
+        };
+
         fetchData();
 
         if (product) {
@@ -144,6 +148,7 @@ const CreateProductModal = ({
 
         const dataToSend = new FormData();
         dataToSend.append("name", formData.name.trim());
+
         const parsedCode = parseInt(formData.code.trim(), 10);
         if (isNaN(parsedCode)) {
             setError("El código debe ser un número entero válido.");
@@ -178,10 +183,10 @@ const CreateProductModal = ({
                 await createProduct(dataToSend);
             }
 
-            onClose(); // Cierra modal inmediatamente
+            onClose();
             setTimeout(() => {
-                if (onSave) onSave(); // Activa SuccessMessage + recarga tabla
-            }, 200); // Leve delay para que se cierre el modal
+                if (onSave) onSave();
+            }, 200);
         } catch (err) {
             console.error("Error al guardar el producto:", err);
             setError(err.message || "No se pudo guardar el producto.");
