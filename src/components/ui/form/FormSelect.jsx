@@ -18,7 +18,7 @@ const FormSelect = ({
                 <select
                     id={name}
                     name={name}
-                    value={value || ''}
+                    value={value || ''} // Asegura que el valor nunca sea undefined
                     onChange={onChange}
                     required={required}
                     className="mt-1 block w-full border border-gray-300 bg-white text-text-primary rounded-md shadow-sm p-2 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 appearance-none"
