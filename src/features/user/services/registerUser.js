@@ -27,7 +27,7 @@ export const registerUser = async (userData) => {
     const response = await axiosInstance.post('/users/register/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`, // Incluye el token Bearer
+        'Authorization': `Bearer ${token}`,
       },
     });
 
@@ -36,20 +36,20 @@ export const registerUser = async (userData) => {
     if (error.response) {
       console.error('Error en el registro:', error.response.data);
 
-      // Si hay un mensaje de error detallado, mostrarlo
       const errors = error.response.data;
       const errorMessages = [];
 
-      // Recopilar mensajes de error específicos de cada campo
       for (const key in errors) {
-        if (errors.hasOwnProperty(key)) {
-          errorMessages.push(`${key}: ${errors[key].join(', ')}`);
+        if (Object.prototype.hasOwnProperty.call(errors, key)) {
+          const value = errors[key];
+          const message = Array.isArray(value) ? value.join(', ') : String(value);
+          errorMessages.push(`${key}: ${message}`);
         }
       }
 
-      // Combinar todos los mensajes de error en uno solo
-      const errorMessage = errorMessages.length ? errorMessages.join(' | ') : 'Error en el registro de usuario';
-
+      const errorMessage = errorMessages.length
+        ? errorMessages.join(' | ')
+        : 'Error en el registro de usuario';
       throw new Error(errorMessage);
     } else {
       console.error('Error en el registro:', error.message);
