@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import Toolbar from "../../../components/common/Toolbar";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import ErrorMessage from "../../../components/common/ErrorMessage";
-import Filter from "../../../components/ui/Filter";
 import Layout from "../../../pages/Layout";
 import Spinner from "../../../components/ui/Spinner";
 import UserTable from "../components/UserTable";
 import UserModals from "../components/UserModals";
+import UserFilters from "../components/UserFilters";
 
 // Servicios API
 import { registerUser } from "../services/registerUser";
@@ -28,11 +28,9 @@ const UserList = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [modalState, setModalState] = useState({ type: null, userData: null });
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState(null);
 
-  // Hook useUsers
   const {
     users,
     loadingUsers,
@@ -45,63 +43,44 @@ const UserList = () => {
     currentUrl: currentUsersUrl,
   } = useUsers(filters);
 
-  const filterColumns = useMemo(() => [
-    { key: "full_name", label: "Nombre y Apellido", filterType: "text" },
-    { key: "dni", label: "DNI", filterType: "text" },
-    {
-      key: "is_active",
-      label: "Estado",
-      filterType: "select",
-      options: [
-        { value: "", label: "Todos" },
-        { value: "true", label: "Activo" },
-        { value: "false", label: "Inactivo" },
-      ],
-    },
-    {
-      key: "is_staff",
-      label: "Rol",
-      filterType: "select",
-      options: [
-        { value: "", label: "Todos" },
-        { value: "true", label: "Admin" },
-        { value: "false", label: "Operario" },
-      ],
-    },
-  ], []);
-
-  // Handlers para modales
   const openCreateModal = useCallback(() => {
     setModalState({ type: "create", userData: null });
   }, []);
+
   const openEditModal = useCallback((user) => {
     setModalState({ type: "edit", userData: user });
   }, []);
+
   const openViewModal = useCallback((user) => {
     setModalState({ type: "view", userData: user });
   }, []);
+
   const openDeleteConfirmModal = useCallback((user) => {
     setModalState({ type: "deleteConfirm", userData: user });
   }, []);
+
   const closeModal = useCallback(() => {
     setModalState({ type: null, userData: null });
     setActionError(null);
   }, []);
 
-  // Handler de éxito general
-  const handleActionSuccess = useCallback((message) => {
-    setSuccessMessage(message);
-    setShowSuccess(true);
-    closeModal(); // Cierra modal
-    fetchUsers(currentUsersUrl); // Recarga la tabla
-    setTimeout(() => setShowSuccess(false), 3000);
-  }, [closeModal, fetchUsers, currentUsersUrl]);
+  const handleActionSuccess = useCallback(
+    (message) => {
+      setSuccessMessage(message);
+      setShowSuccess(true);
+      closeModal();
+      fetchUsers(currentUsersUrl);
+      setTimeout(() => setShowSuccess(false), 3000);
+    },
+    [closeModal, fetchUsers, currentUsersUrl]
+  );
 
-  // CREATE
   const handleregisterUser = useCallback(async (newUserData) => {
     setIsProcessing(true);
     setActionError(null);
     try {
+      await registerUser(newUserData);
+      handleActionSuccess("Usuario creado exitosamente.");
     } catch (err) {
       console.error("Error creating user (UserList):", err);
       const errorMsg = err.response?.data?.detail || err.message || "Error al crear el usuario.";
@@ -110,18 +89,14 @@ const UserList = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [handleActionSuccess]);
 
-  // UPDATE
   const handleUpdateUser = useCallback(async (userId, updatedData) => {
     setIsProcessing(true);
     setActionError(null);
     try {
       const updatedResponse = await updateUser(userId, updatedData);
-      let username = updatedResponse.username || "desconocido";
-      if (updatedResponse.user && updatedResponse.user.username) {
-        username = updatedResponse.user.username;
-      }
+      const username = updatedResponse?.username || updatedResponse?.user?.username || "desconocido";
       handleActionSuccess(`Usuario "${username}" actualizado.`);
     } catch (err) {
       console.error("Error updating user (UserList):", err);
@@ -133,7 +108,6 @@ const UserList = () => {
     }
   }, [handleActionSuccess]);
 
-  // RESET PASSWORD
   const handlePasswordReset = useCallback(async (userId, passwordData) => {
     setIsProcessing(true);
     setActionError(null);
@@ -150,7 +124,6 @@ const UserList = () => {
     }
   }, [handleActionSuccess]);
 
-  // DELETE (Soft Delete)
   const handleDeleteUser = useCallback(async (userToDelete) => {
     if (!userToDelete) return;
     setIsProcessing(true);
@@ -167,7 +140,6 @@ const UserList = () => {
     }
   }, [handleActionSuccess]);
 
-  // Render
   if (loadingUsers && users.length === 0) {
     return (
       <Layout>
@@ -195,16 +167,17 @@ const UserList = () => {
             onButtonClick={openCreateModal}
             buttonText="Crear Usuario"
           />
-          <Filter columns={filterColumns} onFilterChange={setFilters} />
+          <UserFilters filters={filters} onChange={setFilters} />
 
           {fetchError && !loadingUsers && (
             <div className="my-4">
               <ErrorMessage
                 message={fetchError.message || "Error al cargar datos."}
-                onClose={() => setError(null)}
+                onClose={() => setActionError(null)}
               />
             </div>
           )}
+
           {loadingUsers && (
             <div className="my-4 flex justify-center">
               <Spinner />
