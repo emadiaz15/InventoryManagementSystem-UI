@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
+
 const Modal = ({
   isOpen,
   onClose,
@@ -32,6 +33,7 @@ const Modal = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
+
 
   if (!isOpen) return null;
 
@@ -67,6 +69,7 @@ const Modal = ({
           )}
           <button
             onClick={onClose}
+
             className="text-text-secondary hover:text-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-400 rounded-full p-1 ml-auto"
             aria-label="Cerrar modal"
           >
@@ -75,7 +78,6 @@ const Modal = ({
             </svg>
           </button>
         </div>
-
         <div id={contentId} className="text-text-primary overflow-y-auto">
           {children}
         </div>

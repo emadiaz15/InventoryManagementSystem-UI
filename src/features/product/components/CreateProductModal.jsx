@@ -57,9 +57,10 @@ const CreateProductModal = ({
                 setProducts(prodResp.results || []);
             } catch (err) {
                 console.error("Error al cargar data inicial:", err);
-                setError("No se pudo cargar la información inicial de categorías o tipos.");
+                setError("Error al cargar categorías, tipos o productos.");
             }
         };
+
         fetchData();
 
         if (product) {
@@ -150,6 +151,7 @@ const CreateProductModal = ({
 
         const dataToSend = new FormData();
         dataToSend.append("name", formData.name.trim());
+
         const parsedCode = parseInt(formData.code.trim(), 10);
         if (isNaN(parsedCode)) {
             setError("El código debe ser un número entero válido.");

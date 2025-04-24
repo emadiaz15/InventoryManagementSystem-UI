@@ -4,11 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "cross-env VITE_PORT=5173 vite --host --force",
+    "dev": "vite",
     "build": "vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview --port 5173",
-    "start": "vite preview --port 3000"
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",    "preview": "vite preview", 
+    "start": "serve dist -s -n -L -p $PORT"
   },
   "dependencies": {
     "@flaticon/flaticon-uicons": "^3.3.1",

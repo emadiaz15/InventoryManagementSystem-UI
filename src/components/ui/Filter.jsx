@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import FormSelect from "../ui/form/FormSelect";
 
 const Filter = ({ columns, onFilterChange }) => {
+
     const [filters, setFilters] = useState(() =>
         columns.reduce((acc, col) => {
             acc[col.key] = col.defaultValue || "";
