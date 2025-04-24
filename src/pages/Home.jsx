@@ -8,16 +8,18 @@ const Home = () => {
 
   return (
     <PageWrapper>
-      <section className="relative h-screen overflow-hidden bg-gradient-to-r from-cyan-900 to-blue-700 text-white">
+      <section className="relative h-screen overflow-hidden bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-sans">
         <BackgroundCanvas />
 
         <div className="relative z-10 flex items-center justify-center h-full px-4">
-          <div className="text-center bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-md max-w-md w-full border border-white/20">
-            <h1 className="text-2xl font-bold mb-4">Bienvenido</h1>
-            <p className="mb-6">Sistema de gestión de stock</p>
+          <div className="text-center bg-white/10 backdrop-blur-md p-8 sm:p-10 rounded-4xl shadow-md max-w-md w-full border border-white/20 text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4">Bienvenido</h1>
+            <p className="mb-6 text-base sm:text-lg text-text-white">
+              Sistema de gestión de almacén
+            </p>
             <button
               onClick={() => navigate('/login')}
-              className="bg-primary-500 text-white px-4 py-2 rounded-md hover:bg-primary-600 transition-colors"
+              className="w-full rounded-md bg-primary-500 px-4 py-2 font-semibold text-white shadow-md transition-colors hover:bg-primary-600 focus:outline-none"
             >
               Ir a Login
             </button>

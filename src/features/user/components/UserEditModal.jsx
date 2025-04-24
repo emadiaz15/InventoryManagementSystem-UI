@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import FormCheckbox from '../../../components/ui/form/FormCheckbox';
@@ -6,162 +6,183 @@ import ErrorMessage from '../../../components/common/ErrorMessage';
 import PasswordResetModal from './PasswordResetModal';
 import ActionButtons from './ActionButtons';
 
-// Acepta onSaveSuccess, onSave sigue siendo la función que llama a updateUser
 const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswordReset }) => {
   const [formData, setFormData] = useState({
-    username: '', name: '', last_name: '', email: '', dni: '',
-    is_active: true, is_staff: false, image: null,
+    username: '',
+    name: '',
+    last_name: '',
+    email: '',
+    dni: '',
+    image: null,
+    is_staff: false,
+    is_active: true,
+    password: '',
+    confirmPassword: ''
   });
-  const [loading, setLoading] = useState(false); // Añadido estado de carga interno
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [error, setError] = useState(''); // Error general del submit de este modal
-  const [validationErrors, setValidationErrors] = useState({}); // Errores específicos del backend
 
-  // Rellena el form cuando cambia el usuario o se abre el modal
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [internalError, setInternalError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
   useEffect(() => {
-    if (user && isOpen) {
+    if (isOpen && user) {
       setFormData({
         username: user.username || '',
         name: user.name || '',
         last_name: user.last_name || '',
         email: user.email || '',
         dni: user.dni || '',
-        is_active: user.is_active !== undefined ? user.is_active : true,
+        image: null,
         is_staff: user.is_staff || false,
-        image: null, // Resetear imagen en cada apertura
+        is_active: user.is_active !== undefined ? user.is_active : true,
+        password: '',
+        confirmPassword: ''
       });
-      setError(''); // Limpiar errores anteriores al abrir
+      setInternalError('');
       setValidationErrors({});
     }
-    if (!isOpen) {
-      // Limpiar al cerrar si es necesario (opcional)
-      // setTimeout(() => setFormData({...initial state...}), 300);
-    }
-  }, [user, isOpen]);
+  }, [isOpen, user]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
+  const handleChange = useCallback((e) => {
+    const { name, type, value, checked, files } = e.target;
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value,
     }));
-  };
+  }, []);
 
-  // Wrapper para el submit
-  const handleFormSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    setError('');
+    setInternalError('');
     setValidationErrors({});
-    setLoading(true); // Inicia carga
 
-    // Validaciones frontend básicas (opcional, el backend debería validar también)
-    let localErrors = {};
-    if (!formData.username) localErrors.username = 'Nombre de usuario obligatorio.';
-    // ... otras validaciones si quieres ...
-    if (Object.keys(localErrors).length > 0) {
-      setValidationErrors(localErrors);
-      setLoading(false);
+    const errors = {};
+    if (!formData.username.trim()) errors.username = 'El nombre de usuario es obligatorio.';
+    if (!formData.name.trim()) errors.name = 'El nombre es obligatorio.';
+    if (!formData.last_name.trim()) errors.last_name = 'El apellido es obligatorio.';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      errors.email = 'El correo electrónico es obligatorio.';
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = 'Ingresa un correo electrónico válido.';
+    }
+    if (!formData.dni.match(/^\d{7,11}$/)) {
+      errors.dni = 'El DNI debe tener entre 7 y 11 dígitos numéricos.';
+    }
+    if (formData.password && formData.password.length < 4) {
+      errors.password = 'La contraseña debe tener al menos 4 caracteres.';
+    }
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Las contraseñas no coinciden.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
 
-    // Prepara datos para enviar (FormData si hay imagen)
-    let dataToSend;
-    if (formData.image instanceof File) {
-      dataToSend = new FormData();
-      // Añade solo campos modificados o todos excepto la imagen null
-      Object.keys(formData).forEach((key) => {
-        if (key !== 'image' || formData[key] !== null) { // No enviar null para imagen
-          dataToSend.append(key, formData[key]);
-        }
-      });
-    } else {
-      // Si no hay imagen nueva, envía JSON sin el campo image
-      const { image, ...rest } = formData;
-      dataToSend = rest;
-    }
+    const dataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === 'confirmPassword' || value === '' || value === undefined || value === null) return;
+      if (typeof value === 'boolean') value = value ? 'true' : 'false';
+      dataToSend.append(key, value);
+    });
 
+    setInternalLoading(true);
     try {
-      // Llama a la función onSave pasada desde UserList (que llama a updateUser)
       const updatedUser = await onSave(user.id, dataToSend);
-
-      // --- LLAMAR AL HANDLER DEL PADRE ---
-      // Si onSave tuvo éxito, llama a onSaveSuccess (que es handleActionSuccess)
-      if (onSaveSuccess) {
-        onSaveSuccess(`Usuario "${formData.username}" actualizado.`);
-      }
-      // --- FIN LLAMADA HANDLER ---
-
-      // NO necesitas cerrar aquí, lo hace handleActionSuccess
-
+      if (onSaveSuccess) onSaveSuccess(`Usuario "${updatedUser.username}" actualizado correctamente.`);
     } catch (err) {
-      console.error('❌ Error al actualizar usuario:', err);
-      // Manejo de errores (como estaba, parece razonable)
-      if (err.response?.data && typeof err.response.data === 'object') {
-        setValidationErrors(err.response.data);
-        setError("Por favor corrige los errores."); // Mensaje genérico si hay errores de campo
-      } else {
-        setError(err.message || 'Error al actualizar el usuario.');
-      }
+      const message = err?.message || 'Error al actualizar el usuario.';
+      const fieldErrors = err?.fieldErrors || {};
+      setInternalError(message);
+      setValidationErrors(fieldErrors);
     } finally {
-      setLoading(false); // Termina carga
+      setInternalLoading(false);
     }
-  };
+  }, [formData, onSave, onSaveSuccess, user?.id]);
 
   const handleRestorePassword = () => setShowPasswordModal(true);
   const handleClosePasswordModal = () => setShowPasswordModal(false);
   const handleSaveNewPassword = async (userId, newPasswordData) => {
     try {
-      await onPasswordReset(userId, newPasswordData); // Llama a la prop del padre
-      alert('Contraseña cambiada exitosamente'); // O usar un SuccessMessage temporal aquí
+      await onPasswordReset(userId, newPasswordData);
+      alert('Contraseña cambiada exitosamente');
       handleClosePasswordModal();
     } catch (err) {
-      alert('Error al cambiar la contraseña'); // O mostrar error en modal de contraseña
+      alert('Error al cambiar la contraseña');
     }
   };
 
   return (
     <>
-      {/* // Usa el componente Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} title={`Editar Usuario: ${user?.username || ''}`}>
-        {/* Contenido del Modal */}
-        <>
-          {error && <ErrorMessage message={error} />}
-          {/* Mensaje de éxito interno ELIMINADO */}
-          {/* {successMessage && <SuccessMessage message={successMessage} onClose={() => setSuccessMessage('')}/>} */}
+      <Modal isOpen={isOpen} onClose={onClose} title={`Editar Usuario: ${user?.username || ''}`} position="center">
+        <form onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
+          {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}
 
-          <form onSubmit={handleFormSubmit} encType="multipart/form-data">
-            {/* Inputs del Formulario (Sin cambios) */}
-            <FormInput label="Nombre de usuario" name="username" value={formData.username} onChange={handleChange} required error={validationErrors.username} />
+          <FormInput label="Nombre de usuario" name="username" value={formData.username} onChange={handleChange} required error={validationErrors.username} />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required error={validationErrors.name} />
-            <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} required error={validationErrors.last_name} />
-            <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required error={validationErrors.email} />
-            <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required error={validationErrors.dni} />
-            <FormCheckbox label="Activo" name="is_active" checked={formData.is_active} onChange={handleChange} />
-            <FormCheckbox label="Administrador" name="is_staff" checked={formData.is_staff} onChange={handleChange} />
-            <FormInput label="Cambiar Imagen" type="file" name="image" onChange={handleChange} error={validationErrors.image} />
-            {/* Fin Inputs */}
+            <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} error={validationErrors.last_name} />
+          </div>
 
-            {/* Botón Cambiar Contraseña */}
-            <div className="mt-4">
-              <button type="button" onClick={handleRestorePassword} className="text-sm text-blue-600 hover:underline">
-                Restablecer Contraseña
-              </button>
-            </div>
+          <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required error={validationErrors.email} />
+          <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required error={validationErrors.dni} />
 
-            {/* Botones de Acción */}
-            <ActionButtons onClose={onClose} loading={loading} />
-          </form>
-        </>
-        {/* Fin Contenido */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              Cambiar Imagen
+            </label>
+            <input
+              type="file"
+              name="image"
+              onChange={handleChange}
+              className="mt-1 block w-full"
+              accept="image/*"
+            />
+            {validationErrors.image && (
+              <p className="text-red-500 text-xs italic mt-1">
+                {Array.isArray(validationErrors.image)
+                  ? validationErrors.image.join(', ')
+                  : validationErrors.image}
+              </p>
+            )}
+          </div>
+
+          <FormCheckbox label="Administrador" name="is_staff" checked={formData.is_staff} onChange={handleChange} />
+          <FormCheckbox label="Activo" name="is_active" checked={formData.is_active} onChange={handleChange} />
+
+          <FormInput label="Nueva Contraseña (opcional)" name="password" type="password" value={formData.password} onChange={handleChange} error={validationErrors.password} />
+          <FormInput label="Confirmar Contraseña" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} error={validationErrors.confirmPassword} />
+
+          <div className="flex justify-end space-x-2 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={internalLoading}
+              className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={internalLoading}
+              className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors ${internalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {internalLoading ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </form>
       </Modal>
 
-      {/* Modal de Contraseña (se mantiene separado) */}
       {showPasswordModal && (
         <PasswordResetModal
           userId={user.id}
           isOpen={showPasswordModal}
           onClose={handleClosePasswordModal}
-          onSave={handleSaveNewPassword} // Pasa el handler correcto
+          onSave={handleSaveNewPassword}
         />
       )}
     </>
