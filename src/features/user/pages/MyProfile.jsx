@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthProvider';
 import Layout from '../../../pages/Layout';
@@ -19,7 +18,7 @@ const MyProfile = () => {
   return (
     <>
       <Layout>
-        <div className="flex-1 pt-20 px-4 py-10 sm:px-6 lg:px-20 bg-background-100 min-h-screen">
+        <div className="flex-1 px-4 py-10 sm:px-6 pt-20 lg:px-20 bg-background-100 min-h-[calc(100vh-3.5rem-3rem)] overflow-hidden">
           <div className="max-w-5xl mx-auto bg-background-200 border border-gray-200 dark:border-primary-500 rounded-4xl shadow-md p-6 flex flex-col sm:flex-row items-center sm:items-start space-y-6 sm:space-y-0 sm:space-x-6">
             {user && (
               <>
@@ -31,7 +30,7 @@ const MyProfile = () => {
                     {user.name} {user.last_name}
                   </h2>
                   <p className="mb-6 text-text-secondary text-base">
-                    Puedes ver tus datos personales
+                    Tus datos personales
                   </p>
                   <UserInfoSection user={user} setUser={handleUserUpdate} />
                 </div>
