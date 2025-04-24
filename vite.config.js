@@ -10,7 +10,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         // Usa la variable de entorno VITE_API_URL o localhost en desarrollo
-        target: process.env.VITE_API_BASE_URL || 'http://localhost:8000',
+        target: process.env.VITE_API_BASE_URL,
         changeOrigin: true,
         secure: false, // Permite peticiones a HTTP sin SSL en desarrollo
         rewrite: (path) => path.replace(/^\/api/, ''), // Reescribe la ruta del proxy
