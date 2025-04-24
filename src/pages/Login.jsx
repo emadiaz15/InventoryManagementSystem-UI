@@ -5,11 +5,13 @@ import InputField from '../components/ui/form/InputField';
 import Spinner from '../components/ui/Spinner';
 import PageWrapper from '../components/PageWrapper';
 import BackgroundCanvas from '../components/BackgroundCanvas';
+import axiosInstance from '../services/api';
 
 const Login = () => {
   const { login, error, loading } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [testResult, setTestResult] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,6 +25,28 @@ const Login = () => {
     console.log('Datos enviados al backend:', credentials);
 
     await login(credentials);
+  };
+
+  const handleTestLogin = async () => {
+    try {
+      console.log('🌐 VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
+
+      const res = await axiosInstance.post('/users/login/', {
+        username: 'admin',
+        password: '1234',
+      });
+
+      setTestResult({
+        success: true,
+        message: `Login exitoso. Usuario: ${res.data?.user?.username || 'Desconocido'}`,
+      });
+    } catch (err) {
+      console.error('❌ Error en login de test:', err);
+      setTestResult({
+        success: false,
+        message: err.response?.data?.detail || 'Error desconocido',
+      });
+    }
   };
 
   return (
@@ -85,6 +109,22 @@ const Login = () => {
                   </button>
                 </div>
               </form>
+
+              {/* TESTEO DE LOGIN */}
+              <div className="mt-6">
+                <button
+                  onClick={handleTestLogin}
+                  className="w-full bg-accent-500 hover:bg-accent-400 text-white py-2 rounded transition-all"
+                >
+                  🔍 Testear conexión backend
+                </button>
+
+                {testResult && (
+                  <div className={`mt-4 text-sm p-3 rounded ${testResult.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {testResult.message}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
