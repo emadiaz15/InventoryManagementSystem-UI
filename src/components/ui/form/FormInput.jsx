@@ -8,11 +8,19 @@ const FormInput = ({
   onChange,
   required = false,
   placeholder = "",
-  error = "",       // <-- Nuevo prop opcional para el mensaje de error
+  error = "", // Puede ser string o array
 }) => {
+  // Normaliza el error a string
+  const renderError = () => {
+    if (Array.isArray(error)) return error.join(', ');
+    return error || "";
+  };
+
+  const hasError = Boolean(error && renderError());
+
   return (
     <div className="mb-4">
-      {/* Etiqueta (label) */}
+      {/* Etiqueta */}
       {label && (
         <label
           htmlFor={name}
@@ -22,7 +30,7 @@ const FormInput = ({
         </label>
       )}
 
-      {/* Campo de entrada */}
+      {/* Input */}
       <input
         id={name}
         type={type}
@@ -31,14 +39,14 @@ const FormInput = ({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className={`mt-1 block w-full px-3 py-2 border border-background-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${error ? "border-red-500" : ""
+        className={`mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${hasError ? "border-red-500" : "border-background-200"
           }`}
       />
 
-      {/* Texto de error (solo si error no es cadena vacía) */}
-      {error && (
+      {/* Error */}
+      {hasError && (
         <p className="mt-1 text-sm text-red-500">
-          {error}
+          {renderError()}
         </p>
       )}
     </div>

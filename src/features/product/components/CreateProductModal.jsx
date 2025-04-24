@@ -33,6 +33,7 @@ const CreateProductModal = ({
         code: "",
         description: "",
         brand: "",
+        location: "",
         category: "",
         type: "",
         initial_stock_quantity: "",
@@ -68,6 +69,7 @@ const CreateProductModal = ({
                 code: product.code !== null ? String(product.code) : "",
                 description: product.description || "",
                 brand: product.brand || "",
+                location: product.location || "",
                 category: product.category?.toString() || "",
                 type: product.type?.toString() || "",
                 initial_stock_quantity: "",
@@ -79,6 +81,7 @@ const CreateProductModal = ({
                 code: "",
                 description: "",
                 brand: "",
+                location: "",
                 category: "",
                 type: "",
                 initial_stock_quantity: "",
@@ -157,6 +160,7 @@ const CreateProductModal = ({
         dataToSend.append("code", parsedCode);
         dataToSend.append("description", formData.description.trim());
         dataToSend.append("brand", formData.brand.trim());
+        dataToSend.append("location", formData.location.trim());
         dataToSend.append("category", formData.category);
         dataToSend.append("type", formData.type);
 
@@ -228,17 +232,24 @@ const CreateProductModal = ({
                 />
 
                 <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
-                <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
-                <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
-                <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
 
-                <FormStockInput
-                    label="Cantidad de Stock Inicial"
-                    name="initial_stock_quantity"
-                    value={formData.initial_stock_quantity}
-                    onChange={handleStockChange}
-                    placeholder="Ej: 100"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
+                    <FormStockInput
+                        label="Cantidad de Stock Inicial"
+                        name="initial_stock_quantity"
+                        value={formData.initial_stock_quantity}
+                        onChange={handleStockChange}
+                        placeholder="Ej: 100"
+                    />
+                </div>
+
+                <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
+                    <FormInput label="Posición" name="location" value={formData.location} onChange={handleChange} />
+                </div>
 
                 <FormInput label="Imágenes (máx. 5)" name="images" type="file" multiple onChange={handleFileChange} />
 

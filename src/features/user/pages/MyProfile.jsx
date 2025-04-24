@@ -7,7 +7,7 @@ import SuccessMessage from '../../../components/common/SuccessMessage';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 
 const MyProfile = () => {
-  const { user } = useAuth();
+  const { user, profileImage } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
 
@@ -18,15 +18,22 @@ const MyProfile = () => {
   return (
     <>
       <Layout>
-        <div className="flex-1 p-12">
-          <div className="max-w-4xl mx-auto bg-neutral-500 rounded-lg shadow-sm p-6 text-center text-primary-500">
+        <div className="flex-1 px-4 py-10 sm:px-6 pt-20 lg:px-20 bg-background-100 min-h-[calc(100vh-3.5rem-3rem)] overflow-hidden">
+          <div className="max-w-5xl mx-auto bg-background-200 border border-gray-200 dark:border-primary-500 rounded-4xl shadow-md p-6 flex flex-col sm:flex-row items-center sm:items-start space-y-6 sm:space-y-0 sm:space-x-6">
             {user && (
               <>
-                <ProfileImage image={user.image} />
-                <h2 className="mt-4 text-2xl font-bold text-primary-500">
-                  {user.name} {user.last_name}
-                </h2>
-                <UserInfoSection user={user} setUser={handleUserUpdate} />
+                <div className="sm:w-64 w-full flex justify-center sm:justify-start">
+                  <ProfileImage image={profileImage} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="mb-4 text-3xl font-bold text-text-primary">
+                    {user.name} {user.last_name}
+                  </h2>
+                  <p className="mb-6 text-text-secondary text-base">
+                    Tus datos personales
+                  </p>
+                  <UserInfoSection user={user} setUser={handleUserUpdate} />
+                </div>
               </>
             )}
           </div>

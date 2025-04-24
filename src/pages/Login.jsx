@@ -27,7 +27,7 @@ const Login = () => {
 
   return (
     <PageWrapper>
-      <section className="relative h-screen overflow-hidden bg-gradient-to-r from-cyan-900 to-blue-700 text-white">
+      <section className="relative h-screen overflow-hidden bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-sans">
         <BackgroundCanvas />
 
         <div className="relative z-10 h-full flex items-center justify-center px-4">
@@ -38,12 +38,12 @@ const Login = () => {
             </div>
 
             {/* Formulario */}
-            <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-md w-full max-w-md border text-black border-white/20">
+            <div className="bg-white/10 backdrop-blur-md p-8 rounded-4xl shadow-md w-full max-w-md border border-white/20 text-white">
               <h2 className="text-2xl font-bold mb-6 text-center text-white">
-                Sistema de gestión de stock
+                Gestión de Almacén
               </h2>
 
-              <form onSubmit={handleLogin}>
+              <form onSubmit={handleLogin} className="space-y-4">
                 <InputField
                   label="Usuario"
                   type="text"
@@ -74,7 +74,14 @@ const Login = () => {
                     className="w-full rounded-md bg-primary-500 px-4 py-2 font-semibold text-white shadow-md transition-colors hover:bg-primary-600 focus:outline-none"
                     disabled={loading}
                   >
-                    {loading ? <Spinner size="5" color="text-white" /> : 'Ingresar'}
+                    {loading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Spinner size="5" color="text-white" />
+                        <span className="text-sm">Validando credenciales...</span>
+                      </div>
+                    ) : (
+                      'Ingresar'
+                    )}
                   </button>
                 </div>
               </form>

@@ -29,8 +29,7 @@ const UserModals = ({
                 <UserRegisterModal
                     isOpen={true}
                     onClose={closeModal}
-                    // onCreateSuccess es la key para notificar al padre
-                    // Ej: onCreateSuccess => handleActionSuccess("..mensaje..")
+                    onCreate={onregisterUser}
                     onCreateSuccess={(msg) => handleActionSuccess(msg)}
                 />
             )}

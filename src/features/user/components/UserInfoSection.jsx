@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
-import UserInfoCard from './UserInfoCard';
+import React from 'react';
+import { UserIcon } from '@heroicons/react/24/outline';
 
-const UserInfoSection = ({ user, setUser }) => {
+const UserInfoSection = ({ user }) => {
+  const userFields = [
+    { label: 'Correo Electrónico', value: user.email },
+    { label: 'DNI', value: user.dni },
+    { label: 'Activo', value: user.is_active ? 'Sí' : 'No' },
+    { label: 'Rol', value: user.is_staff ? 'Administrador' : 'Operario' },
+    { label: 'Usuario', value: user.username },
+    { label: 'Contraseña', value: '*******' },
+  ];
 
-  const handleUpdateUser = (updatedFields) => {
-    setUser((prevUser) => ({ ...prevUser, ...updatedFields }));
-  };
-  
   return (
-    <div className="mt-6 grid md:grid-cols-2 gap-4 text-secondary-500">
-      {[
-        { label: 'Correo Electrónico', value: user.email },
-        { label: 'DNI', value: user.dni },
-        { label: 'Activo', value: user.is_active ? 'Sí' : 'No' },
-        { label: 'Administrador', value: user.is_staff ? 'Sí' : 'No' },
-        { label: 'Usuario', value: user.username},
-        { label: 'Contraseña', value: user.password}, // No mostrar la contraseña real
-      ].map((info, index) => (
-        <UserInfoCard
+    <div className="mt-6 grid md:grid-cols-2 gap-6">
+      {userFields.map((field, index) => (
+        <div
           key={index}
-          label={info.label}
-          value={info.value}
-          userId={user.id}
-          onUpdate={handleUpdateUser} // Actualiza el usuario después de una edición
-        />
+          className="flex items-center p-4 bg-background-200 rounded-2xl shadow-sm border border-background-100"
+        >
+          <UserIcon className="h-5 w-5 text-primary-500 mr-3" />
+          <div>
+            <p className="text-sm text-text-secondary font-medium">{field.label}</p>
+            <p className="text-lg text-text-primary font-semibold">{field.value}</p>
+          </div>
+        </div>
       ))}
     </div>
   );

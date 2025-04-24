@@ -1,63 +1,70 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/ui/Modal';
+import Spinner from '../../../components/ui/Spinner';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { fetchProtectedImage } from '../../../services/imageService';
 
 const UserViewModal = ({ user, isOpen, onClose }) => {
+    const [imageUrl, setImageUrl] = useState(null);
+    const [imageStatus, setImageStatus] = useState('loading');
+
+    useEffect(() => {
+        if (!user?.image_url || !isOpen) return;
+
+        setImageStatus('loading');
+        setImageUrl(null);
+
+        fetchProtectedImage(user.image_url)
+            .then((blobUrl) => {
+                setImageUrl(blobUrl);
+                setImageStatus('loaded');
+            })
+            .catch(() => setImageStatus('error'));
+    }, [user?.image_url, isOpen]);
+
     if (!isOpen || !user) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Detalles de Usuario" position="center">
-            {/* Contenido del Modal */}
-            <div className="p-4 space-y-4"> {/* Añadido más espacio vertical */}
-
-                {/* --- Sección Imagen/Icono (NUEVO) --- */}
+        <Modal isOpen={isOpen} onClose={onClose} title="Detalles del Usuario">
+            <div className="flex flex-col h-full">
                 <div className="flex justify-center mb-4">
-                    {user.image ? (
+                    {imageStatus === 'loading' && (
+                        <div className="w-32 h-32 flex items-center justify-center">
+                            <Spinner size="6" color="text-gray-500" />
+                        </div>
+                    )}
+                    {imageStatus === 'loaded' && imageUrl && (
                         <img
-                            src={user.image}
-                            alt={`${user.username || 'Usuario'} profile`}
-                            className="w-24 h-24 rounded-full object-cover border-2 border-gray-300" // Tamaño y estilo
+                            src={imageUrl}
+                            alt="Imagen de perfil"
+                            className="w-32 h-32 rounded-full object-cover border-2 border-gray-300 cursor-pointer"
+                            onClick={() => window.open(imageUrl, '_blank')}
                         />
-                    ) : (
-                        // Icono por defecto si no hay imagen
-                        <UserCircleIcon className="w-24 h-24 text-gray-400" />
+                    )}
+                    {imageStatus === 'error' && (
+                        <UserCircleIcon className="w-32 h-32 text-gray-400" />
                     )}
                 </div>
-                {/* --- Fin Sección Imagen/Icono --- */}
-
-
-                {/* --- Detalles del Usuario (Ajustados) --- */}
-                <div className="text-sm text-text-secondary space-y-2"> {/* Estilo consistente */}
-                    <p><strong className="text-text-primary">ID:</strong> {user.id}</p>
-                    <p><strong className="text-text-primary">Username:</strong> {user.username || 'N/A'}</p>
-                    <p><strong className="text-text-primary">Email:</strong> {user.email || 'N/A'}</p>
-                    <p><strong className="text-text-primary">Nombre completo:</strong> {`${user.name || ''} ${user.last_name || ''}`.trim() || 'N/A'}</p>
-                    <p><strong className="text-text-primary">DNI:</strong> {user.dni || 'N/A'}</p>
-                    <p><strong className="text-text-primary">Estado:</strong>
-                        <span className={`ml-2 font-medium px-2 py-0.5 rounded-full text-xs ${user.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                            {user.is_active ? "Activo" : "Inactivo"}
-                        </span>
-                    </p>
-                    <p><strong className="text-text-primary">Rol:</strong> {user.is_staff ? "Administrador" : "Operario"}</p>
-                    {/* Mostrar fechas si existen */}
-                    {user.created_at && <p><strong className="text-text-primary">Creado en:</strong> {new Date(user.created_at).toLocaleString()}</p>}
-                    {user.modified_at && <p><strong className="text-text-primary">Modificado en:</strong> {new Date(user.modified_at).toLocaleString()}</p>}
+                <div className="space-y-2 flex-grow text-sm text-text-secondary">
+                    <p><strong>ID:</strong> {user.id}</p>
+                    <p><strong>Username:</strong> {user.username || "N/A"}</p>
+                    <p><strong>Email:</strong> {user.email || "N/A"}</p>
+                    <p><strong>Nombre completo:</strong> {`${user.name || ''} ${user.last_name || ''}`.trim() || "N/A"}</p>
+                    <p><strong>DNI:</strong> {user.dni || "N/A"}</p>
+                    <p><strong>Estado:</strong> {user.is_active ? "Activo" : "Inactivo"}</p>
+                    <p><strong>Rol:</strong> {user.is_staff ? "Administrador" : "Operario"}</p>
+                    <p><strong>Creado en:</strong> {user.created_at ? new Date(user.created_at).toLocaleString() : "N/A"}</p>
+                    <p><strong>Modificado en:</strong> {user.modified_at ? new Date(user.modified_at).toLocaleString() : "N/A"}</p>
                 </div>
-                {/* --- Fin Detalles --- */}
-
-
-                {/* --- Botón Cerrar (Abajo) --- */}
-                <div className="border-t border-neutral-200 pt-4 mt-6">
+                <div className="flex justify-end mt-4">
                     <button
                         onClick={onClose}
-                        className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors w-full"
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                     >
                         Cerrar
                     </button>
                 </div>
-                {/* --- Fin Botón --- */}
             </div>
-            {/* Fin Contenido */}
         </Modal>
     );
 };

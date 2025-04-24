@@ -1,30 +1,41 @@
 import axios from "axios";
 
-// Obtiene la URL base desde la variable de entorno de Vite
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://inventoryapi.up.railway.app/api/v1";
+// URL base desde variable de entorno Vite
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
+
+// Instancia principal de Axios
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL, // Esto asegura que todas las peticiones se envíen a https://inventoryapi.up.railway.app
+  baseURL: API_BASE_URL,
 });
 
-// Lee el token de sessionStorage
+// ----------------------------
+// Tokens en sessionStorage
+// ----------------------------
 const getAccessToken = () => sessionStorage.getItem("accessToken");
+const getRefreshToken = () => sessionStorage.getItem("refreshToken");
+const getFastapiToken = () => sessionStorage.getItem("fastapiToken");
 
-// Limpia el token (para logout)
 const clearTokens = () => {
   sessionStorage.removeItem("accessToken");
+  sessionStorage.removeItem("refreshToken");
+  sessionStorage.removeItem("fastapiToken");
 };
 
-// Interceptor REQUEST: inyecta el token Bearer si existe
+// ----------------------------
+// Interceptor de REQUEST
+// ----------------------------
 axiosInstance.interceptors.request.use((config) => {
-  const token = getAccessToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const accessToken = getAccessToken();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 });
 
-// Interceptor RESPONSE: si se recibe 401, limpia los tokens y lanza un evento
+// ----------------------------
+// Interceptor de RESPONSE
+// ----------------------------
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,7 +47,14 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-
+// ----------------------------
 // Exportaciones
+// ----------------------------
 export default axiosInstance;
-export { axiosInstance, getAccessToken, clearTokens };
+export {
+  axiosInstance,
+  getAccessToken,
+  getRefreshToken,
+  getFastapiToken,
+  clearTokens,
+};

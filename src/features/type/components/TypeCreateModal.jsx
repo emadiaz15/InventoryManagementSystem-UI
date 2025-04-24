@@ -74,7 +74,7 @@ const TypeCreateModal = ({ isOpen, onClose, onCreate, onCreateSuccess, categorie
 
   // Genera opciones para el select (sin placeholder; FormSelect lo muestra por defecto)
   const categoryOptions = useMemo(() => {
-    const options = [];
+    const options = [{ value: "", label: "Seleccione una categoría" }];
     if (Array.isArray(categories)) {
       categories.forEach(cat => {
         options.push({ value: cat.id.toString(), label: cat.name });

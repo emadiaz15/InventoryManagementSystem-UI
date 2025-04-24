@@ -17,7 +17,7 @@ import {
 const Sidebar = ({ onToggle }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   const sidebarItems = [
     { label: 'Inicio', icon: HomeIcon, onClick: () => navigate('/dashboard') },
