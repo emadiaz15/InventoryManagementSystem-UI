@@ -1,22 +1,22 @@
-# 🔧 Lightweight Node image
+# 🔧 Imagen ligera de Node.js
 FROM node:18-slim
 
-# 📂 App directory
+# 📂 Directorio de trabajo
 WORKDIR /app
 
-# 📦 Dependencies (prod only)
+# 📦 Instalar TODAS las dependencias (incluye vite)
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm install
 
-# 📂 Source code
+# 📂 Copiar el código
 COPY . .
 
-# ⚙️ Build
+# ⚙️ Build con Vite
 RUN npm run build
 
-# 🌍 Port exposure for Railway
+# 🌍 Puerto para Railway
 ENV PORT=3000
 EXPOSE 3000
 
-# 🚀 Start Express
+# 🚀 Servir con Express
 CMD ["node", "server.js"]
