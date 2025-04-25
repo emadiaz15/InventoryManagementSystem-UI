@@ -1,26 +1,38 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+import dotenv from 'dotenv';
+import path from 'path';
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    // El puerto es configurado por Railway en la variable de entorno PORT
-    port: process.env.PORT || 3000,  // Usa el puerto de Railway, o 3000 por defecto
-    strictPort: true, // Evita cambiar de puerto automáticamente si está ocupado
-    proxy: {
-      '/api': {
-        // Usa la variable de entorno VITE_API_URL o localhost en desarrollo
-        target: process.env.VITE_API_URL || 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false, // Permite peticiones a HTTP sin SSL en desarrollo
-        rewrite: (path) => path.replace(/^\/api/, ''), // Reescribe la ruta del proxy
+export default defineConfig(({ mode }) => {
+  // Cargar variables de entorno según el modo (development o production)
+  const env = loadEnv(mode, process.cwd());
 
-      },
+  // También cargar manualmente .env en Node (útil para server-side Node.js)
+  dotenv.config({ path: `.env.${mode}` });
+
+  const isDev = mode === 'development';
+  const PORT = parseInt(env.VITE_PORT || '5173');
+  const API_BASE_URL = env.VITE_API_BASE_URL;
+
+  return {
+    plugins: [react()],
+    server: {
+      port: PORT,
+      strictPort: true,
+      proxy: isDev
+        ? {
+            '/api': {
+              target: API_BASE_URL,
+              changeOrigin: true,
+              secure: false,
+              rewrite: (path) => path.replace(/^\/api/, ''),
+            },
+          }
+        : undefined,
     },
-  },
-  preview: {
-    // Puerto para el modo preview
-    port: 4174,
-    strictPort: true, // Evita cambiar de puerto automáticamente si está ocupado
-  },
+    preview: {
+      port: 4174,
+      strictPort: true,
+    },
+  };
 });
