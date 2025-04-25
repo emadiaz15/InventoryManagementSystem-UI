@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
+// ✅ Cargar variables de entorno desde `.env` (incluyendo VITE_API_BASE_URL)
 dotenv.config();
 
 const app = express();
@@ -16,8 +17,11 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-// 🚀 Arrancar el servidor en el puerto especificado
+// 🔧 Variables con fallback por si no están definidas
+const API_URL = process.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const PORT = process.env.PORT || 3000;
+
+// 🚀 Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`🌍 Frontend disponible en ${VITE_API_BASE_URL} ${PORT}`);
+  console.log(`🌍 Frontend disponible en ${API_URL} en el puerto ${PORT}`);
 });
