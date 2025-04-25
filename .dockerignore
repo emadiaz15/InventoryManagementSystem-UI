@@ -1,0 +1,33 @@
+# 📦 Dependencias locales y build de frontend
+node_modules
+dist
+
+# 🔐 Archivos de entorno (excepto el de producción)
+.env
+.env.*
+!.env.production
+
+# ⚙️ Configuraciones de Docker y Docker Compose
+Dockerfile*
+docker-compose*
+
+# 🧪 Tests y cobertura
+tests
+__tests__
+coverage
+
+# 📚 Documentación
+docs
+
+# 🔧 Configuración de editores
+.vscode
+.idea
+
+# 🔄 Archivos temporales
+*.log
+*.swp
+*.swo
+
+# 🗃 Control de versiones
+.git
+.gitignore

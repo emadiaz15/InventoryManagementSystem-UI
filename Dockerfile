@@ -1,21 +1,25 @@
-# 🔧 Imagen base ligera de Node.js
+# 🔧 Imagen base ligera
 FROM node:18-alpine
 
 # 📂 Directorio de trabajo
 WORKDIR /app
 
-# 📦 Instalar solo dependencias necesarias para producción
+# 📦 Copiar dependencias e instalar solo producción
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# 📂 Copiar código fuente
+# 📂 Copiar todo el código fuente
 COPY . .
 
 # 🧪 Copiar entorno de producción
 COPY .env.production .env
 
-# ⚙️ Generar el build con Vite
+# ⚙️ Generar el build optimizado
 RUN npm run build
 
-# 🚀 Servir archivos estáticos con Express
+# 🌍 Exponer el puerto para Railway (usa variable PORT automáticamente)
+ENV PORT=3000
+EXPOSE 3000
+
+# 🚀 Servir con Express
 CMD ["node", "server.js"]
