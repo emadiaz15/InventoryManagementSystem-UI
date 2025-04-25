@@ -18,11 +18,11 @@ app.get("*", (req, res) => {
 });
 
 // 🔧 Variables con fallback por si no están definidas
-const API_URL = process.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const API_URL = "https://inventoryapi.up.railway.app/api/v1"
 const PORT = process.env.PORT || 3000;
 
 // 🚀 Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`🔗 Backend disponible en ${VITE_API_BASE_URL}`);
+  console.log(`🔗 Backend disponible en ${API_URL}`);
   console.log(`🌍 Frontend servido en ${PORT}`);
 });

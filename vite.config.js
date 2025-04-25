@@ -12,8 +12,7 @@ export default defineConfig(({ mode }) => {
 
   const isDev = mode === 'development';
   const PORT = parseInt(env.VITE_PORT || '5173');
-  const API_BASE_URL = env.VITE_API_BASE_URL;
-
+  const API_BASE_URL = "https://inventoryapi.up.railway.app/api/v1"
   return {
     plugins: [react()],
     server: {
