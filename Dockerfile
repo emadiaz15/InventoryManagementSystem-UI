@@ -1,25 +1,22 @@
-# 🔧 Imagen base ligera
+# 🔧 Lightweight Node image
 FROM node:18-slim
 
-# 📂 Directorio de trabajo
+# 📂 App directory
 WORKDIR /app
 
-# 📦 Copiar dependencias e instalar solo producción
+# 📦 Dependencies (prod only)
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# 📂 Copiar todo el código fuente
+# 📂 Source code
 COPY . .
 
-# 🧪 Copiar entorno de producción
-COPY .env.production .env
-
-# ⚙️ Generar el build optimizado
+# ⚙️ Build
 RUN npm run build
 
-# 🌍 Exponer el puerto para Railway (usa variable PORT automáticamente)
+# 🌍 Port exposure for Railway
 ENV PORT=3000
 EXPOSE 3000
 
-# 🚀 Servir con Express
+# 🚀 Start Express
 CMD ["node", "server.js"]
