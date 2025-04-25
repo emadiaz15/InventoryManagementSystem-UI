@@ -23,5 +23,6 @@ const PORT = process.env.PORT || 3000;
 
 // 🚀 Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`🌍 Frontend disponible en ${API_URL} en el puerto ${PORT}`);
+  console.log(`🔗 Backend disponible en ${VITE_API_BASE_URL}`);
+  console.log(`🌍 Frontend servido en ${PORT}`);
 });

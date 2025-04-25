@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // URL base desde variable de entorno Vite
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL ="https://inventoryapi.up.railway.app/api/v1"
 
 
 // Instancia principal de Axios
