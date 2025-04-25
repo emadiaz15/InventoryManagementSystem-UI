@@ -1,5 +1,5 @@
 # 🔧 Imagen base ligera
-FROM node:18-alpine
+FROM node:18-slim
 
 # 📂 Directorio de trabajo
 WORKDIR /app
