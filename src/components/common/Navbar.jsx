@@ -52,11 +52,6 @@ const Navbar = () => {
               </MenuButton>
 
               <MenuItems className="absolute right-0 z-10 mt-40 w-48 origin-top-right rounded-md bg-neutral-100 py-1 shadow-lg ring-1 ring-black/5 focus:outline-none">
-                {userFullName && (
-                  <div className="block px-4 py-2 text-sm text-neutral-600 font-semibold border-b border-gray-200">
-                    {userFullName}
-                  </div>
-                )}
                 <MenuItem>
                   {({ active }) => (
                     <a

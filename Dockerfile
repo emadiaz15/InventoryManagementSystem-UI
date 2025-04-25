@@ -1,26 +1,41 @@
-# 🛠 Usar una imagen ligera de Node.js basada en Alpine
-FROM node:18-alpine  
+# 🛠 Imagen base de Node.js sobre Alpine (ligera y rápida)
+FROM node:18-alpine as builder
 
-# 📂 Establecer el directorio de trabajo en el contenedor
-WORKDIR /app  
+# 📂 Directorio de trabajo
+WORKDIR /app
 
-# 📦 Copiar los archivos de dependencias primero para aprovechar la caché
-COPY package.json package-lock.json ./  
+# 📦 Copiar dependencias primero
+COPY package*.json ./
+RUN npm install
 
-# 📥 Instalar las dependencias del proyecto
-RUN npm install  
+# 📂 Copiar el resto del código (incluyendo .env.production)
+COPY . .
 
-# 📂 Copiar el resto del código fuente al contenedor
-COPY . .  
+# 🧪 Usar el archivo de entorno de producción durante el build
+COPY .env.production .env
 
-# ⚙️ Ejecutar el build de Vite para generar la carpeta "dist"
-RUN npm run build  
+# ⚙️ Generar el build optimizado con Vite
+RUN npm run build
 
-# 🔥 Instalar Express para servir los archivos estáticos
-RUN npm install express  
 
-# 🚀 Copiar el archivo del servidor Express
-COPY server.js .
+# 🌐 Etapa final: solo servir archivos (más segura, más ligera)
+FROM node:18-alpine
 
-# 🎯 Iniciar el servidor Express para servir "dist"
+# 🔒 Crear un usuario sin privilegios
+RUN addgroup app && adduser -S -G app app
+
+# 📂 Directorio de trabajo
+WORKDIR /app
+
+# 📂 Copiar solo los archivos necesarios del build anterior
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server.js ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/.env.production .env
+
+# 👤 Usar el usuario sin privilegios
+USER app
+
+# 🚀 Servir con Express
 CMD ["node", "server.js"]
