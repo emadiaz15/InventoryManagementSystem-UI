@@ -4,19 +4,20 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# Aquí: aseguramos instalar devDependencies
-ENV NODE_ENV=development
+# 🔥 Instala todas las dependencias incluyendo devDependencies (vite)
 RUN npm install
-RUN npm install -g serve
+
+# 🔥 Instala vite globalmente para que esté disponible
+RUN npm install -g vite serve
 
 COPY . .
 
-# Ahora sí corremos el build
-RUN npm run build
+# 🔥 Build el proyecto
+RUN vite build
 
-# Producción real
-ENV NODE_ENV=production
+# 🔥 Exponer el puerto de production
 ENV PORT=3000
 EXPOSE 3000
 
+# 🔥 Serve el contenido built
 CMD ["serve", "-s", "dist", "-l", "3000"]
