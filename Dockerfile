@@ -3,21 +3,18 @@ FROM node:18-slim
 WORKDIR /app
 
 COPY package*.json ./
-
-# 🔥 Instala todas las dependencias incluyendo devDependencies (vite)
 RUN npm install
-
-# 🔥 Instala vite globalmente para que esté disponible
-RUN npm install -g vite serve
+RUN npm install -g serve
 
 COPY . .
 
-# 🔥 Build el proyecto
-RUN vite build
+# 🔥 DEBUG: Mostrar la variable antes de build
+RUN echo "VITE_API_BASE_URL=$VITE_API_BASE_URL"
 
-# 🔥 Exponer el puerto de production
+# 🔥 Build
+RUN npm run build
+
 ENV PORT=3000
 EXPOSE 3000
 
-# 🔥 Serve el contenido built
 CMD ["serve", "-s", "dist", "-l", "3000"]
