@@ -2,20 +2,21 @@ FROM node:18-slim
 
 WORKDIR /app
 
-# Copiar package.json e instalar dependencias
 COPY package*.json ./
+
+# Aquí: aseguramos instalar devDependencies
+ENV NODE_ENV=development
 RUN npm install
 RUN npm install -g serve
 
-# Copiar el resto de archivos
 COPY . .
 
-# Build del frontend
+# Ahora sí corremos el build
 RUN npm run build
 
-# Definir PORT para Railway
+# Producción real
+ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
 
-# Importante: Servir el build con serve, escuchando el $PORT de Railway
 CMD ["serve", "-s", "dist", "-l", "3000"]
