@@ -8,10 +8,14 @@ RUN npm install -g serve
 
 COPY . .
 
-# 🔥 DEBUG: Mostrar la variable antes de build
-RUN echo "VITE_API_BASE_URL=$VITE_API_BASE_URL"
+# 💥 Define ARG para VITE_API_BASE_URL
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# 🔥 Build
+# 🔥 Verificar que llega
+RUN echo "VITE_API_BASE_URL DURING BUILD: $VITE_API_BASE_URL"
+
+# 🔥 Build usando variable correcta
 RUN npm run build
 
 ENV PORT=3000
