@@ -1,41 +1,24 @@
-# 🛠 Imagen base de Node.js sobre Alpine (ligera y rápida)
-FROM node:18-alpine as builder
+FROM node:18-slim
 
-# 📂 Directorio de trabajo
 WORKDIR /app
 
-# 📦 Copiar dependencias primero
 COPY package*.json ./
 RUN npm install
+RUN npm install -g serve
 
-# 📂 Copiar el resto del código (incluyendo .env.production)
 COPY . .
 
-# 🧪 Usar el archivo de entorno de producción durante el build
-COPY .env.production .env
+# 💥 Define ARG para VITE_API_BASE_URL
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# ⚙️ Generar el build optimizado con Vite
+# 🔥 Verificar que llega
+RUN echo "VITE_API_BASE_URL DURING BUILD: $VITE_API_BASE_URL"
+
+# 🔥 Build usando variable correcta
 RUN npm run build
 
+ENV PORT=3000
+EXPOSE 3000
 
-# 🌐 Etapa final: solo servir archivos (más segura, más ligera)
-FROM node:18-alpine
-
-# 🔒 Crear un usuario sin privilegios
-RUN addgroup app && adduser -S -G app app
-
-# 📂 Directorio de trabajo
-WORKDIR /app
-
-# 📂 Copiar solo los archivos necesarios del build anterior
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.js ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/.env.production .env
-
-# 👤 Usar el usuario sin privilegios
-USER app
-
-# 🚀 Servir con Express
-CMD ["node", "server.js"]
+CMD ["serve", "-s", "dist", "-l", "3000"]
