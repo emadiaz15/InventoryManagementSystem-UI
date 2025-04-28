@@ -24,7 +24,7 @@ const UserTable = ({
         "Nombre Completo": `${user.name || ''} ${user.last_name || ''}`.trim() || "N/A",
         "Email": user.email || "N/A",
         "DNI": user.dni || "N/A",
-        "Rol": user.is_staff ? "Admin" : "Operario",
+        "Rol": user.is_staff ? "Administrador" : "Operario",
         "Acciones": (
             <div className="flex space-x-2">
                 <button

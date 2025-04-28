@@ -4,7 +4,6 @@ import FormInput from '../../../components/ui/form/FormInput';
 import FormCheckbox from '../../../components/ui/form/FormCheckbox';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 import PasswordResetModal from './PasswordResetModal';
-import ActionButtons from './ActionButtons';
 
 const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswordReset }) => {
   const [formData, setFormData] = useState({
@@ -15,9 +14,6 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
     dni: '',
     image: null,
     is_staff: false,
-    is_active: true,
-    password: '',
-    confirmPassword: ''
   });
 
   const [internalLoading, setInternalLoading] = useState(false);
@@ -35,9 +31,6 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
         dni: user.dni || '',
         image: null,
         is_staff: user.is_staff || false,
-        is_active: user.is_active !== undefined ? user.is_active : true,
-        password: '',
-        confirmPassword: ''
       });
       setInternalError('');
       setValidationErrors({});
@@ -67,14 +60,8 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
     } else if (!emailRegex.test(formData.email)) {
       errors.email = 'Ingresa un correo electrónico válido.';
     }
-    if (!formData.dni.match(/^\d{7,11}$/)) {
+    if (formData.dni && !formData.dni.match(/^\d{7,11}$/)) {
       errors.dni = 'El DNI debe tener entre 7 y 11 dígitos numéricos.';
-    }
-    if (formData.password && formData.password.length < 4) {
-      errors.password = 'La contraseña debe tener al menos 4 caracteres.';
-    }
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Las contraseñas no coinciden.';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -84,7 +71,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
 
     const dataToSend = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'confirmPassword' || value === '' || value === undefined || value === null) return;
+      if (value === '' || value === undefined || value === null) return;
       if (typeof value === 'boolean') value = value ? 'true' : 'false';
       dataToSend.append(key, value);
     });
@@ -105,13 +92,14 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
 
   const handleRestorePassword = () => setShowPasswordModal(true);
   const handleClosePasswordModal = () => setShowPasswordModal(false);
+
   const handleSaveNewPassword = async (userId, newPasswordData) => {
     try {
       await onPasswordReset(userId, newPasswordData);
-      alert('Contraseña cambiada exitosamente');
+      alert('Contraseña cambiada exitosamente.');
       handleClosePasswordModal();
     } catch (err) {
-      alert('Error al cambiar la contraseña');
+      alert('Error al cambiar la contraseña.');
     }
   };
 
@@ -121,15 +109,51 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
         <form onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
           {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}
 
-          <FormInput label="Nombre de usuario" name="username" value={formData.username} onChange={handleChange} required error={validationErrors.username} />
+          <FormInput
+            label="Nombre de usuario"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+            error={validationErrors.username}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required error={validationErrors.name} />
-            <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} error={validationErrors.last_name} />
+            <FormInput
+              label="Nombre"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              error={validationErrors.name}
+            />
+            <FormInput
+              label="Apellido"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              error={validationErrors.last_name}
+            />
           </div>
 
-          <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required error={validationErrors.email} />
-          <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required error={validationErrors.dni} />
+          <FormInput
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            error={validationErrors.email}
+          />
+
+          <FormInput
+            label="DNI"
+            name="dni"
+            value={formData.dni}
+            onChange={handleChange}
+            required
+            error={validationErrors.dni}
+          />
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-text-secondary mb-1">
@@ -151,13 +175,24 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
             )}
           </div>
 
-          <FormCheckbox label="Administrador" name="is_staff" checked={formData.is_staff} onChange={handleChange} />
-          <FormCheckbox label="Activo" name="is_active" checked={formData.is_active} onChange={handleChange} />
+          <FormCheckbox
+            label="Administrador"
+            name="is_staff"
+            checked={formData.is_staff}
+            onChange={handleChange}
+          />
+          <div className="flex justify-start mt-4">
+            <button
+              type="button"
+              onClick={handleRestorePassword}
+              disabled={internalLoading}
+              className="bg-accent-500 text-white py-2 px-4 rounded hover:bg-accent-400 transition-colors disabled:opacity-50"
+            >
+              Cambiar Contraseña
+            </button>
+          </div>
 
-          <FormInput label="Nueva Contraseña (opcional)" name="password" type="password" value={formData.password} onChange={handleChange} error={validationErrors.password} />
-          <FormInput label="Confirmar Contraseña" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} error={validationErrors.confirmPassword} />
-
-          <div className="flex justify-end space-x-2 mt-4">
+          <div className="flex justify-end space-x-2 mt-6">
             <button
               type="button"
               onClick={onClose}
@@ -166,6 +201,7 @@ const UserEditModal = ({ user, isOpen, onClose, onSave, onSaveSuccess, onPasswor
             >
               Cancelar
             </button>
+
             <button
               type="submit"
               disabled={internalLoading}

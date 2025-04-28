@@ -4,23 +4,48 @@ import Spinner from '../../../components/ui/Spinner';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { fetchProtectedImage } from '../../../services/imageService';
 
+const TIMEOUT_MS = 7000; // ⏱️ Tiempo máximo de carga
+
 const UserViewModal = ({ user, isOpen, onClose }) => {
     const [imageUrl, setImageUrl] = useState(null);
     const [imageStatus, setImageStatus] = useState('loading');
 
     useEffect(() => {
-        if (!user?.image_url || !isOpen) return;
+        if (!isOpen || !user) return;
 
         setImageStatus('loading');
         setImageUrl(null);
 
-        fetchProtectedImage(user.image_url)
-            .then((blobUrl) => {
+        let timeoutId;
+
+        if (!user.image_url) {
+            // Si no hay imagen disponible, mostrar icono directamente
+            setImageStatus('error');
+            return;
+        }
+
+        const fetchImage = async () => {
+            try {
+                const blobUrl = await fetchProtectedImage(user.image_url);
+                clearTimeout(timeoutId);
                 setImageUrl(blobUrl);
                 setImageStatus('loaded');
-            })
-            .catch(() => setImageStatus('error'));
-    }, [user?.image_url, isOpen]);
+            } catch (error) {
+                clearTimeout(timeoutId);
+                setImageStatus('error');
+            }
+        };
+
+        fetchImage();
+
+        // Timeout manual de seguridad
+        timeoutId = setTimeout(() => {
+            console.warn('⚡ Tiempo de carga de imagen expirado');
+            setImageStatus('error');
+        }, TIMEOUT_MS);
+
+        return () => clearTimeout(timeoutId);
+    }, [user, isOpen]);
 
     if (!isOpen || !user) return null;
 
@@ -45,6 +70,7 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
                         <UserCircleIcon className="w-32 h-32 text-gray-400" />
                     )}
                 </div>
+
                 <div className="space-y-2 flex-grow text-sm text-text-secondary">
                     <p><strong>ID:</strong> {user.id}</p>
                     <p><strong>Username:</strong> {user.username || "N/A"}</p>
@@ -53,9 +79,8 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
                     <p><strong>DNI:</strong> {user.dni || "N/A"}</p>
                     <p><strong>Estado:</strong> {user.is_active ? "Activo" : "Inactivo"}</p>
                     <p><strong>Rol:</strong> {user.is_staff ? "Administrador" : "Operario"}</p>
-                    <p><strong>Creado en:</strong> {user.created_at ? new Date(user.created_at).toLocaleString() : "N/A"}</p>
-                    <p><strong>Modificado en:</strong> {user.modified_at ? new Date(user.modified_at).toLocaleString() : "N/A"}</p>
                 </div>
+
                 <div className="flex justify-end mt-4">
                     <button
                         onClick={onClose}
