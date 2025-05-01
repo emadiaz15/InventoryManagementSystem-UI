@@ -1,10 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { fetchProtectedImage } from "../../../services/imageService"; // Asumimos mismo fetch que users
 
 const ProductCarouselOverlay = ({ images, onClose }) => {
     const defaultImages = ["/product-images.jpg", "/product-images1.jpg"];
-    const carouselImages = Array.isArray(images) && images.length > 0 ? images : defaultImages;
+    const [carouselImages, setCarouselImages] = useState([]);
     const [current, setCurrent] = useState(0);
     const length = carouselImages.length;
+
+    useEffect(() => {
+        const loadImages = async () => {
+            if (Array.isArray(images) && images.length > 0) {
+                try {
+                    const loadedImages = await Promise.all(
+                        images.map(async (imgUrl) => {
+                            try {
+                                const blobUrl = await fetchProtectedImage(imgUrl);
+                                return blobUrl;
+                            } catch {
+                                return null; // Si falla una imagen, seguimos
+                            }
+                        })
+                    );
+                    const validImages = loadedImages.filter((img) => img !== null);
+                    setCarouselImages(validImages.length > 0 ? validImages : defaultImages);
+                } catch (err) {
+                    console.error("❌ Error loading product images:", err);
+                    setCarouselImages(defaultImages);
+                }
+            } else {
+                setCarouselImages(defaultImages);
+            }
+        };
+
+        loadImages();
+    }, [images]);
 
     const nextSlide = () => {
         setCurrent((prev) => (prev === length - 1 ? 0 : prev + 1));
@@ -14,6 +43,8 @@ const ProductCarouselOverlay = ({ images, onClose }) => {
         setCurrent((prev) => (prev === 0 ? length - 1 : prev - 1));
     };
 
+    if (!carouselImages.length) return null;
+
     return (
         <div
             className="fixed top-1/2 right-4 transform -translate-y-1/2 
@@ -21,7 +52,7 @@ const ProductCarouselOverlay = ({ images, onClose }) => {
                        bg-background-100 text-text-primary shadow-2xl z-[9999] rounded-lg 
                        border border-neutral-500 overflow-hidden"
         >
-            {/* Botón de cierre estilo Modal */}
+            {/* Botón de cierre */}
             <button
                 onClick={onClose}
                 className="absolute top-3 right-3 text-text-secondary hover:text-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-400 rounded-full p-1 z-50"

@@ -24,7 +24,7 @@ const DeleteMessage = ({
             )}
 
             <p className="text-text-secondary mb-6">
-                ¿Estás seguro de que deseas eliminar (desactivar) {itemName}
+                ¿Estás seguro de que deseas eliminar {itemName}
                 <strong className="text-text-primary"> "{itemIdentifier}"</strong>?
             </p>
             <div className="flex justify-end space-x-3">

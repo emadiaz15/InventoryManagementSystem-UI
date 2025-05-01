@@ -13,12 +13,10 @@ import { listCategories } from "../../category/services/listCategory";
 import { listTypes } from "../../type/services/listType";
 import { listProducts } from "../services/listProducts";
 
-const CreateProductModal = ({
-    product = null,
-    isOpen,
-    onClose,
-    onSave,
-}) => {
+// Nuevo hook 💥
+import { useProductImageUpload } from "../hooks/useProductImageUpload";
+
+const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
     const [categories, setCategories] = useState([]);
     const [types, setTypes] = useState([]);
     const [products, setProducts] = useState([]);
@@ -39,6 +37,8 @@ const CreateProductModal = ({
         initial_stock_quantity: "",
         images: [],
     });
+
+    const { uploadImages, uploadError } = useProductImageUpload();
 
     const buttonLabel = product ? "Actualizar Producto" : "Crear Producto";
 
@@ -63,31 +63,17 @@ const CreateProductModal = ({
 
         fetchData();
 
-        if (product) {
-            setFormData({
-                name: product.name || "",
-                code: product.code !== null ? String(product.code) : "",
-                description: product.description || "",
-                brand: product.brand || "",
-                location: product.location || "",
-                category: product.category?.toString() || "",
-                type: product.type?.toString() || "",
-                initial_stock_quantity: "",
-                images: [],
-            });
-        } else {
-            setFormData({
-                name: "",
-                code: "",
-                description: "",
-                brand: "",
-                location: "",
-                category: "",
-                type: "",
-                initial_stock_quantity: "",
-                images: [],
-            });
-        }
+        setFormData({
+            name: product?.name || "",
+            code: product?.code !== null ? String(product.code) : "",
+            description: product?.description || "",
+            brand: product?.brand || "",
+            location: product?.location || "",
+            category: product?.category?.toString() || "",
+            type: product?.type?.toString() || "",
+            initial_stock_quantity: "",
+            images: [],
+        });
     }, [isOpen, product]);
 
     useEffect(() => {
@@ -107,10 +93,9 @@ const CreateProductModal = ({
 
     const handleStockChange = (e) => {
         const { value } = e.target;
-        const newVal = value.toString();
         setFormData((prev) => ({
             ...prev,
-            initial_stock_quantity: newVal,
+            initial_stock_quantity: value.toString(),
         }));
     };
 
@@ -146,6 +131,7 @@ const CreateProductModal = ({
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setShowSuccess(false);
 
         if (!validateCodeUnique()) return;
 
@@ -157,6 +143,7 @@ const CreateProductModal = ({
             setError("El código debe ser un número entero válido.");
             return;
         }
+
         dataToSend.append("code", parsedCode);
         dataToSend.append("description", formData.description.trim());
         dataToSend.append("brand", formData.brand.trim());
@@ -164,30 +151,32 @@ const CreateProductModal = ({
         dataToSend.append("category", formData.category);
         dataToSend.append("type", formData.type);
 
-        let stockValue = formData.initial_stock_quantity;
-        if (Array.isArray(stockValue)) {
-            stockValue = stockValue[0];
-        }
-        stockValue = String(stockValue).replace(/[^0-9.]/g, "");
+        let stockValue = String(formData.initial_stock_quantity).replace(/[^0-9.]/g, "");
         if (parseFloat(stockValue) > 0) {
             dataToSend.set("initial_stock_quantity", stockValue.trim());
-        } else {
-            dataToSend.delete("initial_stock_quantity");
         }
-
-        formData.images.forEach((file) => {
-            dataToSend.append("images", file);
-        });
 
         try {
             setLoading(true);
+            let savedProduct = null;
+
             if (product?.id) {
                 await updateProduct(product.id, dataToSend);
+                savedProduct = { id: product.id };
             } else {
-                await createProduct(dataToSend);
+                savedProduct = await createProduct(dataToSend); // debe retornar { id }
+            }
+
+            if (formData.images.length > 0 && savedProduct?.id) {
+                const success = await uploadImages(savedProduct.id, formData.images);
+                if (!success) {
+                    setError(uploadError || "Error al subir imágenes");
+                    return;
+                }
             }
 
             onClose();
+            setShowSuccess(true);
             setTimeout(() => {
                 if (onSave) onSave();
             }, 200);
@@ -257,14 +246,14 @@ const CreateProductModal = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50 mr-2"
+                        className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 mr-2"
                         disabled={loading}
                     >
                         Cancelar
                     </button>
                     <button
                         type="submit"
-                        className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors disabled:opacity-50"
+                        className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600"
                         disabled={loading}
                     >
                         {loading ? "Guardando..." : buttonLabel}

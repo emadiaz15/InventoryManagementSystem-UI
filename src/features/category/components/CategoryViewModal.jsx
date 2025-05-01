@@ -29,19 +29,11 @@ const CategoryViewModal = ({ category, onClose }) => {
                         {category.modified_at ? category.modified_at : "N/A"}
                     </p>
                     <p>
-                        <strong>Eliminado en:</strong>{" "}
-                        {category.deleted_at ? category.deleted_at : "N/A"}
-                    </p>
-                    <p>
                         <strong>Creado por:</strong> {category.created_by}
                     </p>
                     <p>
                         <strong>Modificado por:</strong>{" "}
                         {category.modified_by ? category.modified_by : "N/A"}
-                    </p>
-                    <p>
-                        <strong>Eliminado por:</strong>{" "}
-                        {category.deleted_by ? category.deleted_by : "N/A"}
                     </p>
                 </div>
                 <div className="flex justify-end mt-4"> {/* Contenedor para el botón "Cerrar" */}

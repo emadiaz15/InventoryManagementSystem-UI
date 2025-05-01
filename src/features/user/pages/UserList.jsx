@@ -130,7 +130,7 @@ const UserList = () => {
     setActionError(null);
     try {
       await deleteUser(userToDelete.id);
-      handleActionSuccess(`Usuario "${userToDelete.username}" desactivado.`);
+      handleActionSuccess(`Usuario "${userToDelete.username}" eliminado (soft).`);
     } catch (err) {
       console.error("Error deactivating user (UserList):", err);
       const errorMsg = err.response?.data?.detail || err.message || "Error al desactivar el usuario.";

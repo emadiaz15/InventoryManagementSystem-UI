@@ -73,9 +73,9 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
 
                 <div className="space-y-2 flex-grow text-sm text-text-secondary">
                     <p><strong>ID:</strong> {user.id}</p>
-                    <p><strong>Username:</strong> {user.username || "N/A"}</p>
-                    <p><strong>Email:</strong> {user.email || "N/A"}</p>
+                    <p><strong>Nombre de Usuario:</strong> {user.username || "N/A"}</p>
                     <p><strong>Nombre completo:</strong> {`${user.name || ''} ${user.last_name || ''}`.trim() || "N/A"}</p>
+                    <p><strong>Email:</strong> {user.email || "N/A"}</p>
                     <p><strong>DNI:</strong> {user.dni || "N/A"}</p>
                     <p><strong>Estado:</strong> {user.is_active ? "Activo" : "Inactivo"}</p>
                     <p><strong>Rol:</strong> {user.is_staff ? "Administrador" : "Operario"}</p>
