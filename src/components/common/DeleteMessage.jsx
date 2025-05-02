@@ -24,17 +24,19 @@ const DeleteMessage = ({
             )}
 
             <p className="text-text-secondary mb-6">
-                ¿Estás seguro de que deseas eliminar (desactivar) {itemName}
+                ¿Estás seguro de que deseas eliminar {itemName}
                 <strong className="text-text-primary"> "{itemIdentifier}"</strong>?
             </p>
             <div className="flex justify-end space-x-3">
                 <button onClick={onClose} disabled={isDeleting} className="bg-neutral-500 text-text-white px-4 py-2 rounded hover:bg-neutral-600 transition-colors"> Cancelar </button>
                 <button
+                    type="button"
                     onClick={onDelete}
                     disabled={isDeleting}
-                    className="bg-error-500 text-text-white px-4 py-2 rounded hover:bg-error-600 transition-colors"
+                    className={`bg-error-500 text-white py-2 px-4 rounded hover:bg-error-600 transition-colors flex items-center justify-center gap-2 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    {isDeleting ? <><Spinner size="sm" /> Eliminando...</> : 'Confirmar Eliminación'}
+                    {isDeleting && <Spinner size="4" />}
+                    {isDeleting ? 'Eliminando...' : 'Eliminar'}
                 </button>
             </div>
         </Modal>

@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
-import FormCheckbox from '../../../components/ui/form/FormCheckbox';
 import ErrorMessage from '../../../components/common/ErrorMessage';
-import ActionButtons from './ActionButtons';
 
 const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
   const initialFormData = useMemo(() => ({
@@ -98,14 +96,33 @@ const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
       <form onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
         {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}
 
-        <FormInput
-          label="Nombre de usuario"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          required
-          error={validationErrors.username}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center mb-4">
+          <FormInput
+            label="Nombre de usuario"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+            error={validationErrors.username}
+          />
+
+          <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
+            <input
+              id="is_staff"
+              type="checkbox"
+              name="is_staff"
+              checked={formData.is_staff}
+              onChange={handleChange}
+              className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2"
+            />
+            <label
+              htmlFor="is_staff"
+              className="ms-2 text-sm font-medium"
+            >
+              Administrador
+            </label>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormInput
@@ -125,38 +142,55 @@ const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
           />
         </div>
 
-        <FormInput
-          label="Email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          error={validationErrors.email}
-        />
-
-        <FormInput
-          label="DNI"
-          name="dni"
-          value={formData.dni}
-          onChange={handleChange}
-          required
-          error={validationErrors.dni}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <FormInput
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            error={validationErrors.email}
+          />
+          <FormInput
+            label="DNI"
+            name="dni"
+            value={formData.dni}
+            onChange={handleChange}
+            required
+            error={validationErrors.dni}
+          />
+        </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-text-secondary mb-1">
-            Cargar Imagen
+          <label className="block mb-2 text-sm font-medium text-text-secondary" htmlFor="image">
+            Imagen de perfil
           </label>
+
+          <div className="flex items-center space-x-4">
+            <label
+              htmlFor="image"
+              className="cursor-pointer bg-background-100 border border-background-200 text-text-primary text-sm rounded-lg px-4 py-2 hover:bg-background-200 transition-colors"
+            >
+              Seleccionar archivo
+            </label>
+
+            <span className="text-sm text-text-secondary">
+              {formData.image ? formData.image.name : 'Sin archivo seleccionado'}
+            </span>
+          </div>
+
           <input
-            type="file"
+            id="image"
             name="image"
-            onChange={handleChange}
-            className="mt-1 block w-full"
+            type="file"
             accept="image/*"
+            onChange={handleChange}
+            className="hidden"
           />
+
           {validationErrors.image && (
-            <p className="text-red-500 text-xs italic mt-1">
+            <p className="text-error-500 text-xs italic mt-1">
               {Array.isArray(validationErrors.image)
                 ? validationErrors.image.join(', ')
                 : validationErrors.image}
@@ -164,32 +198,26 @@ const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
           )}
         </div>
 
-        <FormCheckbox
-          label="Administrador"
-          name="is_staff"
-          checked={formData.is_staff}
-          onChange={handleChange}
-        />
-
-        <FormInput
-          label="Contraseña"
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          error={validationErrors.password}
-        />
-
-        <FormInput
-          label="Confirmar Contraseña"
-          name="confirmPassword"
-          type="password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-          error={validationErrors.confirmPassword}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <FormInput
+            label="Contraseña"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            error={validationErrors.password}
+          />
+          <FormInput
+            label="Confirmar Contraseña"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            error={validationErrors.confirmPassword}
+          />
+        </div>
 
         <div className="flex justify-end space-x-2 mt-4">
           <button

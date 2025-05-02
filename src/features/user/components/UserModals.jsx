@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import UserRegisterModal from "./UserRegisterModal";
 import UserEditModal from "./UserEditModal";
@@ -10,7 +10,6 @@ import PasswordResetModal from './PasswordResetModal';
 const UserModals = ({
     modalState,
     closeModal,
-    // Handlers CRUD
     onregisterUser,
     onUpdateUser,
     onDeleteUser,
@@ -19,9 +18,29 @@ const UserModals = ({
     isProcessing,
     actionError,
 }) => {
+    const [deleteConfirmState, setDeleteConfirmState] = useState(null);
 
     if (!modalState || !modalState.type) return null;
     const currentUserData = modalState.userData;
+
+    const handleOpenDeleteConfirmModal = ({ type, username, onConfirm }) => {
+        setDeleteConfirmState({
+            type,
+            username,
+            onConfirm,
+        });
+    };
+
+    const handleCloseDeleteConfirm = () => {
+        setDeleteConfirmState(null);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (deleteConfirmState?.onConfirm) {
+            await deleteConfirmState.onConfirm();
+        }
+        handleCloseDeleteConfirm();
+    };
 
     return (
         <>
@@ -42,6 +61,7 @@ const UserModals = ({
                     onSave={onUpdateUser}
                     onSaveSuccess={handleActionSuccess}
                     onPasswordReset={onPasswordReset}
+                    openDeleteConfirmModal={handleOpenDeleteConfirmModal}
                 />
             )}
 
@@ -53,7 +73,7 @@ const UserModals = ({
                 />
             )}
 
-            {modalState.type === "deleteConfirm" && currentUserData && (
+            {(modalState.type === "deleteConfirm" && currentUserData) && (
                 <DeleteMessage
                     isOpen={true}
                     onClose={closeModal}
@@ -63,6 +83,16 @@ const UserModals = ({
                     clearDeleteError={closeModal}
                     itemName="al usuario"
                     itemIdentifier={currentUserData.username || currentUserData.name}
+                />
+            )}
+
+            {deleteConfirmState && (
+                <DeleteMessage
+                    isOpen={true}
+                    onClose={handleCloseDeleteConfirm}
+                    onDelete={handleConfirmDelete}
+                    itemName="la imagen de perfil"
+                    itemIdentifier={deleteConfirmState.username}
                 />
             )}
         </>

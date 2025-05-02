@@ -30,16 +30,10 @@ const TypeViewModal = ({ type, isOpen, onClose }) => {
                         <strong>Modificado en:</strong> {type.modified_at || "N/A"}
                     </p>
                     <p>
-                        <strong>Eliminado en:</strong> {type.deleted_at || "N/A"}
-                    </p>
-                    <p>
                         <strong>Creado por:</strong> {type.created_by || "N/A"}
                     </p>
                     <p>
                         <strong>Modificado por:</strong> {type.modified_by || "N/A"}
-                    </p>
-                    <p>
-                        <strong>Eliminado por:</strong> {type.deleted_by || "N/A"}
                     </p>
                 </div>
                 <div className="flex justify-end mt-4">
