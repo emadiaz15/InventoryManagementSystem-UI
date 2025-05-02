@@ -42,6 +42,7 @@ module.exports = {
         },
         info: {
           500: '#17a2b8', // Información
+          600: '#138496', // Información para hover
         },
         neutral: {
           500: '#6c757d', // Neutro

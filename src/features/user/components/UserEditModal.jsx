@@ -3,8 +3,11 @@ import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import ErrorMessage from '../../../components/common/ErrorMessage';
 import PasswordResetModal from './PasswordResetModal';
+import Spinner from '../../../components/ui/Spinner';
+import SuccessMessage from '../../../components/common/SuccessMessage';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { deleteProfileImage } from '../services/deleteProfileImage';
+import { updateProfileImage } from '../services/updateProfileImage';
 
 const UserEditModal = ({
   user,
@@ -30,6 +33,8 @@ const UserEditModal = ({
   const [validationErrors, setValidationErrors] = useState({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [hasImage, setHasImage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
 
   useEffect(() => {
     if (isOpen && user) {
@@ -74,9 +79,23 @@ const UserEditModal = ({
       username: user.username,
       onConfirm: async () => {
         try {
-          await deleteProfileImage(user.image);
+          const deletedUser = await deleteProfileImage(user.image, user.id);
           setHasImage(false);
-          setFormData((prev) => ({ ...prev, image: null }));
+          setFormData((prev) => ({
+            ...prev,
+            image: null,
+          }));
+
+          // 🔁 Actualiza campos locales para que icono delete desaparezca
+          user.image = deletedUser.image || '';
+          user.image_url = deletedUser.image_url || null;
+
+          setSuccessMessage('Imagen de perfil eliminada correctamente.');
+          setTimeout(() => {
+            setSuccessMessage('');
+            onClose();
+          }, 2000);
+
         } catch (err) {
           setInternalError('No se pudo eliminar la imagen.');
           console.error(err);
@@ -119,7 +138,24 @@ const UserEditModal = ({
     setInternalLoading(true);
     try {
       const updatedUser = await onSave(user.id, dataToSend);
+
+      // ✅ Intentar reemplazar imagen si hay una nueva y el usuario ya tenía una
+      if (formData.image && user.image) {
+        try {
+          await updateProfileImage(formData.image, user.image, user.id);
+          setHasImage(true);
+        } catch (imgErr) {
+          console.warn('⚠️ Error al actualizar imagen:', imgErr);
+          setInternalError('Usuario actualizado, pero falló la imagen.');
+        }
+      }
+
       if (onSaveSuccess) onSaveSuccess(`Usuario "${updatedUser.username}" actualizado correctamente.`);
+      setSuccessMessage(`Usuario "${updatedUser.username}" actualizado correctamente.`);
+      setTimeout(() => {
+        setSuccessMessage('');
+        onClose();
+      }, 2000);
     } catch (err) {
       const message = err?.message || 'Error al actualizar el usuario.';
       const fieldErrors = err?.fieldErrors || {};
@@ -145,6 +181,11 @@ const UserEditModal = ({
 
   return (
     <>
+      {successMessage && (
+        <div className="fixed top-20 right-5 z-[9999]">
+          <SuccessMessage message={successMessage} onClose={() => setSuccessMessage('')} />
+        </div>
+      )}
       <Modal isOpen={isOpen} onClose={onClose} title={`Editar Usuario: ${user?.username || ''}`} position="center">
         <form onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
           {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}
@@ -264,7 +305,7 @@ const UserEditModal = ({
               type="button"
               onClick={handleRestorePassword}
               disabled={internalLoading}
-              className="bg-accent-500 text-white py-2 px-4 rounded hover:bg-accent-400 transition-colors disabled:opacity-50"
+              className="bg-info-500 text-white py-2 px-4 rounded hover:bg-info-600 transition-colors disabled:opacity-50"
             >
               Cambiar Contraseña
             </button>
@@ -282,8 +323,9 @@ const UserEditModal = ({
             <button
               type="submit"
               disabled={internalLoading}
-              className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors ${internalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors flex items-center justify-center gap-2 ${internalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
+              {internalLoading && <Spinner size="4" />}
               {internalLoading ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
