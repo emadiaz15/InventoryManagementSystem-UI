@@ -1,4 +1,9 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, {
+    createContext,
+    useState,
+    useEffect,
+    useContext
+} from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../services/api";
@@ -45,7 +50,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(data);
                 setIsAuthenticated(true);
                 await loadProfileImage(data);
-            } catch (error) {
+            } catch {
                 await logout();
             } finally {
                 setLoading(false);
@@ -59,20 +64,27 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         try {
             const response = await axiosInstance.post("/users/login/", credentials);
-            const { refresh_token, access_token, fastapi_token, user } = response.data;
+            const {
+                refresh_token,
+                access_token,
+                fastapi_token,
+                user: userData
+            } = response.data;
 
             if (access_token && fastapi_token && refresh_token) {
                 sessionStorage.setItem("accessToken", access_token);
                 sessionStorage.setItem("refreshToken", refresh_token);
                 sessionStorage.setItem("fastapiToken", fastapi_token);
 
-                setUser(user || null);
+                setUser(userData || null);
                 setIsAuthenticated(true);
-                await loadProfileImage(user);
+                await loadProfileImage(userData);
                 navigate("/dashboard");
             }
-        } catch (error) {
-            const detail = error?.response?.data?.detail || "Ocurrió un error al iniciar sesión.";
+        } catch (err) {
+            const detail =
+                err?.response?.data?.detail ||
+                "Ocurrió un error al iniciar sesión.";
             setError(detail);
         }
     };
@@ -96,12 +108,14 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider
             value={{
                 user,
+                // <-- aquí exponemos directamente isStaff
+                isStaff: Boolean(user?.is_staff),
                 isAuthenticated,
                 login,
                 logout,
                 loading,
                 profileImage,
-                error,
+                error
             }}
         >
             {children}
@@ -110,7 +124,7 @@ export const AuthProvider = ({ children }) => {
 };
 
 AuthProvider.propTypes = {
-    children: PropTypes.node.isRequired,
+    children: PropTypes.node.isRequired
 };
 
 export default AuthProvider;

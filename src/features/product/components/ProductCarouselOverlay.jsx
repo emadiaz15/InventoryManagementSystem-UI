@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { TrashIcon } from "@heroicons/react/24/solid";
+import { TrashIcon, DocumentIcon } from "@heroicons/react/24/outline";
 import { fetchProtectedFile } from "../../../services/mediaService";
 import Spinner from "../../../components/ui/Spinner";
 import PropTypes from "prop-types";
@@ -35,7 +35,9 @@ const ProductCarouselOverlay = ({
                 const enriched = await Promise.all(
                     images.map(async (img) => {
                         const fileId = img.drive_file_id || img.id;
-                        const url = img.url || await fetchProtectedFile(productId, fileId, source);
+                        const url =
+                            img.url ||
+                            (await fetchProtectedFile(productId, fileId, source));
                         return { ...img, id: fileId, url };
                     })
                 );
@@ -59,11 +61,15 @@ const ProductCarouselOverlay = ({
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
-    }, [current, localImages]);
+    }, [current, localImages, isEmbedded, onClose]);
 
     const isVideo = (type) => type?.startsWith("video/");
-    const nextSlide = () => setCurrent((i) => (i + 1) % localImages.length);
-    const prevSlide = () => setCurrent((i) => (i - 1 + localImages.length) % localImages.length);
+    const nextSlide = () =>
+        setCurrent((i) => (localImages.length ? (i + 1) % localImages.length : 0));
+    const prevSlide = () =>
+        setCurrent((i) =>
+            localImages.length ? (i - 1 + localImages.length) % localImages.length : 0
+        );
     const handleClickImage = (url) => url && window.open(url, "_blank");
 
     // Delegar eliminación al padre
@@ -78,7 +84,9 @@ const ProductCarouselOverlay = ({
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6 h-full">
                 <Spinner size="8" color="text-primary-500" />
-                <p className="mt-4 text-sm text-gray-500">Cargando archivos multimedia...</p>
+                <p className="mt-4 text-sm text-gray-500">
+                    Cargando archivos multimedia...
+                </p>
             </div>
         );
     }
@@ -96,7 +104,7 @@ const ProductCarouselOverlay = ({
     return (
         <>
             <div className="relative w-full pt-[66%] bg-black rounded overflow-hidden mb-4">
-                <div className="absolute top-0 left-0 w-full h-full z-10">
+                <div className="absolute top-0 left-0 w-full h-full z-10 flex items-center justify-center">
                     {isVideo(currentItem.contentType) ? (
                         <video
                             src={currentItem.url}
@@ -105,14 +113,16 @@ const ProductCarouselOverlay = ({
                             title={currentItem.filename}
                         />
                     ) : isPDF(currentItem.contentType) ? (
-                        <div className="flex items-center justify-center w-full h-full bg-gray-100">
-                            <button
-                                onClick={() => handleClickImage(currentItem.url)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition-colors"
-                            >
-                                Ver PDF: {currentItem.filename}
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => handleClickImage(currentItem.url)}
+                            className="flex flex-col items-center justify-center space-y-2 bg-gray-100 p-4 rounded"
+                            title={`Ver PDF: ${currentItem.filename}`}
+                        >
+                            <DocumentIcon className="w-12 h-12 text-blue-600" />
+                            <span className="text-sm text-gray-700 truncate max-w-xs">
+                                {currentItem.filename}
+                            </span>
+                        </button>
                     ) : (
                         <img
                             src={currentItem.url}
@@ -127,12 +137,14 @@ const ProductCarouselOverlay = ({
                 <button
                     onClick={prevSlide}
                     className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow z-20"
+                    aria-label="Anterior"
                 >
                     ◀
                 </button>
                 <button
                     onClick={nextSlide}
                     className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow z-20"
+                    aria-label="Siguiente"
                 >
                     ▶
                 </button>
@@ -153,7 +165,8 @@ const ProductCarouselOverlay = ({
                     <button
                         key={idx}
                         onClick={() => setCurrent(idx)}
-                        className={`w-3 h-3 mx-1 rounded-full ${idx === current ? "bg-blue-500" : "bg-gray-400"}`}
+                        className={`w-3 h-3 mx-1 rounded-full ${idx === current ? "bg-blue-500" : "bg-gray-400"
+                            }`}
                         aria-label={`Slide ${idx + 1}`}
                     />
                 ))}

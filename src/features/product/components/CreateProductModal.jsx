@@ -6,13 +6,11 @@ import FormStockInput from "../components/FormStockInput";
 import ErrorMessage from "../../../components/common/ErrorMessage";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 
-// Servicios
 import { createProduct } from "../services/createProduct";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes } from "../../type/services/listType";
 import { listProducts } from "../services/listProducts";
 
-// Hook upload
 import { useProductFileUpload } from "../hooks/useProductFileUpload";
 
 const CreateProductModal = ({ isOpen, onClose, onSave }) => {
@@ -26,7 +24,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [previewFiles, setPreviewFiles] = useState([]);
 
-    const { uploadFiles, uploadError, clearUploadError } = useProductFileUpload();
+    const { uploadFiles, uploading, uploadError, clearUploadError } = useProductFileUpload();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -34,12 +32,14 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         description: "",
         brand: "",
         location: "",
+        position: "",
         category: "",
         type: "",
         initial_stock_quantity: "",
         images: [],
     });
 
+    // Carga inicial y reset solo cuando se abre el modal
     useEffect(() => {
         if (!isOpen) return;
 
@@ -55,18 +55,18 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                 setProducts(prodResp.results || []);
             } catch (err) {
                 console.error("Error al cargar datos iniciales:", err);
-                setError("Error al cargar categorías, tipos o productos.");
+                setError("No se pudo conectar con el servidor.");
             }
         };
 
         fetchData();
-
         setFormData({
             name: "",
             code: "",
             description: "",
             brand: "",
             location: "",
+            position: "",
             category: "",
             type: "",
             initial_stock_quantity: "",
@@ -78,11 +78,11 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         setShowSuccess(false);
     }, [isOpen]);
 
+    // Filtrar tipos al cambiar categoría
     useEffect(() => {
         if (formData.category) {
             const catId = parseInt(formData.category, 10);
-            const filtered = types.filter((t) => t.category === catId);
-            setFilteredTypes(filtered);
+            setFilteredTypes(types.filter((t) => t.category === catId));
         } else {
             setFilteredTypes([]);
         }
@@ -96,40 +96,36 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     const handleStockChange = (e) => {
         setFormData((prev) => ({
             ...prev,
-            initial_stock_quantity: e.target.value.toString(),
+            initial_stock_quantity: e.target.value,
         }));
     };
 
     const handleFileChange = (e) => {
         const newFiles = Array.from(e.target.files);
-        const totalSelected = formData.images.length + newFiles.length;
-
-        if (totalSelected > 5) {
+        if (formData.images.length + newFiles.length > 5) {
             setError("Máximo 5 archivos permitidos.");
             return;
         }
-
-        const updatedFiles = [...formData.images, ...newFiles];
-        setFormData((prev) => ({ ...prev, images: updatedFiles }));
-        setPreviewFiles(updatedFiles.map((f) => f.name));
+        const updated = [...formData.images, ...newFiles];
+        setFormData((prev) => ({ ...prev, images: updated }));
+        setPreviewFiles(updated.map((f) => f.name));
     };
 
-    const removeFile = (indexToRemove) => {
-        const updatedImages = formData.images.filter((_, idx) => idx !== indexToRemove);
-        const updatedPreview = previewFiles.filter((_, idx) => idx !== indexToRemove);
-        setFormData((prev) => ({ ...prev, images: updatedImages }));
-        setPreviewFiles(updatedPreview);
+    const removeFile = (idx) => {
+        setFormData((prev) => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== idx),
+        }));
+        setPreviewFiles((prev) => prev.filter((_, i) => i !== idx));
     };
 
-    const normalizeText = (text) => text.trim().toLowerCase().replace(/\s+/g, "");
-
+    const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "");
     const validateCodeUnique = () => {
-        const codeStr = normalizeText(formData.code);
-        const codeClash = products.find((p) => {
-            if (!p.code) return false;
-            return normalizeText(String(p.code)) === codeStr;
-        });
-        if (codeClash) {
+        const codeStr = normalize(formData.code);
+        const clash = products.find(
+            (p) => p.code && normalize(String(p.code)) === codeStr
+        );
+        if (clash) {
             setError("El código ya está en uso por otro producto.");
             return false;
         }
@@ -144,41 +140,40 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
         if (!validateCodeUnique()) return;
 
-        const dataToSend = new FormData();
-        dataToSend.append("name", formData.name.trim());
+        const data = new FormData();
+        data.append("name", formData.name.trim());
 
-        const parsedCode = parseInt(formData.code.trim(), 10);
-        if (isNaN(parsedCode)) {
+        const codeNum = parseInt(formData.code.trim(), 10);
+        if (isNaN(codeNum)) {
             setError("El código debe ser un número válido.");
             return;
         }
+        data.append("code", codeNum);
+        data.append("description", formData.description.trim());
+        data.append("brand", formData.brand.trim());
+        data.append("location", formData.location.trim());
+        data.append("position", formData.position.trim());
+        data.append("category", formData.category);
+        data.append("type", formData.type);
 
-        dataToSend.append("code", parsedCode);
-        dataToSend.append("description", formData.description.trim());
-        dataToSend.append("brand", formData.brand.trim());
-        dataToSend.append("location", formData.location.trim());
-        dataToSend.append("category", formData.category);
-        dataToSend.append("type", formData.type);
-
-        const stockValue = String(formData.initial_stock_quantity).replace(/[^0-9.]/g, "");
-        if (parseFloat(stockValue) > 0) {
-            dataToSend.set("initial_stock_quantity", stockValue.trim());
+        const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
+        if (parseFloat(stockVal) > 0) {
+            data.set("initial_stock_quantity", stockVal);
         }
 
         try {
             setLoading(true);
-            const newProduct = await createProduct(dataToSend);
+            const newP = await createProduct(data);
 
-            if (formData.images.length > 0) {
-                const uploadOk = await uploadFiles(newProduct.id, formData.images);
-                if (!uploadOk) return;
+            if (formData.images.length && !(await uploadFiles(newP.id, formData.images))) {
+                return;
             }
 
             setShowSuccess(true);
             onClose();
-            if (onSave) onSave();
+            onSave?.();
         } catch (err) {
-            console.error("❌ Error al crear el producto:", err);
+            console.error("Error al crear:", err);
             setError(err.message || "No se pudo guardar el producto.");
         } finally {
             setLoading(false);
@@ -189,16 +184,18 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Producto">
             <form onSubmit={handleSubmit} encType="multipart/form-data">
                 {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-                {uploadError && <ErrorMessage message={uploadError} onClose={clearUploadError} />}
+                {uploadError && (
+                    <ErrorMessage message={uploadError} onClose={clearUploadError} />
+                )}
 
                 <FormSelect
                     label="Categoría"
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    options={categories.map((cat) => ({
-                        value: String(cat.id),
-                        label: cat.name,
+                    options={categories.map((c) => ({
+                        value: String(c.id),
+                        label: c.name,
                     }))}
                     required
                 />
@@ -209,7 +206,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     value={formData.type}
                     onChange={handleChange}
                     options={
-                        filteredTypes.length > 0
+                        filteredTypes.length
                             ? filteredTypes.map((t) => ({
                                 value: String(t.id),
                                 label: t.name,
@@ -220,59 +217,96 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     disabled={!formData.category}
                 />
 
-                <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
+                <FormInput
+                    label="Nombre / Medida"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
+                    <FormInput
+                        label="Código"
+                        name="code"
+                        value={formData.code}
+                        onChange={handleChange}
+                        required
+                    />
+                    <FormInput
+                        label="Marca"
+                        name="brand"
+                        value={formData.brand}
+                        onChange={handleChange}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
                     <FormStockInput
-                        label="Cantidad de Stock Inicial"
+                        label="Stock Inicial"
                         name="initial_stock_quantity"
                         value={formData.initial_stock_quantity}
                         onChange={handleStockChange}
                         placeholder="Ej: 100"
                     />
+                    <FormInput
+                        label="Ubicación"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                    />
+                    <FormInput
+                        label="Posición"
+                        name="position"
+                        value={formData.position}
+                        onChange={handleChange}
+                    />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
-                    <FormInput label="Posición" name="location" value={formData.location} onChange={handleChange} />
-                </div>
-
-                <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
+                <FormInput
+                    label="Descripción"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                />
 
                 <div className="mb-4">
-                    <label className="block mb-2 text-sm font-medium text-text-secondary" htmlFor="images">
+                    <label
+                        htmlFor="images"
+                        className="block mb-2 text-sm font-medium text-text-secondary"
+                    >
                         Archivos Multimedia (máx. 5)
                     </label>
-
                     <div className="flex items-center space-x-4">
-                        <label htmlFor="images" className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600 transition-colors">Seleccionar archivos</label>
-
+                        <label
+                            htmlFor="images"
+                            className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600 transition-colors"
+                        >
+                            Seleccionar archivos
+                        </label>
                         <span className="text-sm text-text-secondary">
-                            {previewFiles.length > 0
+                            {previewFiles.length
                                 ? `${previewFiles.length} archivo(s) seleccionados`
                                 : "Sin archivos seleccionados"}
                         </span>
                     </div>
-
                     <input
                         id="images"
-                        name="images"
                         type="file"
                         multiple
                         accept="image/*,video/*,application/pdf"
                         onChange={handleFileChange}
                         className="hidden"
                     />
-
                     {previewFiles.length > 0 && (
                         <ul className="mt-2 ml-2 text-sm text-gray-600 space-y-1">
-                            {previewFiles.map((fileName, idx) => (
-                                <li key={idx} className="flex items-center gap-2">
-                                    <span className="truncate">{fileName}</span>
+                            {previewFiles.map((nm, i) => (
+                                <li key={i} className="flex items-center gap-2">
+                                    <span className="truncate">{nm}</span>
                                     <button
                                         type="button"
-                                        onClick={() => removeFile(idx)}
+                                        onClick={() => removeFile(i)}
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title="Eliminar archivo"
                                     >
@@ -296,15 +330,18 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     <button
                         type="submit"
                         className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600"
-                        disabled={loading}
+                        disabled={loading || uploading}
                     >
-                        {loading ? "Guardando..." : "Crear Producto"}
+                        {loading || uploading ? "Guardando..." : "Crear Producto"}
                     </button>
                 </div>
             </form>
 
             {showSuccess && (
-                <SuccessMessage message="¡Producto creado exitosamente!" onClose={() => setShowSuccess(false)} />
+                <SuccessMessage
+                    message="¡Producto creado exitosamente!"
+                    onClose={() => setShowSuccess(false)}
+                />
             )}
         </Modal>
     );

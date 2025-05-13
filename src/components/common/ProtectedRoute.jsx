@@ -1,10 +1,11 @@
+// src/components/common/ProtectedRoute.jsx
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthProvider';
 import Spinner from '../ui/Spinner';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -16,10 +17,17 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
+    // No está logueado → login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return children;
+  if (adminOnly && !user?.is_staff) {
+    // Está logueado pero no es staff → unauthorized
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  // Si vienen hijos explícitos, los renderiza; si no, renderiza las rutas anidadas via <Outlet/>
+  return children ? children : <Outlet />;
 };
 
 export default ProtectedRoute;

@@ -16,7 +16,7 @@ import {
 
 const Sidebar = ({ onToggle }) => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, isStaff } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   const sidebarItems = [
@@ -24,9 +24,9 @@ const Sidebar = ({ onToggle }) => {
     { label: 'Mi Perfil', icon: UserIcon, onClick: () => navigate('/my-profile') },
     { label: 'Productos', icon: CubeIcon, onClick: () => navigate('/product-list') },
     { label: 'Órdenes de Corte', icon: ClipboardDocumentListIcon, onClick: () => navigate('/cutting-orders') },
-    { label: 'Usuarios', icon: UsersIcon, onClick: () => navigate('/users-list') },
-    { label: 'Tipos', icon: TagIcon, onClick: () => navigate('/types') },
-    { label: 'Categorías', icon: Squares2X2Icon, onClick: () => navigate('/categories') },
+    { label: 'Usuarios', icon: UsersIcon, onClick: () => navigate('/users-list'), adminOnly: true },
+    { label: 'Tipos', icon: TagIcon, onClick: () => navigate('/types'), adminOnly: true },
+    { label: 'Categorías', icon: Squares2X2Icon, onClick: () => navigate('/categories'), adminOnly: true },
     { label: 'Cerrar Sesión', icon: ArrowRightOnRectangleIcon, onClick: logout, isLogout: true }
   ];
 
@@ -38,6 +38,7 @@ const Sidebar = ({ onToggle }) => {
 
   useEffect(() => {
     if (onToggle) onToggle(collapsed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cerrar sidebar automáticamente en pantallas pequeñas
@@ -51,6 +52,12 @@ const Sidebar = ({ onToggle }) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [onToggle]);
+
+  // Filtrar ítems según rol
+  const visibleItems = sidebarItems.filter(item =>
+    // siempre mostrar si no es adminOnly, o si lo es y el usuario sí es staff
+    (!item.adminOnly || isStaff)
+  );
 
   return (
     <aside
@@ -69,11 +76,13 @@ const Sidebar = ({ onToggle }) => {
         </div>
 
         <div className="flex flex-col px-2">
-          {sidebarItems.map(({ label, icon: Icon, onClick, isLogout }, idx) => (
+          {visibleItems.map(({ label, icon: Icon, onClick, isLogout }, idx) => (
             <button
               key={idx}
               onClick={onClick}
-              className={`w-full flex items-center py-3 px-4 mb-2 rounded transition-all ${isLogout ? 'bg-accent-500 hover:bg-accent-400' : 'hover:bg-primary-600'
+              className={`w-full flex items-center py-3 px-4 mb-2 rounded transition-all ${isLogout
+                ? 'bg-accent-500 hover:bg-accent-400'
+                : 'hover:bg-primary-600'
                 }`}
             >
               <Icon className="h-5 w-5" />
