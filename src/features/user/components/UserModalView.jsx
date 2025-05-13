@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/ui/Modal';
 import Spinner from '../../../components/ui/Spinner';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
-import { fetchProtectedImage } from '../../../services/imageService';
+import { fetchBlobFromUrl } from '../../../services/mediaService';
 
 const TIMEOUT_MS = 7000; // ⏱️ Tiempo máximo de carga
 
@@ -26,7 +26,7 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
 
         const fetchImage = async () => {
             try {
-                const blobUrl = await fetchProtectedImage(user.image_url);
+                const blobUrl = await fetchBlobFromUrl(user.image_url);
                 clearTimeout(timeoutId);
                 setImageUrl(blobUrl);
                 setImageStatus('loaded');

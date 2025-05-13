@@ -8,15 +8,14 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 
 // Servicios
 import { createProduct } from "../services/createProduct";
-import { updateProduct } from "../services/updateProduct";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes } from "../../type/services/listType";
 import { listProducts } from "../services/listProducts";
 
-// Nuevo hook 💥
-import { useProductImageUpload } from "../hooks/useProductImageUpload";
+// Hook upload
+import { useProductFileUpload } from "../hooks/useProductFileUpload";
 
-const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
+const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     const [categories, setCategories] = useState([]);
     const [types, setTypes] = useState([]);
     const [products, setProducts] = useState([]);
@@ -25,6 +24,9 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
+    const [previewFiles, setPreviewFiles] = useState([]);
+
+    const { uploadFiles, uploadError, setUploadError } = useProductFileUpload();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -38,10 +40,7 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
         images: [],
     });
 
-    const { uploadImages, uploadError } = useProductImageUpload();
-
-    const buttonLabel = product ? "Actualizar Producto" : "Crear Producto";
-
+    // Reset form y carga inicial
     useEffect(() => {
         if (!isOpen) return;
 
@@ -56,7 +55,7 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
                 setTypes(typeResp.results || []);
                 setProducts(prodResp.results || []);
             } catch (err) {
-                console.error("Error al cargar data inicial:", err);
+                console.error("Error al cargar datos iniciales:", err);
                 setError("Error al cargar categorías, tipos o productos.");
             }
         };
@@ -64,17 +63,21 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
         fetchData();
 
         setFormData({
-            name: product?.name || "",
-            code: product?.code !== null ? String(product.code) : "",
-            description: product?.description || "",
-            brand: product?.brand || "",
-            location: product?.location || "",
-            category: product?.category?.toString() || "",
-            type: product?.type?.toString() || "",
+            name: "",
+            code: "",
+            description: "",
+            brand: "",
+            location: "",
+            category: "",
+            type: "",
             initial_stock_quantity: "",
             images: [],
         });
-    }, [isOpen, product]);
+        setPreviewFiles([]);
+        setError("");
+        setUploadError(null);
+        setShowSuccess(false);
+    }, [isOpen]);
 
     useEffect(() => {
         if (formData.category) {
@@ -92,33 +95,39 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
     };
 
     const handleStockChange = (e) => {
-        const { value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            initial_stock_quantity: value.toString(),
+            initial_stock_quantity: e.target.value.toString(),
         }));
     };
 
     const handleFileChange = (e) => {
-        const filesArray = Array.from(e.target.files);
-        if (filesArray.length > 5) {
-            setError("Solo puedes seleccionar hasta 5 imágenes.");
+        const newFiles = Array.from(e.target.files);
+        const totalSelected = formData.images.length + newFiles.length;
+
+        if (totalSelected > 5) {
+            setError("Máximo 5 archivos permitidos.");
             return;
         }
-        setFormData((prev) => ({
-            ...prev,
-            images: filesArray,
-        }));
+
+        const updatedFiles = [...formData.images, ...newFiles];
+        setFormData((prev) => ({ ...prev, images: updatedFiles }));
+        setPreviewFiles(updatedFiles.map((f) => f.name));
+    };
+
+    const removeFile = (indexToRemove) => {
+        const updatedImages = formData.images.filter((_, idx) => idx !== indexToRemove);
+        const updatedPreview = previewFiles.filter((_, idx) => idx !== indexToRemove);
+        setFormData((prev) => ({ ...prev, images: updatedImages }));
+        setPreviewFiles(updatedPreview);
     };
 
     const normalizeText = (text) => text.trim().toLowerCase().replace(/\s+/g, "");
 
     const validateCodeUnique = () => {
         const codeStr = normalizeText(formData.code);
-        const editingId = product?.id || null;
         const codeClash = products.find((p) => {
             if (!p.code) return false;
-            if (p.id === editingId) return false;
             return normalizeText(String(p.code)) === codeStr;
         });
         if (codeClash) {
@@ -132,6 +141,7 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
         e.preventDefault();
         setError("");
         setShowSuccess(false);
+        setUploadError(null);
 
         if (!validateCodeUnique()) return;
 
@@ -140,7 +150,7 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
 
         const parsedCode = parseInt(formData.code.trim(), 10);
         if (isNaN(parsedCode)) {
-            setError("El código debe ser un número entero válido.");
+            setError("El código debe ser un número válido.");
             return;
         }
 
@@ -151,37 +161,25 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
         dataToSend.append("category", formData.category);
         dataToSend.append("type", formData.type);
 
-        let stockValue = String(formData.initial_stock_quantity).replace(/[^0-9.]/g, "");
+        const stockValue = String(formData.initial_stock_quantity).replace(/[^0-9.]/g, "");
         if (parseFloat(stockValue) > 0) {
             dataToSend.set("initial_stock_quantity", stockValue.trim());
         }
 
         try {
             setLoading(true);
-            let savedProduct = null;
+            const newProduct = await createProduct(dataToSend); // debe retornar { id }
 
-            if (product?.id) {
-                await updateProduct(product.id, dataToSend);
-                savedProduct = { id: product.id };
-            } else {
-                savedProduct = await createProduct(dataToSend); // debe retornar { id }
+            if (formData.images.length > 0) {
+                const uploadOk = await uploadFiles(newProduct.id, formData.images);
+                if (!uploadOk) return;
             }
 
-            if (formData.images.length > 0 && savedProduct?.id) {
-                const success = await uploadImages(savedProduct.id, formData.images);
-                if (!success) {
-                    setError(uploadError || "Error al subir imágenes");
-                    return;
-                }
-            }
-
-            onClose();
             setShowSuccess(true);
-            setTimeout(() => {
-                if (onSave) onSave();
-            }, 200);
+            onClose();
+            if (onSave) onSave();
         } catch (err) {
-            console.error("Error al guardar el producto:", err);
+            console.error("❌ Error al crear el producto:", err);
             setError(err.message || "No se pudo guardar el producto.");
         } finally {
             setLoading(false);
@@ -189,9 +187,10 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={product ? "Editar Producto" : "Crear Nuevo Producto"}>
+        <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Producto">
             <form onSubmit={handleSubmit} encType="multipart/form-data">
                 {error && <ErrorMessage message={error} onClose={() => setError("")} />}
+                {uploadError && <ErrorMessage message={uploadError} onClose={() => setUploadError(null)} />}
 
                 <FormSelect
                     label="Categoría"
@@ -210,12 +209,14 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
                     name="type"
                     value={formData.type}
                     onChange={handleChange}
-                    options={filteredTypes.length > 0
-                        ? filteredTypes.map((t) => ({
-                            value: String(t.id),
-                            label: t.name,
-                        }))
-                        : [{ value: "", label: "Sin tipos disponibles" }]}
+                    options={
+                        filteredTypes.length > 0
+                            ? filteredTypes.map((t) => ({
+                                value: String(t.id),
+                                label: t.name,
+                            }))
+                            : [{ value: "", label: "Sin tipos disponibles" }]
+                    }
                     required
                     disabled={!formData.category}
                 />
@@ -233,14 +234,60 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
                     />
                 </div>
 
-                <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
                     <FormInput label="Posición" name="location" value={formData.location} onChange={handleChange} />
                 </div>
 
-                <FormInput label="Imágenes (máx. 5)" name="images" type="file" multiple onChange={handleFileChange} />
+                <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
+
+                <div className="mb-4">
+                    <label className="block mb-2 text-sm font-medium text-text-secondary" htmlFor="images">
+                        Archivos Multimedia (máx. 5)
+                    </label>
+
+                    <div className="flex items-center space-x-4">
+                        <label
+                            htmlFor="images"
+                            className="cursor-pointer bg-background-100 border border-background-200 text-text-primary text-sm rounded-lg px-4 py-2 hover:bg-background-200 transition-colors"
+                        >
+                            Seleccionar archivos
+                        </label>
+                        <span className="text-sm text-text-secondary">
+                            {previewFiles.length > 0
+                                ? `${previewFiles.length} archivo(s) seleccionados`
+                                : 'Sin archivos seleccionados'}
+                        </span>
+                    </div>
+
+                    <input
+                        id="images"
+                        name="images"
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+
+                    {previewFiles.length > 0 && (
+                        <ul className="mt-2 ml-2 text-sm text-gray-600 space-y-1">
+                            {previewFiles.map((fileName, idx) => (
+                                <li key={idx} className="flex items-center gap-2">
+                                    <span className="truncate">{fileName}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeFile(idx)}
+                                        className="text-gray-400 hover:text-red-600 transition-colors"
+                                        title="Eliminar archivo"
+                                    >
+                                        ✖
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
 
                 <div className="flex justify-end mt-4">
                     <button
@@ -256,13 +303,13 @@ const CreateProductModal = ({ product = null, isOpen, onClose, onSave }) => {
                         className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600"
                         disabled={loading}
                     >
-                        {loading ? "Guardando..." : buttonLabel}
+                        {loading ? "Guardando..." : "Crear Producto"}
                     </button>
                 </div>
             </form>
 
             {showSuccess && (
-                <SuccessMessage message="¡Producto guardado exitosamente!" onClose={() => setShowSuccess(false)} />
+                <SuccessMessage message="¡Producto creado exitosamente!" onClose={() => setShowSuccess(false)} />
             )}
         </Modal>
     );

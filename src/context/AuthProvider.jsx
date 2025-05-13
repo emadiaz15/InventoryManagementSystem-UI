@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../services/api";
 import { logoutHelper } from "./authHelpers";
-import { fetchProtectedImage } from "../services/imageService";
+import { fetchBlobFromUrl } from "../services/mediaService";
 
 const AuthContext = createContext(null);
 
@@ -12,15 +12,16 @@ export const AuthProvider = ({ children }) => {
     const [profileImage, setProfileImage] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null); // ✅ nuevo estado para error de login
+    const [error, setError] = useState(null);
 
     const navigate = useNavigate();
 
     const loadProfileImage = async (userData) => {
-        if (!userData?.image_url) return;
+        const url = userData?.image_url;
+        if (!url) return;
 
         try {
-            const blobUrl = await fetchProtectedImage(userData.image_url);
+            const blobUrl = await fetchBlobFromUrl(url);
             setProfileImage(blobUrl);
         } catch (err) {
             console.warn("❌ No se pudo cargar la imagen de perfil:", err);
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (credentials) => {
-        setError(null); // ✅ limpia errores anteriores
+        setError(null);
         try {
             const response = await axiosInstance.post("/users/login/", credentials);
             const { refresh_token, access_token, fastapi_token, user } = response.data;
@@ -72,7 +73,7 @@ export const AuthProvider = ({ children }) => {
             }
         } catch (error) {
             const detail = error?.response?.data?.detail || "Ocurrió un error al iniciar sesión.";
-            setError(detail); // ✅ actualiza el mensaje de error
+            setError(detail);
         }
     };
 
@@ -86,7 +87,7 @@ export const AuthProvider = ({ children }) => {
             setUser(null);
             setProfileImage(null);
             setIsAuthenticated(false);
-            setError(null); // ✅ limpia error al cerrar sesión
+            setError(null);
             navigate("/login");
         }
     };
@@ -100,7 +101,7 @@ export const AuthProvider = ({ children }) => {
                 logout,
                 loading,
                 profileImage,
-                error, // ✅ incluido en el contexto
+                error,
             }}
         >
             {children}
