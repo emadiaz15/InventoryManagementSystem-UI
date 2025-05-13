@@ -225,7 +225,7 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                                     {previewFiles.length > 0 ? `${previewFiles.length} seleccionado(s)` : "Sin archivos"}
                                 </span>
                             </div>
-                            <input id="images" name="images" type="file" multiple accept="image/*,video/*"
+                            <input id="images" name="images" type="file" multiple accept="image/*,video/*,application/pdf"
                                 onChange={handleFileChange} className="hidden" />
                             {previewFiles.length > 0 && (
                                 <ul className="mt-2 ml-2 text-sm text-gray-600 space-y-1">

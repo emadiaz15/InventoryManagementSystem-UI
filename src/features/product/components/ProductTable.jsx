@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import Table from "../../../components/common/Table";
 import {
     PencilIcon,
@@ -8,16 +9,25 @@ import {
     ClockIcon,
 } from "@heroicons/react/24/outline";
 
+/**
+ * Tabla de productos con acciones: ver, editar, eliminar, ver subproductos e historial.
+ * Al hacer clic en el icono de reloj, navega a /products/:productId/history.
+ */
 const ProductTable = ({
     products,
     onView,
     onEdit,
     onDelete,
     onShowSubproducts,
-    onViewHistory,
     getTypeName,
     getCategoryName,
 }) => {
+    const navigate = useNavigate();
+
+    const handleViewHistory = (product) => {
+        navigate(`/products/${product.id}/history`);
+    };
+
     const headers = ["Código", "Articulo", "Stock", "Marcas", "Categoría", "Acciones"];
 
     const rows = products.map((product) => ({
@@ -62,7 +72,7 @@ const ProductTable = ({
                     <PencilIcon className="w-5 h-5 text-white" />
                 </button>
                 <button
-                    onClick={() => onViewHistory(product)}
+                    onClick={() => handleViewHistory(product)}
                     className="bg-yellow-500 p-2 rounded hover:bg-yellow-600 transition-colors"
                     aria-label="Ver historial de stock"
                 >

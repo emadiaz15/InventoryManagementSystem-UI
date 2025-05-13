@@ -22,6 +22,7 @@ const ProductCarouselOverlay = ({
     const [localImages, setLocalImages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [downloadError, setDownloadError] = useState(null);
+    const isPDF = (type) => type === "application/pdf";
 
     useEffect(() => {
         setCurrent(0);
@@ -103,6 +104,15 @@ const ProductCarouselOverlay = ({
                             className="w-full h-full object-contain"
                             title={currentItem.filename}
                         />
+                    ) : isPDF(currentItem.contentType) ? (
+                        <div className="flex items-center justify-center w-full h-full bg-gray-100">
+                            <button
+                                onClick={() => handleClickImage(currentItem.url)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition-colors"
+                            >
+                                Ver PDF: {currentItem.filename}
+                            </button>
+                        </div>
                     ) : (
                         <img
                             src={currentItem.url}

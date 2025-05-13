@@ -33,7 +33,7 @@ export const useProductFileUpload = () => {
     try {
       const { success, failed } = await uploadProductFiles(productId, filesArray);
 
-      if (failed.length > 0) {
+      if (failed && failed.length > 0) {
         const names = failed.map(f => f.file?.name || "archivo_desconocido");
         setUploadError(`Falló la subida de: ${names.join(', ')}`);
         setFailedFiles(failed);
@@ -50,10 +50,18 @@ export const useProductFileUpload = () => {
     }
   };
 
+  /**
+   * Limpia el mensaje de error de subida
+   */
+  const clearUploadError = () => {
+    setUploadError(null);
+  };
+
   return {
     uploading,
     uploadError,
     failedFiles,
     uploadFiles,
+    clearUploadError,
   };
 };

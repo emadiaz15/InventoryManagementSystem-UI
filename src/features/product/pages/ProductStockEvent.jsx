@@ -9,7 +9,7 @@ import {
 import Toolbar from '../../../components/common/Toolbar';
 import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
-import DateFilter from '../components/DateFilter';
+import DateFilter from '../../../components/common/DateFilter';
 import { listStockProductEvents } from '../services/listStockProductEvents';
 import Layout from '../../../pages/Layout';
 
@@ -143,7 +143,9 @@ const ProductStockEvent = () => {
     return (
         <Layout>
             <div className="flex-1 p-2 mt-14">
-                <Toolbar title="Historial de Stock" />
+                <Toolbar title="Historial de Stock"
+                    buttonText="Modificar Stock"
+                />
                 <DateFilter onFilterChange={handleFilterChange} />
                 {error && (
                     <div className="text-yellow-500 text-center mt-4">

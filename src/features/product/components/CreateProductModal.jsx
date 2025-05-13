@@ -26,7 +26,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [previewFiles, setPreviewFiles] = useState([]);
 
-    const { uploadFiles, uploadError, setUploadError } = useProductFileUpload();
+    const { uploadFiles, uploadError, clearUploadError } = useProductFileUpload();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -40,7 +40,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         images: [],
     });
 
-    // Reset form y carga inicial
     useEffect(() => {
         if (!isOpen) return;
 
@@ -75,7 +74,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         });
         setPreviewFiles([]);
         setError("");
-        setUploadError(null);
+        clearUploadError();
         setShowSuccess(false);
     }, [isOpen]);
 
@@ -141,7 +140,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         e.preventDefault();
         setError("");
         setShowSuccess(false);
-        setUploadError(null);
+        clearUploadError();
 
         if (!validateCodeUnique()) return;
 
@@ -168,7 +167,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
         try {
             setLoading(true);
-            const newProduct = await createProduct(dataToSend); // debe retornar { id }
+            const newProduct = await createProduct(dataToSend);
 
             if (formData.images.length > 0) {
                 const uploadOk = await uploadFiles(newProduct.id, formData.images);
@@ -190,7 +189,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Producto">
             <form onSubmit={handleSubmit} encType="multipart/form-data">
                 {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-                {uploadError && <ErrorMessage message={uploadError} onClose={() => setUploadError(null)} />}
+                {uploadError && <ErrorMessage message={uploadError} onClose={clearUploadError} />}
 
                 <FormSelect
                     label="Categoría"
@@ -247,16 +246,12 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     </label>
 
                     <div className="flex items-center space-x-4">
-                        <label
-                            htmlFor="images"
-                            className="cursor-pointer bg-background-100 border border-background-200 text-text-primary text-sm rounded-lg px-4 py-2 hover:bg-background-200 transition-colors"
-                        >
-                            Seleccionar archivos
-                        </label>
+                        <label htmlFor="images" className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600 transition-colors">Seleccionar archivos</label>
+
                         <span className="text-sm text-text-secondary">
                             {previewFiles.length > 0
                                 ? `${previewFiles.length} archivo(s) seleccionados`
-                                : 'Sin archivos seleccionados'}
+                                : "Sin archivos seleccionados"}
                         </span>
                     </div>
 
@@ -265,7 +260,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                         name="images"
                         type="file"
                         multiple
-                        accept="image/*,video/*"
+                        accept="image/*,video/*,application/pdf"
                         onChange={handleFileChange}
                         className="hidden"
                     />
