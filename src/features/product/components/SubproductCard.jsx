@@ -1,15 +1,11 @@
 import React from "react";
-import {
-    PencilIcon,
-    TrashIcon,
-    EyeIcon,
-    ClockIcon,
-} from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, EyeIcon, ClockIcon } from "@heroicons/react/24/outline";
 
-const getDefaultImage = () => {
-    const defaultImages = ["/rollo.png", "/bobina.png"];
-    const randomIndex = Math.floor(Math.random() * defaultImages.length);
-    return defaultImages[randomIndex];
+const getDefaultImage = (subType) => {
+    const typeNormalized = (subType || "").toLowerCase();
+    if (typeNormalized === "rollo") return "/rollo.png";
+    if (typeNormalized === "bobina") return "/bobina.png";
+    return "/default.png";
 };
 
 const SubproductCard = ({
@@ -20,76 +16,71 @@ const SubproductCard = ({
     onViewDetails,
     onViewStock,
 }) => {
-    const imageUrl = subproduct.technical_sheet_photo || getDefaultImage();
+    const imageUrl = subproduct.technical_sheet_photo
+        ? subproduct.technical_sheet_photo
+        : getDefaultImage(subproduct.form_type);
 
     return (
-        <div className="w-full max-w-sm bg-white border border-neutral-500 rounded-lg shadow-md">
-            <img className="p-4 rounded-t-lg" src={imageUrl} alt={subproduct.name} />
-            <div className="px-5 pb-5">
-                <h5 className="text-xl font-semibold tracking-tight text-text-primary">
-                    {subproduct.name}
-                </h5>
-                <p className="text-sm text-text-primary">{subproduct.description}</p>
-                <ul className="mt-2 text-sm text-text-secondary">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 md:max-w-2xl w-full">
+            {/* Header: mostrar tipo y nombre del producto padre */}
+            <div className="flex justify-between px-4 py-2 border-b">
+                <span className="text-1xl font-bold text-gray-800 truncate">
+                    {subproduct.parent_type_name} - {subproduct.parent_name}
+                </span>
+                <strong>{subproduct.initial_stock_quantity} Mts</strong>
+            </div>
+
+            {/* Content: image + details */}
+            <div className="flex flex-col md:flex-row p-4 space-y-4 md:space-y-0 md:space-x-6">
+                <img
+                    className="object-cover w-full h-40 md:w-48 md:h-48 rounded"
+                    src={imageUrl}
+                    alt={subproduct.name}
+                />
+                <ul className="flex-1 text-sm text-gray-700 space-y-1 overflow-hidden">
                     <li><strong>Marca:</strong> {subproduct.brand}</li>
-                    <li><strong>Número de bobina:</strong> {subproduct.number_coil}</li>
-                    <li><strong>Longitud Inicial:</strong> {subproduct.initial_length}</li>
-                    <li><strong>Longitud Final:</strong> {subproduct.final_length}</li>
-                    <li><strong>Peso Total:</strong> {subproduct.total_weight}</li>
-                    <li><strong>Peso de la Bobina:</strong> {subproduct.coil_weight}</li>
-                    <li><strong>ID del Producto:</strong> {subproduct.parent}</li>
-                    <li><strong>Cantidad:</strong> {subproduct.quantity}</li>
-                    <li><strong>Estado:</strong> {subproduct.status ? "Activo" : "Inactivo"}</li>
+                    <li><strong>Bobina N°:</strong> {subproduct.number_coil}</li>
+                    <li><strong>Ubicación:</strong> {subproduct.location}</li>
+                    <li><strong>Estado:</strong> {subproduct.status ? "Disponible" : "Completada"}</li>
                 </ul>
+            </div>
 
-                <div className="mt-4">
-                    <button
-                        onClick={onAddToOrder}
-                        className="w-full text-white bg-primary-500 hover:bg-primary-600 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                    >
-                        Agregar Orden de Corte
-                    </button>
-                </div>
-
-                <div className="mt-4 flex justify-between">
-                    <button
-                        onClick={onViewDetails}
-                        className="p-2 bg-blue-500 hover:bg-blue-600 rounded"
-                        title="Ver Ficha Técnica"
-                    >
-                        <EyeIcon className="w-5 h-5 text-white" />
-                    </button>
-                    <button
-                        onClick={onViewStock}
-                        className="p-2 bg-yellow-500 hover:bg-yellow-600 rounded"
-                        title="Historial de stock"
-                    >
-                        <ClockIcon className="w-5 h-5 text-white" />
-                    </button>
-                    <button
-                        onClick={onEdit}
-                        className="p-2 bg-primary-500 hover:bg-primary-600 rounded"
-                        title="Editar subproducto"
-                    >
-                        <PencilIcon className="w-5 h-5 text-white" />
-                    </button>
-                    <button
-                        onClick={onDelete}
-                        className="p-2 bg-error-500 hover:bg-error-600 rounded"
-                        title="Eliminar subproducto"
-                    >
-                        <TrashIcon className="w-5 h-5 text-white" />
-                    </button>
-                </div>
-
-                <div className="mt-4 text-xs text-text-secondary">
-                    <p><strong>Fecha de creación:</strong> {new Date(subproduct.created_at).toLocaleString()}</p>
-                    <p><strong>Creado por:</strong> {subproduct.created_by || "N/A"}</p>
-                    <p><strong>Última modificación:</strong> {subproduct.modified_at ? new Date(subproduct.modified_at).toLocaleString() : "N/A"}</p>
-                    <p><strong>Modificado por:</strong> {subproduct.modified_by || "N/A"}</p>
-                    <p><strong>Fecha de borrado:</strong> {subproduct.deleted_at ? new Date(subproduct.deleted_at).toLocaleString() : "N/A"}</p>
-                    <p><strong>Borrado por:</strong> {subproduct.deleted_by || "N/A"}</p>
-                </div>
+            {/* Actions: full width buttons row */}
+            <div className="flex flex-wrap justify-center items-center space-x-2 p-4 border-t">
+                <button
+                    onClick={onAddToOrder}
+                    className="bg-indigo-500 hover:bg-indigo-600 transition-colors text-white font-medium rounded p-2 px-4"
+                >
+                    Agregar Orden
+                </button>
+                <button
+                    onClick={onViewDetails}
+                    title="Ver Ficha Técnica"
+                    className="bg-blue-500 hover:bg-blue-600 transition-colors rounded p-2"
+                >
+                    <EyeIcon className="w-5 h-5 text-white" />
+                </button>
+                <button
+                    onClick={onViewStock}
+                    title="Ver Historial de Stock"
+                    className="bg-yellow-500 hover:bg-yellow-600 transition-colors rounded p-2"
+                >
+                    <ClockIcon className="w-5 h-5 text-white" />
+                </button>
+                <button
+                    onClick={onEdit}
+                    title="Editar Subproducto"
+                    className="bg-primary-500 hover:bg-primary-600 transition-colors rounded p-2"
+                >
+                    <PencilIcon className="w-5 h-5 text-white" />
+                </button>
+                <button
+                    onClick={onDelete}
+                    title="Eliminar Subproducto"
+                    className="bg-red-500 hover:bg-red-600 transition-colors rounded p-2"
+                >
+                    <TrashIcon className="w-5 h-5 text-white" />
+                </button>
             </div>
         </div>
     );

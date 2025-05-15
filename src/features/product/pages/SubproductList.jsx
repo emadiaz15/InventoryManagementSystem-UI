@@ -6,8 +6,14 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import ErrorMessage from "../../../components/common/ErrorMessage";
 import Spinner from "../../../components/ui/Spinner";
 import Pagination from "../../../components/ui/Pagination";
+import SubproductModals from "../components/SubproductModals";
+import SubproductCard from "../components/SubproductCard";
 import { listSubproducts } from "../services/listSubproducts";
-import SubproductModals from "../components/SubproductModals"; // 🆕 Centraliza los modales
+import { createSubproduct } from "../services/createSubproduct";
+import { updateSubproduct } from "../services/updateSubproduct";
+import { deleteSubproduct } from "../services/deleteSubproduct";
+
+const PAGE_SIZE = 8;
 
 const SubproductList = () => {
   const { productId } = useParams();
@@ -20,8 +26,12 @@ const SubproductList = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [modalState, setModalState] = useState({ type: null, subproductData: null });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
-  const fetchSubproducts = async (url = `/inventory/products/${productId}/subproducts/`) => {
+  const fetchSubproducts = async (
+    url = `/inventory/products/${productId}/subproducts/?page_size=${PAGE_SIZE}`
+  ) => {
     setLoading(true);
     setError(null);
     try {
@@ -29,7 +39,7 @@ const SubproductList = () => {
       setSubproducts(data.results || []);
       setNextPage(data.next);
       setPreviousPage(data.previous);
-    } catch (err) {
+    } catch {
       setError("Error al obtener los subproductos.");
     } finally {
       setLoading(false);
@@ -37,9 +47,7 @@ const SubproductList = () => {
   };
 
   useEffect(() => {
-    if (productId) {
-      fetchSubproducts();
-    }
+    if (productId) fetchSubproducts();
   }, [productId]);
 
   const handleShowSuccess = (message) => {
@@ -49,8 +57,44 @@ const SubproductList = () => {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
+  const clearDeleteError = () => setDeleteError(null);
+
   const handleCloseModal = () => {
     setModalState({ type: null, subproductData: null });
+    clearDeleteError();
+  };
+
+  const handleCreate = async (formData) => {
+    try {
+      await createSubproduct(productId, formData);
+      handleShowSuccess("Creado correctamente");
+      handleCloseModal();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdate = async (formData) => {
+    try {
+      await updateSubproduct(productId, formData.id, formData);
+      handleShowSuccess("Actualizado correctamente");
+      handleCloseModal();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (subData) => {
+    setIsDeleting(true);
+    try {
+      await deleteSubproduct(productId, subData.id);
+      handleShowSuccess("Eliminado correctamente");
+      handleCloseModal();
+    } catch (err) {
+      setDeleteError(err.response?.data?.detail || err.message);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -64,31 +108,37 @@ const SubproductList = () => {
       <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
         <Toolbar
           title="Lista de Subproductos"
-          buttonText="Crear Subproducto ( Cables )"
+          buttonText="Crear Subproducto"
           onButtonClick={() => setModalState({ type: "create", subproductData: null })}
         />
 
-        {error && !loading && (
-          <div className="my-4">
-            <ErrorMessage message={error} onClose={() => setError(null)} />
-          </div>
-        )}
+        {error && !loading && <ErrorMessage message={error} onClose={() => setError(null)} />}
 
         {loading && (
-          <div className="flex justify-center items-center h-32">
+          <div className="flex justify-center py-12">
             <Spinner />
           </div>
         )}
 
         {!loading && subproducts.length === 0 && (
-          <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
+          <div className="text-center py-10 bg-white rounded-lg shadow">
             <p className="text-gray-500">No existen subproductos registrados para este producto.</p>
           </div>
         )}
 
         {!loading && subproducts.length > 0 && (
-          <div className="text-center py-10 px-4 mt-4 bg-yellow-100 border border-yellow-300 rounded">
-            <p className="text-gray-700">Aquí se mostrará la tabla de subproductos.</p>
+          <div className="mt-4 grid grid-cols-4 gap-4">
+            {subproducts.map((sp) => (
+              <SubproductCard
+                key={sp.id}
+                subproduct={sp}
+                onAddToOrder={() => setModalState({ type: "createOrder", subproductData: sp })}
+                onViewDetails={() => setModalState({ type: "view", subproductData: sp })}
+                onViewStock={() => setModalState({ type: "viewHistory", subproductData: sp })}
+                onEdit={() => setModalState({ type: "edit", subproductData: sp })}
+                onDelete={() => setModalState({ type: "deleteConfirm", subproductData: sp })}
+              />
+            ))}
           </div>
         )}
 
@@ -100,17 +150,16 @@ const SubproductList = () => {
         />
       </div>
 
-      {/* 🆕 Contenedor de modales */}
       <SubproductModals
         modalState={modalState}
         closeModal={handleCloseModal}
-        onCreateSubproduct={() => handleShowSuccess("Subproducto creado exitosamente.")}
-        onUpdateSubproduct={() => handleShowSuccess("Subproducto actualizado exitosamente.")}
-        onDeleteSubproduct={() => handleShowSuccess("Subproducto eliminado exitosamente.")}
-        isDeleting={false}
-        deleteError={null}
-        clearDeleteError={() => { }}
-        parentProduct={{ id: productId }} // ✅ Esto es lo correcto
+        onCreateSubproduct={handleCreate}
+        onUpdateSubproduct={handleUpdate}
+        onDeleteSubproduct={handleDelete}
+        isDeleting={isDeleting}
+        deleteError={deleteError}
+        clearDeleteError={clearDeleteError}
+        parentProduct={{ id: Number(productId) }}
       />
     </Layout>
   );

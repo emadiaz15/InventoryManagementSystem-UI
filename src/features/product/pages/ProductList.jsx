@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../../pages/Layout";
 import Toolbar from "../../../components/common/Toolbar";
@@ -15,6 +15,7 @@ import { listTypes } from "../../type/services/listType";
 import { listCategories } from "../../category/services/listCategory";
 import { useProducts } from "../hooks/useProducts";
 import { useAuth } from "../../../context/AuthProvider";
+import { deleteProduct } from "../services/deleteProduct";
 
 const ProductsList = () => {
   const navigate = useNavigate();
@@ -29,6 +30,9 @@ const ProductsList = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [errorCategories, setErrorCategories] = useState(null);
 
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
   const {
     products,
     loadingProducts,
@@ -41,6 +45,7 @@ const ProductsList = () => {
     currentUrl
   } = useProducts(filters);
 
+  // Carga de tipos
   const fetchTypesData = useCallback(async () => {
     try {
       const data = await listTypes("/inventory/types/");
@@ -50,6 +55,7 @@ const ProductsList = () => {
     }
   }, []);
 
+  // Carga de categorías
   const fetchCategoriesData = useCallback(async () => {
     setLoadingCategories(true);
     setErrorCategories(null);
@@ -70,30 +76,62 @@ const ProductsList = () => {
     fetchTypesData();
   }, [isAuthenticated, fetchCategoriesData, fetchTypesData]);
 
-  const getTypeName = useCallback((typeId) => types.find((t) => t.id === typeId)?.name || "Sin tipo", [types]);
-  const getCategoryName = useCallback((categoryId) => categories.find((c) => c.id === categoryId)?.name || "Sin categoría", [categories]);
+  const getTypeName = useCallback(
+    (typeId) => types.find((t) => t.id === typeId)?.name || "Sin tipo",
+    [types]
+  );
+  const getCategoryName = useCallback(
+    (categoryId) => categories.find((c) => c.id === categoryId)?.name || "Sin categoría",
+    [categories]
+  );
 
-  const handleViewProduct = (product) => setModalState({ type: "view", productData: product, showCarousel: true });
-  const handleViewSubproducts = (product) => navigate(`/products/${product.id}/subproducts`);
-  const handleEditProduct = (product) => setModalState({ type: "edit", productData: product });
-  const handleDeleteProduct = (modalConfig) => setModalState(modalConfig);
-  const handleViewHistory = (product) => navigate(`/products/${product.id}/stock-history`);
-  const handleCloseModal = () => setModalState({ type: null, productData: null });
+  // Handlers de apertura de modales y navegación
+  const handleViewProduct = (product) =>
+    setModalState({ type: "view", productData: product, showCarousel: true });
+  const handleViewSubproducts = (product) =>
+    navigate(`/products/${product.id}/subproducts`);
+  const handleEditProduct = (product) =>
+    setModalState({ type: "edit", productData: product });
+  const handleDeleteClick = (modalConfig) =>
+    setModalState(modalConfig);
+  const handleViewHistory = (product) =>
+    navigate(`/products/${product.id}/history`);
+  const handleCloseModal = () =>
+    setModalState({ type: null, productData: null });
 
+  // Tras crear o editar recarga la lista
   const handleSaveProduct = () => {
     fetchProducts(currentUrl);
-    setSuccessMessage("¡Producto guardado con éxito!");
+    setSuccessMessage("¡Producto actualizado con éxito!");
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  // Confirmación y ejecución de borrado
+  const handleConfirmDelete = async (product) => {
+    setIsDeletingProduct(true);
+    setDeleteError(null);
+    try {
+      await deleteProduct(product.id);
+      await fetchProducts(currentUrl);
+      setSuccessMessage("¡Producto eliminado con éxito!");
+      setShowSuccess(true);
+      setModalState({ type: null, productData: null });
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      setIsDeletingProduct(false);
+    }
   };
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   }, []);
 
-  const filterColumns = useMemo(() => [
-    { key: "code", label: "Código", filterable: true, type: "number" },
-  ], []);
+  const filterColumns = useMemo(
+    () => [{ key: "code", label: "Código", filterable: true, type: "number" }],
+    []
+  );
 
   if (loadingProducts && products.length === 0) {
     return (
@@ -118,7 +156,9 @@ const ProductsList = () => {
           <Toolbar
             title="Lista de Productos"
             buttonText="Crear Producto"
-            onButtonClick={() => setModalState({ type: "create", productData: null })}
+            onButtonClick={() =>
+              setModalState({ type: "create", productData: null })
+            }
           />
 
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
@@ -132,7 +172,7 @@ const ProductsList = () => {
                 onView={handleViewProduct}
                 onShowSubproducts={handleViewSubproducts}
                 onEdit={handleEditProduct}
-                onDelete={handleDeleteProduct}
+                onDelete={handleDeleteClick}
                 onViewHistory={handleViewHistory}
                 getTypeName={getTypeName}
                 getCategoryName={getCategoryName}
@@ -154,10 +194,10 @@ const ProductsList = () => {
         closeModal={handleCloseModal}
         onCreateProduct={handleSaveProduct}
         onUpdateProduct={handleSaveProduct}
-        onDeleteProduct={() => { }}
-        isDeleting={false}
-        deleteError={null}
-        clearDeleteError={() => { }}
+        onDeleteProduct={handleConfirmDelete}
+        isDeleting={isDeletingProduct}
+        deleteError={deleteError}
+        clearDeleteError={() => setDeleteError(null)}
       />
     </>
   );

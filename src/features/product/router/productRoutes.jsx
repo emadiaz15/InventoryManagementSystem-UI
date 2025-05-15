@@ -28,7 +28,7 @@ const productRoutes = [
   />,
   <Route
     key="product-stock-events"
-    path="/product-stock-history/:productId"
+    path="/products/:productId/history"
     element={
       <ProtectedRoute>
         <ProductStockEvent />

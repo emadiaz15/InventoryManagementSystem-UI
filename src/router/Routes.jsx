@@ -1,39 +1,46 @@
+// src/routes/AppRoutes.jsx
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home';
-import Dashboard from '../pages/Dashboard';
 import Login from '../pages/Login';
+import Dashboard from '../pages/Dashboard';
+import Unauthorized from '../pages/Unauthorized';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 
+// rutas “anidadas”
 import cuttingOrderRoutes from '../features/cuttingOrder/router/cuttingOrderRoutes';
 import productRoutes from '../features/product/router/productRoutes';
-import userRoutes from '../features/user/router/userRoutes';
+import userRoutes from '../features/user/router/userRoutes';           // ahora sólo user-list
 import categoryRoutes from '../features/category/router/categoryRoutes';
 import typeRoutes from '../features/type/router/typeRoutes';
 
+// importa aquí MyProfile directamente
+import MyProfile from '../features/user/pages/MyProfile';
+
 const AppRoutes = () => (
   <Routes>
-    {/* Rutas generales */}
+    {/* PÚBLICAS */}
     <Route path="/" element={<Home />} />
     <Route path="/login" element={<Login />} />
+    <Route path="/unauthorized" element={<Unauthorized />} />
 
-    {/* Ejemplo de ruta protegida suelta */}
-    <Route
-      path="/dashboard"
-      element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      }
-    />
+    {/* CUALQUIERA autenticado */}
+    <Route element={<ProtectedRoute />}>
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/my-profile" element={<MyProfile />} />
+      {cuttingOrderRoutes}
+      {productRoutes}
+    </Route>
 
-    {/* Rutas modulares: simplemente inyectamos los arrays de <Route> */}
-    {cuttingOrderRoutes}
-    {productRoutes}
-    {userRoutes}
-    {categoryRoutes}
-    {typeRoutes}
+    {/* SOLO staff */}
+    <Route element={<ProtectedRoute adminOnly />}>
+      {userRoutes}       {/* aquí userRoutes exportará sólo /users-list */}
+      {categoryRoutes}
+      {typeRoutes}
+    </Route>
+
+    {/* fallback */}
+    <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 );
 

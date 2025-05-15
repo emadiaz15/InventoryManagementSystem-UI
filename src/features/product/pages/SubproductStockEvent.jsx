@@ -9,7 +9,7 @@ import {
 import Toolbar from '../../../components/common/Toolbar';
 import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
-import DateFilter from '../components/DateFilter';
+import DateFilter from '../../../components/common/DateFilter';
 import Layout from '../../../pages/Layout';
 import { listStockSubproductEvents } from '../services/listStockSubproductEvents';
 

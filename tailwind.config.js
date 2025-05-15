@@ -46,6 +46,7 @@ module.exports = {
         },
         neutral: {
           500: '#6c757d', // Neutro
+          600: '#5a6268', // Neutro para hover
         },
       },
       fontFamily: {
