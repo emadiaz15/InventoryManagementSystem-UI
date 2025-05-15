@@ -1,21 +1,15 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import PropTypes from "prop-types";
 import CreateSubproductModal from "./CreateSubproductModal";
 import EditSubproductModal from "./EditSubproductModal";
 import ViewSubproductModal from "./ViewSubproductModal";
 import DeleteMessage from "../../../components/common/DeleteMessage";
+import Spinner from "../../../components/ui/Spinner";
+import ProductCarouselOverlay from "./ProductCarouselOverlay";
+import { listSubproductFiles } from "../services/listSubproductFiles";
 
 /**
  * Centraliza la lógica de modales para Subproductos.
- *
- * @param {Object} modalState - { type: 'create'|'edit'|'view'|'deleteConfirm', subproductData: object|null }
- * @param {Function} closeModal - Cierra cualquier modal
- * @param {Function} onCreateSubproduct - Handler para crear subproducto
- * @param {Function} onUpdateSubproduct - Handler para actualizar subproducto
- * @param {Function} onDeleteSubproduct - Handler para eliminar subproducto
- * @param {Boolean} isDeleting - Estado de carga para la eliminación
- * @param {String|Null} deleteError - Error específico de la eliminación
- * @param {Function} clearDeleteError - Limpia el error de eliminación
- * @param {Object|null} parentProduct - Producto padre (requerido para crear subproducto)
  */
 const SubproductModals = ({
     modalState,
@@ -23,61 +17,100 @@ const SubproductModals = ({
     onCreateSubproduct,
     onUpdateSubproduct,
     onDeleteSubproduct,
-    isDeleting,
-    deleteError,
+    isDeleting = false,
+    deleteError = null,
     clearDeleteError,
     parentProduct = null,
 }) => {
-    if (!modalState || !modalState.type) return null;
-
+    if (!modalState?.type) return null;
     const { type, subproductData } = modalState;
+    const [files, setFiles] = useState([]);
+    const [loadingFiles, setLoadingFiles] = useState(false);
+
+    const loadFiles = useCallback(async () => {
+        if (type !== "view" || !subproductData) return;
+        setLoadingFiles(true);
+        try {
+            const imgs = await listSubproductFiles(parentProduct.id, subproductData.id);
+            setFiles(imgs);
+        } catch (e) {
+            console.error("No se pudieron cargar los archivos:", e);
+            setFiles([]);
+        } finally {
+            setLoadingFiles(false);
+        }
+    }, [type, subproductData, parentProduct]);
+
+    useEffect(() => {
+        loadFiles();
+    }, [loadFiles]);
 
     return (
         <>
-            {/* --- Modal Crear Subproducto --- */}
             {type === "create" && parentProduct && (
                 <CreateSubproductModal
-                    isOpen={true}
-                    onClose={closeModal}
-                    onSave={onCreateSubproduct}
-                    product={parentProduct}
+                    isOpen onClose={closeModal} onSave={onCreateSubproduct} product={parentProduct}
                 />
             )}
 
-            {/* --- Modal Editar Subproducto --- */}
             {type === "edit" && subproductData && (
                 <EditSubproductModal
-                    isOpen={true}
-                    onClose={closeModal}
-                    subproduct={subproductData}
-                    onSave={onUpdateSubproduct}
+                    isOpen onClose={closeModal} subproduct={subproductData} onSave={onUpdateSubproduct}
                 />
             )}
 
-            {/* --- Modal Ver Subproducto --- */}
             {type === "view" && subproductData && (
                 <ViewSubproductModal
-                    isOpen={true}
-                    onClose={closeModal}
-                    subproduct={subproductData}
-                />
+                    isOpen onClose={closeModal} subproduct={subproductData}
+                >
+                    {loadingFiles ? (
+                        <div className="flex items-center justify-center h-32">
+                            <Spinner />
+                        </div>
+                    ) : files.length > 0 ? (
+                        <ProductCarouselOverlay
+                            images={files}
+                            productId={parentProduct.id}
+                            onClose={closeModal}
+                            editable={false}
+                            isEmbedded
+                        />
+                    ) : (
+                        <div className="p-4 text-center text-sm text-gray-600">
+                            No hay archivos multimedia.
+                        </div>
+                    )}
+                </ViewSubproductModal>
             )}
 
-            {/* --- Modal Confirmar Eliminación --- */}
             {type === "deleteConfirm" && subproductData && (
                 <DeleteMessage
-                    isOpen={true}
-                    onClose={closeModal}
+                    isOpen onClose={closeModal}
                     onDelete={() => onDeleteSubproduct(subproductData)}
                     isDeleting={isDeleting}
                     deleteError={deleteError}
                     clearDeleteError={clearDeleteError}
                     itemName="el subproducto"
-                    itemIdentifier={subproductData.name || "SIN NOMBRE"}
+                    itemIdentifier={subproductData.brand || subproductData.id}
                 />
             )}
         </>
     );
+};
+
+SubproductModals.propTypes = {
+    modalState: PropTypes.shape({
+        type: PropTypes.oneOf(["create", "edit", "view", "deleteConfirm"]),
+        subproductData: PropTypes.object,
+    }),
+    closeModal: PropTypes.func.isRequired,
+    onCreateSubproduct: PropTypes.func.isRequired,
+    onUpdateSubproduct: PropTypes.func.isRequired,
+    onDeleteSubproduct: PropTypes.func.isRequired,
+    isDeleting: PropTypes.bool,
+    deleteError: PropTypes.string,
+    clearDeleteError: PropTypes.func.isRequired,
+    parentProduct: PropTypes.shape({ id: PropTypes.number }),
 };
 
 export default SubproductModals;
