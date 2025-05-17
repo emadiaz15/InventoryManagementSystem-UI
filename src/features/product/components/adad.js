@@ -57,7 +57,7 @@ const ProductModals = ({
 
     return (
         <>
-            {type === "create" && isStaff && productData && (
+            {type === "create" && isStaff && (
                 <CreateProductModal
                     isOpen={true}
                     onClose={closeModal}
@@ -93,34 +93,6 @@ const ProductModals = ({
                         </div>
                     )}
                 </EditProductModal>
-            )}
-
-            {type === "view" && productData && (
-                <ViewProductModal
-                    isOpen={true}
-                    onClose={closeModal}
-                    product={productData}
-                >
-                    {loadingFiles ? (
-                        <div className="flex items-center justify-center h-full">
-                            <Spinner size="8" color="text-primary-500" />
-                        </div>
-                    ) : hasFiles ? (
-                        <ProductCarouselOverlay
-                            images={files}
-                            productId={productId}
-                            onClose={closeModal}
-                            onDeleteSuccess={loadFiles}
-                            source="fastapi"
-                            editable={false}
-                            isEmbedded
-                        />
-                    ) : (
-                        <div className="p-6 text-center text-sm text-gray-600">
-                            No hay archivos de multimedia.
-                        </div>
-                    )}
-                </ViewProductModal>
             )}
 
             {type === "deleteConfirm" && isStaff && productData && (

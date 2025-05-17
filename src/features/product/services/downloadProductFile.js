@@ -7,5 +7,5 @@ import { fetchProtectedFile } from "../../../services/mediaService";
  * @returns {Promise<string|null>} Blob URL o null si falla
  */
 export const downloadProductFile = async (productId, fileId) => {
-  return await fetchProtectedFile(productId, fileId, 'fastapi');
+  return await fetchProtectedFile(productId, fileId, 'django');
 };

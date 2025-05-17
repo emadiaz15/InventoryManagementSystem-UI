@@ -71,6 +71,7 @@ const SubproductModals = ({
                         <ProductCarouselOverlay
                             images={files}
                             productId={parentProduct.id}
+                            subproductId={subproductData.id}
                             onClose={closeModal}
                             editable={false}
                             isEmbedded

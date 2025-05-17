@@ -170,8 +170,7 @@ const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
           <div className="flex items-center space-x-4">
             <label
               htmlFor="image"
-              className="cursor-pointer bg-background-100 border border-background-200 text-text-primary text-sm rounded-lg px-4 py-2 hover:bg-background-200 transition-colors"
-            >
+              className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600"            >
               Seleccionar archivo
             </label>
 

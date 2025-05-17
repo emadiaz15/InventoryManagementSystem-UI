@@ -6,7 +6,7 @@ import { fetchProtectedFile } from "../../../services/mediaService";
  * @returns {{
  *   downloading: boolean,
  *   downloadError: string | null,
- *   downloadFile: (productId: number, fileId: string, source?: 'fastapi' | 'django') => Promise<string | null>
+ *   downloadFile: (productId: number, fileId: string, source?: 'django') => Promise<string | null>
  * }}
  */
 export const useDownloadProductFile = () => {
@@ -14,7 +14,7 @@ export const useDownloadProductFile = () => {
   const [downloadError, setDownloadError] = useState(null);
   const controllerRef = useRef(null);
 
-  const downloadFile = useCallback(async (productId, fileId, source = "fastapi") => {
+  const downloadFile = useCallback(async (productId, fileId, source = "django") => {
     if (!productId || !fileId) {
       setDownloadError("ID de producto o archivo no válidos.");
       return null;

@@ -11,6 +11,7 @@ import PropTypes from "prop-types";
 const ProductCarouselOverlay = ({
     images = [],
     productId,
+    subproductId = null,
     onClose,
     onDeleteSuccess,
     onDeleteRequest,
@@ -37,7 +38,7 @@ const ProductCarouselOverlay = ({
                         const fileId = img.drive_file_id || img.id;
                         const url =
                             img.url ||
-                            (await fetchProtectedFile(productId, fileId, source));
+                            (await fetchProtectedFile(productId, fileId, source, subproductId));
                         return { ...img, id: fileId, url };
                     })
                 );
@@ -51,7 +52,7 @@ const ProductCarouselOverlay = ({
         };
 
         if (Array.isArray(images) && images.length > 0) preload();
-    }, [images, productId, source]);
+    }, [images, productId, subproductId, source]);
 
     useEffect(() => {
         const handleKey = (e) => {
@@ -184,6 +185,7 @@ const ProductCarouselOverlay = ({
 ProductCarouselOverlay.propTypes = {
     images: PropTypes.array,
     productId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    subproductId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     onClose: PropTypes.func,
     onDeleteSuccess: PropTypes.func,
     onDeleteRequest: PropTypes.func,

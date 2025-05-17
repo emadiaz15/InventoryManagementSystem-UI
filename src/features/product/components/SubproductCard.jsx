@@ -1,5 +1,6 @@
 import React from "react";
-import { PencilIcon, TrashIcon, EyeIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, EyeIcon, ClockIcon, ScissorsIcon } from "@heroicons/react/24/outline";
+import { useAuth } from "../../../context/AuthProvider";
 
 const getDefaultImage = (subType) => {
     const typeNormalized = (subType || "").toLowerCase();
@@ -19,7 +20,8 @@ const SubproductCard = ({
     const imageUrl = subproduct.technical_sheet_photo
         ? subproduct.technical_sheet_photo
         : getDefaultImage(subproduct.form_type);
-
+    const { user } = useAuth();
+    const isStaff = user?.is_staff;
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 md:max-w-2xl w-full">
             {/* Header: mostrar tipo y nombre del producto padre */}
@@ -47,12 +49,7 @@ const SubproductCard = ({
 
             {/* Actions: full width buttons row */}
             <div className="flex flex-wrap justify-center items-center space-x-2 p-4 border-t">
-                <button
-                    onClick={onAddToOrder}
-                    className="bg-indigo-500 hover:bg-indigo-600 transition-colors text-white font-medium rounded p-2 px-4"
-                >
-                    Agregar Orden
-                </button>
+                {/* 👁️ Ver Ficha Técnica (todos) */}
                 <button
                     onClick={onViewDetails}
                     title="Ver Ficha Técnica"
@@ -60,6 +57,8 @@ const SubproductCard = ({
                 >
                     <EyeIcon className="w-5 h-5 text-white" />
                 </button>
+
+                {/* ⏰ Ver Historial de Stock (todos) */}
                 <button
                     onClick={onViewStock}
                     title="Ver Historial de Stock"
@@ -67,21 +66,39 @@ const SubproductCard = ({
                 >
                     <ClockIcon className="w-5 h-5 text-white" />
                 </button>
-                <button
-                    onClick={onEdit}
-                    title="Editar Subproducto"
-                    className="bg-primary-500 hover:bg-primary-600 transition-colors rounded p-2"
-                >
-                    <PencilIcon className="w-5 h-5 text-white" />
-                </button>
-                <button
-                    onClick={onDelete}
-                    title="Eliminar Subproducto"
-                    className="bg-red-500 hover:bg-red-600 transition-colors rounded p-2"
-                >
-                    <TrashIcon className="w-5 h-5 text-white" />
-                </button>
+
+                {isStaff && (
+                    <>
+                        {/* 🛒 Agregar Orden */}
+                        <button
+                            onClick={onAddToOrder}
+                            title="Agregar Orden de Corte"
+                            className="bg-indigo-500 hover:bg-indigo-600 transition-colors rounded p-2"
+                        >
+                            <ScissorsIcon className="w-5 h-5 text-white" />
+                        </button>
+
+                        {/* ✏️ Editar */}
+                        <button
+                            onClick={onEdit}
+                            title="Editar Subproducto"
+                            className="bg-primary-500 hover:bg-primary-600 transition-colors rounded p-2"
+                        >
+                            <PencilIcon className="w-5 h-5 text-white" />
+                        </button>
+
+                        {/* 🗑️ Eliminar */}
+                        <button
+                            onClick={onDelete}
+                            title="Eliminar Subproducto"
+                            className="bg-red-500 hover:bg-red-600 transition-colors rounded p-2"
+                        >
+                            <TrashIcon className="w-5 h-5 text-white" />
+                        </button>
+                    </>
+                )}
             </div>
+
         </div>
     );
 };

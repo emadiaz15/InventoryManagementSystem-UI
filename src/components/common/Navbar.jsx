@@ -7,9 +7,10 @@ import { useAuth } from "../../context/AuthProvider";
 const Navbar = () => {
   const { user, profileImage, logout } = useAuth();
 
-  const userFullName = user?.name || user?.last_name
-    ? `${user.name || ""} ${user.last_name || ""}`.trim()
-    : "";
+  const userFullName =
+    user?.name || user?.last_name
+      ? `${user?.name || ""} ${user?.last_name || ""}`.trim()
+      : "";
 
   return (
     <nav className="fixed top-0 z-50 w-full bg-primary-500">
@@ -20,7 +21,7 @@ const Navbar = () => {
             <a href="/dashboard" className="flex items-center">
               <img src="/home-img.png" className="h-8 me-3" alt="Logo" />
               <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-neutral-50">
-                Inventario Web
+                Sistema ERP Seryon
               </span>
             </a>
           </div>
@@ -39,11 +40,12 @@ const Navbar = () => {
             <Menu as="div" className="relative flex items-center">
               <UserIndicator />
 
-              <MenuButton className="relative flex items-center space-x-2 rounded-full bg-primary-500 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 hover:bg-primary-600 transition-all">
-                {profileImage ? (
+              <MenuButton className="...">
+                {profileImage && typeof profileImage === "string" ? (
                   <img
-                    alt="User Profile"
+                    key={profileImage} // fuerza re-render si cambia la URL
                     src={profileImage}
+                    alt="User Profile"
                     className="size-8 rounded-full object-cover border border-white"
                   />
                 ) : (
