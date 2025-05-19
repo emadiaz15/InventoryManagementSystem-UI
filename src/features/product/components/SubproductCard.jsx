@@ -1,6 +1,13 @@
 import React from "react";
-import { PencilIcon, TrashIcon, EyeIcon, ClockIcon, ScissorsIcon } from "@heroicons/react/24/outline";
+import {
+    PencilIcon,
+    TrashIcon,
+    EyeIcon,
+    ClockIcon,
+    ScissorsIcon,
+} from "@heroicons/react/24/outline";
 import { useAuth } from "../../../context/AuthProvider";
+import { useNavigate } from "react-router-dom"; // ✅ IMPORTANTE
 
 const getDefaultImage = (subType) => {
     const typeNormalized = (subType || "").toLowerCase();
@@ -15,16 +22,25 @@ const SubproductCard = ({
     onEdit,
     onDelete,
     onViewDetails,
-    onViewStock,
 }) => {
     const imageUrl = subproduct.technical_sheet_photo
         ? subproduct.technical_sheet_photo
         : getDefaultImage(subproduct.form_type);
+
     const { user } = useAuth();
     const isStaff = user?.is_staff;
+
+    const navigate = useNavigate();
+
+    const handleViewStockHistory = () => {
+        if (subproduct?.id) {
+            navigate(`/subproducts/${subproduct.id}/stock-history`);
+        }
+    };
+
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 md:max-w-2xl w-full">
-            {/* Header: mostrar tipo y nombre del producto padre */}
+            {/* Header */}
             <div className="flex justify-between px-4 py-2 border-b">
                 <span className="text-1xl font-bold text-gray-800 truncate">
                     {subproduct.parent_type_name} - {subproduct.parent_name}
@@ -32,7 +48,7 @@ const SubproductCard = ({
                 <strong>{subproduct.initial_stock_quantity} Mts</strong>
             </div>
 
-            {/* Content: image + details */}
+            {/* Content */}
             <div className="flex flex-col md:flex-row p-4 space-y-4 md:space-y-0 md:space-x-6">
                 <img
                     className="object-cover w-full h-40 md:w-48 md:h-48 rounded"
@@ -47,9 +63,9 @@ const SubproductCard = ({
                 </ul>
             </div>
 
-            {/* Actions: full width buttons row */}
+            {/* Actions */}
             <div className="flex flex-wrap justify-center items-center space-x-2 p-4 border-t">
-                {/* 👁️ Ver Ficha Técnica (todos) */}
+                {/* 👁️ Ficha Técnica */}
                 <button
                     onClick={onViewDetails}
                     title="Ver Ficha Técnica"
@@ -58,9 +74,9 @@ const SubproductCard = ({
                     <EyeIcon className="w-5 h-5 text-white" />
                 </button>
 
-                {/* ⏰ Ver Historial de Stock (todos) */}
+                {/* ⏰ Historial de Stock */}
                 <button
-                    onClick={onViewStock}
+                    onClick={handleViewStockHistory}
                     title="Ver Historial de Stock"
                     className="bg-yellow-500 hover:bg-yellow-600 transition-colors rounded p-2"
                 >
@@ -98,7 +114,6 @@ const SubproductCard = ({
                     </>
                 )}
             </div>
-
         </div>
     );
 };

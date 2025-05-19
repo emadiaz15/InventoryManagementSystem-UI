@@ -39,7 +39,8 @@ const Login = () => {
             {/* Formulario */}
             <div className="bg-white/10 backdrop-blur-md p-8 rounded-4xl shadow-md w-full max-w-md border border-white/20 text-white">
               <h2 className="text-2xl font-bold mb-6 text-center text-white">
-                Sistema ERP Seryon
+                Sistema de gestión comercial
+                Seryon
               </h2>
 
               <form onSubmit={handleLogin} className="space-y-4">
