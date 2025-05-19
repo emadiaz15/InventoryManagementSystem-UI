@@ -34,7 +34,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         description: "",
         brand: "",
         location: "",
-        position: "",
         category: "",
         type: "",               // opcional
         initial_stock_quantity: "",
@@ -56,7 +55,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             description: "",
             brand: "",
             location: "",
-            position: "",
+
             category: "",
             type: "",
             initial_stock_quantity: "",
