@@ -1,4 +1,3 @@
-// src/features/product/components/CreateProductModal.jsx
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import Modal from "../../../components/ui/Modal";
@@ -34,6 +33,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         description: "",
         brand: "",
         location: "",
+        position: "",
         category: "",
         type: "",               // opcional
         initial_stock_quantity: "",
@@ -55,7 +55,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             description: "",
             brand: "",
             location: "",
-
+            position: "",
             category: "",
             type: "",
             initial_stock_quantity: "",
@@ -312,6 +312,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                                 : "Sin archivos"}
                         </span>
                     </div>
+
                     <input
                         id="images"
                         type="file"
