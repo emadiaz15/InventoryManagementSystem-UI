@@ -57,7 +57,7 @@ const ProductModals = ({
 
     return (
         <>
-            {type === "create" && isStaff && productData && (
+            {type === "create" && isStaff && (
                 <CreateProductModal
                     isOpen={true}
                     onClose={closeModal}
