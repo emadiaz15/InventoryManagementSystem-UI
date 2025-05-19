@@ -55,7 +55,7 @@ const ProductTable = ({
         ),
         "Acciones": (
             <div className="flex space-x-2 min-w-[180px]">
-                {/* Siempre mostramos el EyeIcon */}
+                {/* Íconos visibles para TODOS */}
                 <button
                     onClick={() => onView(product)}
                     className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
@@ -77,9 +77,10 @@ const ProductTable = ({
                 >
                     <ClockIcon className="w-5 h-5 text-white" />
                 </button>
+
+                {/* Íconos solo para admins (is_staff === true) */}
                 {isStaff && (
                     <>
-
                         <button
                             onClick={() => onEdit(product)}
                             className="bg-primary-500 p-2 rounded hover:bg-primary-600 transition-colors"

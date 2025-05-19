@@ -13,7 +13,6 @@ export const enrichProductFiles = async (productId, rawFiles = [], source = 'dja
   }
 
   const VALID_SOURCES = ['fastapi', 'django'];
-
   if (!VALID_SOURCES.includes(source)) {
     console.warn(`⚠️ 'source' inválido: '${source}'. Se usará 'django' por defecto.`);
     source = 'django';
@@ -21,22 +20,30 @@ export const enrichProductFiles = async (productId, rawFiles = [], source = 'dja
 
   const enriched = await Promise.all(
     rawFiles
-      .filter(f => f?.drive_file_id || f?.id)
+      // ❌ Ignora carpetas (solo procesa archivos)
+      .filter(f => 
+        (f?.drive_file_id || f?.id) &&
+        f?.mimeType !== 'application/vnd.google-apps.folder'
+      )
       .map(async (f) => {
         const fileId = f.drive_file_id || f.id;
 
-        // ⚠️ Forzamos siempre 'django' porque tu endpoint actual es de Django
-        const url = await fetchProtectedFile(productId, fileId, 'django');
+        try {
+          const url = await fetchProtectedFile(productId, fileId, 'django');
 
-        return {
-          ...f,
-          id: fileId,
-          url,
-          filename: f.name || f.filename || "archivo_sin_nombre",
-          contentType: f.mimeType || f.contentType || "application/octet-stream",
-        };
+          return {
+            ...f,
+            id: fileId,
+            url,
+            filename: f.name || f.filename || "archivo_sin_nombre",
+            contentType: f.mimeType || f.contentType || "application/octet-stream",
+          };
+        } catch (err) {
+          console.error(`❌ Error descargando archivo con ID ${fileId}`, err);
+          return null; // Evita que archivos con error pasen el filtro
+        }
       })
   );
 
-  return enriched.filter(file => file.url); // 🔥 Solo archivos válidos con URL Blob
+  return enriched.filter(file => file && file.url); // 🔥 Solo archivos válidos con URL Blob
 };

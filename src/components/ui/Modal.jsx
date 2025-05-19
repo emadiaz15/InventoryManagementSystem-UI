@@ -1,18 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 
-
 const Modal = ({
   isOpen,
   onClose,
   title,
   children,
   position = 'center',
-  maxWidth = 'max-w-xl', // nuevo: personalizable
-  className = '', // nuevo: clase externa opcional
+  maxWidth = 'max-w-xl',
+  className = '',
 }) => {
   const modalRef = useRef(null);
-  const titleId = `modal-title-${React.useId()}`;
-  const contentId = `modal-content-${React.useId()}`;
+  const modalId = useRef(`modal-${Math.random().toString(36).substr(2, 9)}`);
+  const titleId = `${modalId.current}-title`;
+  const contentId = `${modalId.current}-content`;
 
   useEffect(() => {
     if (isOpen && modalRef.current) {
@@ -33,7 +33,6 @@ const Modal = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
-
 
   if (!isOpen) return null;
 
@@ -69,11 +68,10 @@ const Modal = ({
           )}
           <button
             onClick={onClose}
-
             className="text-text-secondary hover:text-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-400 rounded-full p-1 ml-auto"
             aria-label="Cerrar modal"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>
           </button>

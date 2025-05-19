@@ -1,10 +1,21 @@
 import { axiosInstance } from "../../../services/api";
 
+/**
+ * Actualiza un subproducto con PUT utilizando FormData y headers explícitos
+ * @param {number} productId - ID del producto padre
+ * @param {number} subproductId - ID del subproducto
+ * @param {FormData} subproductData - Datos en FormData
+ */
 export const updateSubproduct = async (productId, subproductId, subproductData) => {
   try {
     const response = await axiosInstance.put(
       `/inventory/products/${productId}/subproducts/${subproductId}/`,
-      subproductData
+      subproductData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
     return response.data;
   } catch (error) {

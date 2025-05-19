@@ -8,6 +8,7 @@ import Spinner from "../../../components/ui/Spinner";
 import Pagination from "../../../components/ui/Pagination";
 import SubproductModals from "../components/SubproductModals";
 import SubproductCard from "../components/SubproductCard";
+import SubproductFilters from "../components/SubproductFilter";
 import { listSubproducts } from "../services/listSubproducts";
 import { createSubproduct } from "../services/createSubproduct";
 import { updateSubproduct } from "../services/updateSubproduct";
@@ -28,6 +29,7 @@ const SubproductList = () => {
   const [modalState, setModalState] = useState({ type: null, subproductData: null });
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [filters, setFilters] = useState({ status: "" });
 
   const fetchSubproducts = async (
     url = `/inventory/products/${productId}/subproducts/?page_size=${PAGE_SIZE}`
@@ -48,7 +50,8 @@ const SubproductList = () => {
 
   useEffect(() => {
     if (productId) fetchSubproducts();
-  }, [productId]);
+  }, [productId, filters]);
+
 
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
@@ -74,9 +77,9 @@ const SubproductList = () => {
     }
   };
 
-  const handleUpdate = async (formData) => {
+  const handleUpdate = async (subproduct) => {
     try {
-      await updateSubproduct(productId, formData.id, formData);
+      await updateSubproduct(productId, subproduct.id, subproduct);
       handleShowSuccess("Actualizado correctamente");
       handleCloseModal();
     } catch (err) {
@@ -112,6 +115,7 @@ const SubproductList = () => {
           onButtonClick={() => setModalState({ type: "create", subproductData: null })}
         />
 
+        <SubproductFilters filters={filters} onChange={setFilters} />
         {error && !loading && <ErrorMessage message={error} onClose={() => setError(null)} />}
 
         {loading && (

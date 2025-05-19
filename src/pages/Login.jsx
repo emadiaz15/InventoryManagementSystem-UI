@@ -39,7 +39,8 @@ const Login = () => {
             {/* Formulario */}
             <div className="bg-white/10 backdrop-blur-md p-8 rounded-4xl shadow-md w-full max-w-md border border-white/20 text-white">
               <h2 className="text-2xl font-bold mb-6 text-center text-white">
-                Gestión de Almacén
+                Sistema de gestión comercial
+                Seryon
               </h2>
 
               <form onSubmit={handleLogin} className="space-y-4">
@@ -74,9 +75,9 @@ const Login = () => {
                     disabled={loading}
                   >
                     {loading ? (
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center">
+                        <span className="text-sm justify-center"> Ingresando...</span>
                         <Spinner size="5" color="text-white" />
-                        <span className="text-sm">Validando credenciales...</span>
                       </div>
                     ) : (
                       'Ingresar'
@@ -88,8 +89,8 @@ const Login = () => {
             </div>
           </div>
         </div>
-      </section>
-    </PageWrapper>
+      </section >
+    </PageWrapper >
   );
 };
 

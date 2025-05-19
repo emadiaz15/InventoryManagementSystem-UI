@@ -5,6 +5,7 @@ import ViewProductModal from "./ViewProductModal";
 import ProductCarouselOverlay from "./ProductCarouselOverlay";
 import DeleteMessage from "../../../components/common/DeleteMessage";
 import Spinner from "../../../components/ui/Spinner";
+import { useAuth } from "../../../context/AuthProvider";
 
 import { listProductFiles } from "../services/listProductFiles";
 import { enrichProductFiles } from "../utils/productFileUtils";
@@ -24,7 +25,8 @@ const ProductModals = ({
 }) => {
     const [files, setFiles] = useState([]);
     const [loadingFiles, setLoadingFiles] = useState(false);
-
+    const { user } = useAuth();
+    const isStaff = user?.is_staff;
     const { type = "", productData = {}, showCarousel = false } = modalState || {};
     const productId = productData?.id;
 
@@ -55,7 +57,7 @@ const ProductModals = ({
 
     return (
         <>
-            {type === "create" && (
+            {type === "create" && isStaff && productData && (
                 <CreateProductModal
                     isOpen={true}
                     onClose={closeModal}
@@ -63,7 +65,7 @@ const ProductModals = ({
                 />
             )}
 
-            {type === "edit" && productData && (
+            {type === "edit" && isStaff && productData && (
                 <EditProductModal
                     isOpen={true}
                     onClose={closeModal}
@@ -121,7 +123,7 @@ const ProductModals = ({
                 </ViewProductModal>
             )}
 
-            {type === "deleteConfirm" && productData && (
+            {type === "deleteConfirm" && isStaff && productData && (
                 <DeleteMessage
                     isOpen={true}
                     onClose={closeModal}

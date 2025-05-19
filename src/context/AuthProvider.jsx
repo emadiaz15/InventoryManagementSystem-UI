@@ -1,4 +1,4 @@
-import React, {
+import {
     createContext,
     useState,
     useEffect,
@@ -16,11 +16,12 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [profileImage, setProfileImage] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true); // 🌀 spinner control
     const [error, setError] = useState(null);
 
     const navigate = useNavigate();
 
+    // 🔄 Cargar imagen de perfil desde Drive
     const loadProfileImage = async (userData) => {
         const url = userData?.image_url;
         if (!url) return;
@@ -29,11 +30,12 @@ export const AuthProvider = ({ children }) => {
             const blobUrl = await fetchBlobFromUrl(url);
             setProfileImage(blobUrl);
         } catch (err) {
-            console.warn("❌ No se pudo cargar la imagen de perfil:", err);
+            console.warn("❌ Imagen de perfil no cargada:", err);
             setProfileImage(null);
         }
     };
 
+    // 🧪 Validar sesión (autologin)
     useEffect(() => {
         const validateToken = async () => {
             const accessToken = sessionStorage.getItem("accessToken");
@@ -50,8 +52,8 @@ export const AuthProvider = ({ children }) => {
                 setUser(data);
                 setIsAuthenticated(true);
                 await loadProfileImage(data);
-            } catch {
-                await logout();
+            } catch (e) {
+                await logout(); // Si falla, destruir sesión
             } finally {
                 setLoading(false);
             }
@@ -60,45 +62,59 @@ export const AuthProvider = ({ children }) => {
         validateToken();
     }, []);
 
-    const login = async (credentials) => {
+    const login = async ({ username, password }) => {
         setError(null);
+        setLoading(true);
+
         try {
-            const response = await axiosInstance.post("/users/login/", credentials);
+            const res = await axiosInstance.post("/users/login/", {
+                username,
+                password,
+            });
+
             const {
-                refresh_token,
                 access_token,
+                refresh_token,
                 fastapi_token,
-                user: userData
-            } = response.data;
+                user: userData,
+            } = res.data;
 
-            if (access_token && fastapi_token && refresh_token) {
-                sessionStorage.setItem("accessToken", access_token);
-                sessionStorage.setItem("refreshToken", refresh_token);
-                sessionStorage.setItem("fastapiToken", fastapi_token);
+            sessionStorage.setItem("accessToken", access_token);
+            sessionStorage.setItem("refreshToken", refresh_token);
+            sessionStorage.setItem("fastapiToken", fastapi_token);
 
-                setUser(userData || null);
-                setIsAuthenticated(true);
-                await loadProfileImage(userData);
-                navigate("/dashboard");
+            setUser(userData);
+            setIsAuthenticated(true);
+
+            if (userData?.image_url) {
+                const blobUrl = await fetchBlobFromUrl(userData.image_url);
+                setProfileImage(blobUrl);
+            } else {
+                setProfileImage(null);
             }
+
+            // 🚀 Forzar reload brutal para asegurar imagen, estado y layout sincronizados
+            window.location.href = "/dashboard"; // alternativa 1
+            // window.location.reload();        // alternativa 2 (menos suave, evita esta si no es estrictamente necesario)
+
         } catch (err) {
-            const detail =
-                err?.response?.data?.detail ||
-                "Ocurrió un error al iniciar sesión.";
-            setError(detail);
+            setError(err?.response?.data?.detail || "Credenciales inválidas");
+        } finally {
+            setLoading(false);
         }
     };
 
+    // 🔓 Logout
     const logout = async () => {
         try {
-            await logoutHelper();
+            await logoutHelper(); // puede ser opcional si solo limpiás sesión
+        } catch {
+            /* opcional log */
         } finally {
-            sessionStorage.removeItem("accessToken");
-            sessionStorage.removeItem("refreshToken");
-            sessionStorage.removeItem("fastapiToken");
+            sessionStorage.clear();
             setUser(null);
-            setProfileImage(null);
             setIsAuthenticated(false);
+            setProfileImage(null);
             setError(null);
             navigate("/login");
         }
@@ -108,14 +124,13 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider
             value={{
                 user,
-                // <-- aquí exponemos directamente isStaff
-                isStaff: Boolean(user?.is_staff),
+                isStaff: !!user?.is_staff,
                 isAuthenticated,
-                login,
-                logout,
                 loading,
+                error,
                 profileImage,
-                error
+                login,
+                logout
             }}
         >
             {children}

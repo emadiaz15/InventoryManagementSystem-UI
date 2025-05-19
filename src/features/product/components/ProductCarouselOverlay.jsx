@@ -1,78 +1,102 @@
 import React, { useState, useEffect } from "react";
 import { TrashIcon, DocumentIcon } from "@heroicons/react/24/outline";
-import { fetchProtectedFile } from "../../../services/mediaService";
 import Spinner from "../../../components/ui/Spinner";
 import PropTypes from "prop-types";
 
-/**
- * Overlay de carousel para mostrar archivos multimedia de un producto.
- * En modo editable, delega la eliminación al handler onDeleteRequest.
- */
 const ProductCarouselOverlay = ({
     images = [],
     productId,
+    subproductId = null,
     onClose,
     onDeleteSuccess,
     onDeleteRequest,
-    source = "fastapi",
     editable = false,
     isEmbedded = false,
+    source = "django",
 }) => {
     const [current, setCurrent] = useState(0);
     const [localImages, setLocalImages] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [downloadError, setDownloadError] = useState(null);
-    const isPDF = (type) => type === "application/pdf";
+    const [imgLoaded, setImgLoaded] = useState(false);
+
+    // Media type detection
+    const isPDF = (type = "") => type === "application/pdf";
+    const isVideo = (type = "") => type.startsWith("video/");
+    const isImage = (type = "") => type.startsWith("image/");
+
+    const getMediaType = (type = "", filename = "") => {
+        const lowered = type.toLowerCase();
+        const ext = filename.toLowerCase().split('.').pop();
+
+        if (lowered === "application/pdf" || ext === "pdf") return "pdf";
+        if (lowered.startsWith("video/") || ["mp4", "webm", "mov"].includes(ext)) return "video";
+        if (lowered.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) return "image";
+
+        return "unknown";
+    };
+
 
     useEffect(() => {
         setCurrent(0);
-        setLocalImages([]);
-        setDownloadError(null);
-        setLoading(true);
+        if (!images?.length) {
+            setLocalImages([]);
+            setLoading(false);
+            return;
+        }
 
+        setLoading(true);
         const preload = async () => {
             try {
-                const enriched = await Promise.all(
-                    images.map(async (img) => {
-                        const fileId = img.drive_file_id || img.id;
-                        const url =
-                            img.url ||
-                            (await fetchProtectedFile(productId, fileId, source));
-                        return { ...img, id: fileId, url };
-                    })
-                );
-                setLocalImages(enriched.filter((img) => img.url));
+                const formatted = images.map((img) => {
+                    const contentType =
+                        img.contentType ||
+                        img.content_type ||
+                        img.mimeType ||
+                        "application/octet-stream";
+
+                    return {
+                        ...img,
+                        id: img.drive_file_id || img.id,
+                        filename: img.filename || img.name || img.id,
+                        contentType,
+                        url: img.url,
+                    };
+                });
+                setLocalImages(formatted.filter((img) => !!img.url));
             } catch (error) {
                 console.error("❌ Error cargando archivos:", error);
-                setDownloadError("Error al cargar archivos multimedia.");
+                setLocalImages([]);
             } finally {
                 setLoading(false);
+                setImgLoaded(false);
             }
         };
 
-        if (Array.isArray(images) && images.length > 0) preload();
-    }, [images, productId, source]);
+        preload();
+    }, [images]);
 
     useEffect(() => {
         const handleKey = (e) => {
             if (e.key === "ArrowRight") nextSlide();
             else if (e.key === "ArrowLeft") prevSlide();
-            else if (e.key === "Escape" && !isEmbedded) onClose();
+            else if (e.key === "Escape" && !isEmbedded) onClose?.();
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
     }, [current, localImages, isEmbedded, onClose]);
 
-    const isVideo = (type) => type?.startsWith("video/");
-    const nextSlide = () =>
-        setCurrent((i) => (localImages.length ? (i + 1) % localImages.length : 0));
-    const prevSlide = () =>
-        setCurrent((i) =>
-            localImages.length ? (i - 1 + localImages.length) % localImages.length : 0
-        );
-    const handleClickImage = (url) => url && window.open(url, "_blank");
+    const nextSlide = () => {
+        setImgLoaded(false);
+        setCurrent((i) => (i + 1) % localImages.length);
+    };
 
-    // Delegar eliminación al padre
+    const prevSlide = () => {
+        setImgLoaded(false);
+        setCurrent((i) => (i - 1 + localImages.length) % localImages.length);
+    };
+
+    const openInNewTab = (url) => window.open(url, "_blank");
+
     const handleDelete = () => {
         const file = localImages[current];
         if (file && typeof onDeleteRequest === "function") {
@@ -82,11 +106,8 @@ const ProductCarouselOverlay = ({
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 px-6 h-full">
+            <div className="flex items-center justify-center h-full">
                 <Spinner size="8" color="text-primary-500" />
-                <p className="mt-4 text-sm text-gray-500">
-                    Cargando archivos multimedia...
-                </p>
             </div>
         );
     }
@@ -100,37 +121,49 @@ const ProductCarouselOverlay = ({
     }
 
     const currentItem = localImages[current];
+    const mediaType = getMediaType(currentItem.contentType, currentItem.filename);
 
     return (
-        <>
+        <div className="w-full">
             <div className="relative w-full pt-[66%] bg-black rounded overflow-hidden mb-4">
                 <div className="absolute top-0 left-0 w-full h-full z-10 flex items-center justify-center">
-                    {isVideo(currentItem.contentType) ? (
+                    {!imgLoaded && mediaType === "image" && (
+                        <div className="absolute flex flex-col items-center justify-center z-20">
+                            <Spinner size="6" color="text-white" />
+                            <p className="text-sm text-white mt-2">Cargando imagen...</p>
+                        </div>
+                    )}
+
+                    {mediaType === "video" ? (
                         <video
                             src={currentItem.url}
                             controls
                             className="w-full h-full object-contain"
                             title={currentItem.filename}
+                            onCanPlay={() => setImgLoaded(true)}
                         />
-                    ) : isPDF(currentItem.contentType) ? (
+                    ) : mediaType === "pdf" ? (
                         <button
-                            onClick={() => handleClickImage(currentItem.url)}
+                            onClick={() => openInNewTab(currentItem.url)}
                             className="flex flex-col items-center justify-center space-y-2 bg-gray-100 p-4 rounded"
                             title={`Ver PDF: ${currentItem.filename}`}
                         >
-                            <DocumentIcon className="w-12 h-12 text-blue-600" />
+                            <DocumentIcon className="w-12 h-12 text-red-600" />
                             <span className="text-sm text-gray-700 truncate max-w-xs">
                                 {currentItem.filename}
                             </span>
                         </button>
-                    ) : (
+                    ) : mediaType === "image" ? (
                         <img
                             src={currentItem.url}
-                            onClick={() => handleClickImage(currentItem.url)}
-                            className="w-full h-full object-contain cursor-pointer"
+                            onLoad={() => setImgLoaded(true)}
+                            onClick={() => openInNewTab(currentItem.url)}
+                            className={`w-full h-full object-contain cursor-pointer transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
                             alt={currentItem.filename || "archivo"}
                             title={currentItem.filename}
                         />
+                    ) : (
+                        <div className="text-white text-sm">Tipo no soportado</div>
                     )}
                 </div>
 
@@ -163,33 +196,31 @@ const ProductCarouselOverlay = ({
             <div className="flex justify-center py-2 border-t border-gray-200 bg-gray-50 rounded">
                 {localImages.map((_, idx) => (
                     <button
-                        key={idx}
-                        onClick={() => setCurrent(idx)}
-                        className={`w-3 h-3 mx-1 rounded-full ${idx === current ? "bg-blue-500" : "bg-gray-400"
-                            }`}
+                        key={`dot-${idx}`}
+                        onClick={() => {
+                            setCurrent(idx);
+                            setImgLoaded(false);
+                        }}
+                        className={`w-3 h-3 mx-1 rounded-full ${idx === current ? "bg-blue-500" : "bg-gray-400"}`}
                         aria-label={`Slide ${idx + 1}`}
                     />
                 ))}
             </div>
-
-            {downloadError && (
-                <div className="text-sm text-red-600 text-center py-2">
-                    ❌ {downloadError}
-                </div>
-            )}
-        </>
+        </div>
     );
+
 };
 
 ProductCarouselOverlay.propTypes = {
     images: PropTypes.array,
     productId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    subproductId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     onClose: PropTypes.func,
     onDeleteSuccess: PropTypes.func,
     onDeleteRequest: PropTypes.func,
-    source: PropTypes.string,
     editable: PropTypes.bool,
     isEmbedded: PropTypes.bool,
+    source: PropTypes.string,
 };
 
 export default ProductCarouselOverlay;

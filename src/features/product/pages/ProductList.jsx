@@ -19,8 +19,7 @@ import { deleteProduct } from "../services/deleteProduct";
 
 const ProductsList = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-
+  const { isAuthenticated, user } = useAuth();
   const [modalState, setModalState] = useState({ type: null, productData: null });
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -176,6 +175,7 @@ const ProductsList = () => {
                 onViewHistory={handleViewHistory}
                 getTypeName={getTypeName}
                 getCategoryName={getCategoryName}
+                user={user}
               />
             </div>
           )}

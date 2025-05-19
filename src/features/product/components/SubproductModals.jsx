@@ -6,7 +6,37 @@ import ViewSubproductModal from "./ViewSubproductModal";
 import DeleteMessage from "../../../components/common/DeleteMessage";
 import Spinner from "../../../components/ui/Spinner";
 import ProductCarouselOverlay from "./ProductCarouselOverlay";
-import { listSubproductFiles } from "../services/listSubproductFiles";
+import { djangoApi } from "@/services/clients";
+import { fetchProtectedFile } from "@/services/mediaService";
+
+const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose }) => {
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <Spinner size="8" color="text-primary-500" />
+            </div>
+        );
+    }
+
+    if (files.length > 0) {
+        return (
+            <ProductCarouselOverlay
+                images={files}
+                productId={productId}
+                subproductId={subproductId}
+                onClose={onClose}
+                editable={false}
+                isEmbedded
+            />
+        );
+    }
+
+    return (
+        <div className="p-4 text-center text-sm text-gray-600">
+            No hay archivos multimedia.
+        </div>
+    );
+};
 
 /**
  * Centraliza la lógica de modales para Subproductos.
@@ -23,23 +53,52 @@ const SubproductModals = ({
     parentProduct = null,
 }) => {
     if (!modalState?.type) return null;
+
     const { type, subproductData } = modalState;
+
     const [files, setFiles] = useState([]);
     const [loadingFiles, setLoadingFiles] = useState(false);
 
     const loadFiles = useCallback(async () => {
-        if (type !== "view" || !subproductData) return;
+        if (!subproductData || !parentProduct?.id) return;
+
         setLoadingFiles(true);
+
         try {
-            const imgs = await listSubproductFiles(parentProduct.id, subproductData.id);
-            setFiles(imgs);
+            const res = await djangoApi.get(
+                `/inventory/products/${parentProduct.id}/subproducts/${subproductData.id}/files/`
+            );
+
+            const fetched = await Promise.all(
+                (res.data.files || []).map(async (f) => {
+                    const url = await fetchProtectedFile(
+                        parentProduct.id,
+                        f.drive_file_id,
+                        "django",
+                        subproductData.id
+                    );
+
+                    const contentType =
+                        f.contentType || f.content_type || f.mimeType || "application/octet-stream";
+
+                    return {
+                        id: f.drive_file_id,
+                        filename: f.filename || f.drive_file_id,
+                        contentType,
+                        url,
+                    };
+                })
+            );
+
+            setFiles(fetched);
         } catch (e) {
-            console.error("No se pudieron cargar los archivos:", e);
+            console.error("❌ No se pudieron cargar los archivos:", e);
             setFiles([]);
         } finally {
             setLoadingFiles(false);
         }
-    }, [type, subproductData, parentProduct]);
+    }, [subproductData, parentProduct]);
+
 
     useEffect(() => {
         loadFiles();
@@ -49,43 +108,68 @@ const SubproductModals = ({
         <>
             {type === "create" && parentProduct && (
                 <CreateSubproductModal
-                    isOpen onClose={closeModal} onSave={onCreateSubproduct} product={parentProduct}
+                    isOpen
+                    onClose={closeModal}
+                    onSave={onCreateSubproduct}
+                    product={parentProduct}
                 />
             )}
 
             {type === "edit" && subproductData && (
                 <EditSubproductModal
-                    isOpen onClose={closeModal} subproduct={subproductData} onSave={onUpdateSubproduct}
-                />
-            )}
-
-            {type === "view" && subproductData && (
-                <ViewSubproductModal
-                    isOpen onClose={closeModal} subproduct={subproductData}
+                    isOpen={true}
+                    onClose={closeModal}
+                    subproduct={subproductData}
+                    onSave={onUpdateSubproduct}
+                    onDeleteSuccess={loadFiles} // importante para refrescar el carousel tras eliminar
                 >
                     {loadingFiles ? (
-                        <div className="flex items-center justify-center h-32">
-                            <Spinner />
+                        <div className="flex items-center justify-center h-full">
+                            <Spinner size="8" color="text-primary-500" />
                         </div>
                     ) : files.length > 0 ? (
                         <ProductCarouselOverlay
                             images={files}
-                            productId={parentProduct.id}
+                            productId={parentProduct?.id}
+                            subproductId={subproductData?.id}
                             onClose={closeModal}
-                            editable={false}
+                            onDeleteSuccess={loadFiles}
+                            editable={true}
                             isEmbedded
+                            source="django"
                         />
                     ) : (
-                        <div className="p-4 text-center text-sm text-gray-600">
-                            No hay archivos multimedia.
+                        <div className="p-6 text-center text-sm text-gray-600">
+                            No hay archivos de multimedia.
                         </div>
                     )}
-                </ViewSubproductModal>
+                </EditSubproductModal>
+            )}
+
+
+            {type === "view" && subproductData && (
+                <ViewSubproductModal
+                    isOpen
+                    onClose={closeModal}
+                    subproduct={subproductData}
+                    mediaPanel={
+                        <MultimediaWrapper
+                            files={files}
+                            loading={loadingFiles}
+                            productId={parentProduct.id}
+                            subproductId={subproductData.id}
+                            onClose={closeModal}
+                        />
+                    }
+                />
+
+
             )}
 
             {type === "deleteConfirm" && subproductData && (
                 <DeleteMessage
-                    isOpen onClose={closeModal}
+                    isOpen
+                    onClose={closeModal}
                     onDelete={() => onDeleteSubproduct(subproductData)}
                     isDeleting={isDeleting}
                     deleteError={deleteError}

@@ -2,10 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import Modal from "../../../components/ui/Modal";
 
-/**
- * Modal para ver detalles de un subproducto e inyectar contenido adicional (e.g. multimedia) al lado.
- */
-const ViewSubproductModal = ({ subproduct, isOpen, onClose, children }) => {
+const ViewSubproductModal = ({ subproduct, isOpen, onClose, mediaPanel }) => {
     if (!subproduct) return null;
 
     return (
@@ -16,11 +13,8 @@ const ViewSubproductModal = ({ subproduct, isOpen, onClose, children }) => {
             position="center"
             maxWidth="max-w-6xl"
         >
-            {/* Layout: detalles y multimedia lado a lado */}
             <div className="flex flex-col lg:flex-row gap-4 h-full text-text-primary">
-                {/* Detalles */}
                 <div className="flex-1 space-y-2 bg-background-100 p-4 rounded overflow-y-auto max-h-[80vh]">
-                    {/* Mantener todos los <p> originales sin tocar */}
                     <p>
                         <span className="font-extrabold text-2xl">
                             {subproduct.parent_type_name} - {subproduct.parent_name}
@@ -50,20 +44,19 @@ const ViewSubproductModal = ({ subproduct, isOpen, onClose, children }) => {
                     <p><span className="font-semibold">ID:</span> {subproduct.id}</p>
                 </div>
 
-                {/* Multimedia al lado */}
-                {children && (
-                    <div className="w-full lg:w-1/2 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
-                        {children}
-                    </div>
-                )}
+                {/* MEDIA PANEL EXPLÍCITO */}
+                <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
+                    {mediaPanel}
+                </div>
             </div>
 
-            {/* Botón Cerrar */}
             <div className="flex justify-end mt-4">
                 <button
                     onClick={onClose}
-                    className="px-4 py-2 bg-primary-500 text-text-white rounded hover:bg-primary-600 transition-colors"
-                >Cerrar</button>
+                    className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
+                >
+                    Cerrar
+                </button>
             </div>
         </Modal>
     );
@@ -73,7 +66,7 @@ ViewSubproductModal.propTypes = {
     subproduct: PropTypes.object.isRequired,
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    children: PropTypes.node,
+    mediaPanel: PropTypes.node.isRequired, // ← Cambiado
 };
 
 export default ViewSubproductModal;

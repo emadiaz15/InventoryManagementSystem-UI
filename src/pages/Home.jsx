@@ -15,7 +15,7 @@ const Home = () => {
           <div className="text-center bg-white/10 backdrop-blur-md p-8 sm:p-10 rounded-4xl shadow-md max-w-md w-full border border-white/20 text-white">
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">Bienvenido</h1>
             <p className="mb-6 text-base sm:text-lg text-text-white">
-              Sistema de gestión de almacén
+              Sistema de gestión comercial ERP Seryon. Aquí podrás gestionar tu inventario, ventas y más.
             </p>
             <button
               onClick={() => navigate('/login')}
