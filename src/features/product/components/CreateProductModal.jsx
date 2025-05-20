@@ -170,10 +170,8 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         data.append("location", formData.location.trim());
         data.append("position", formData.position.trim());
         data.append("category", parseInt(formData.category, 10));
+        data.append("type", formData.type ? parseInt(formData.type, 10) : "");
 
-        if (formData.type) {
-            data.append("type", parseInt(formData.type, 10));
-        }
 
         const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
         if (parseFloat(stockVal) > 0) {
