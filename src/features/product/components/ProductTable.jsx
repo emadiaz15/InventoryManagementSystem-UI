@@ -8,12 +8,8 @@ import {
     FolderIcon,
     ClockIcon,
 } from "@heroicons/react/24/outline";
-import { useAuth } from "../../../context/AuthProvider"; // Ajusta la ruta si es necesario
+import { useAuth } from "../../../context/AuthProvider";
 
-/**
- * Tabla de productos con acciones: ver, editar, eliminar, ver subproductos e historial.
- * A un user no staff solo se le muestra el icono de ver (EyeIcon).
- */
 const ProductTable = ({
     products,
     onView,
@@ -54,7 +50,7 @@ const ProductTable = ({
             </div>
         ),
         "Acciones": (
-            <div className="flex space-x-2 min-w-[180px]">
+            <div className="flex space-x-2 min-w-[200px]">
                 {/* Íconos visibles para TODOS */}
                 <button
                     onClick={() => onView(product)}
@@ -63,13 +59,17 @@ const ProductTable = ({
                 >
                     <EyeIcon className="w-5 h-5 text-white" />
                 </button>
-                <button
-                    onClick={() => onShowSubproducts(product)}
-                    className="bg-indigo-500 p-2 rounded hover:bg-indigo-600 transition-colors"
-                    aria-label="Ver subproductos"
-                >
-                    <FolderIcon className="w-5 h-5 text-white" />
-                </button>
+
+                {product?.has_subproducts && (
+                    <button
+                        onClick={() => onShowSubproducts(product)}
+                        className="bg-indigo-500 p-2 rounded hover:bg-indigo-600 transition-colors"
+                        aria-label="Ver subproductos"
+                    >
+                        <FolderIcon className="w-5 h-5 text-white" />
+                    </button>
+                )}
+
                 <button
                     onClick={() => handleViewHistory(product)}
                     className="bg-yellow-500 p-2 rounded hover:bg-yellow-600 transition-colors"
@@ -78,7 +78,7 @@ const ProductTable = ({
                     <ClockIcon className="w-5 h-5 text-white" />
                 </button>
 
-                {/* Íconos solo para admins (is_staff === true) */}
+                {/* Íconos solo para admins */}
                 {isStaff && (
                     <>
                         <button
@@ -89,7 +89,9 @@ const ProductTable = ({
                             <PencilIcon className="w-5 h-5 text-white" />
                         </button>
                         <button
-                            onClick={() => onDelete({ type: "deleteConfirm", productData: product })}
+                            onClick={() =>
+                                onDelete({ type: "deleteConfirm", productData: product })
+                            }
                             className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
                             aria-label="Eliminar producto"
                         >

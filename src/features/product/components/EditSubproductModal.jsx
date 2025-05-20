@@ -110,11 +110,17 @@ const EditSubproductModal = ({
             if ((val !== "" && val != null) && key !== "images") {
                 if (key === "initial_stock_quantity") {
                     fd.append("initial_stock_quantity", qty);
+                } else if (key === "number_coil") {
+                    const parsed = parseInt(val, 10);
+                    if (!isNaN(parsed)) {
+                        fd.append("number_coil", String(parsed));
+                    }
                 } else {
                     fd.append(key, val);
                 }
             }
         });
+
 
         try {
             await updateSubproduct(subproduct.parent, subproduct.id, fd);
@@ -169,15 +175,30 @@ const EditSubproductModal = ({
                         {error && <ErrorMessage message={error} onClose={() => setError("")} />}
                         {uploadError && <ErrorMessage message={uploadError} onClose={clearUploadError} />}
 
-                        <FormSelect label="Tipo de Forma" name="form_type" value={formData.form_type} onChange={handleChange} options={formTypeOptions} required />
-                        <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
-                        <FormInput label="Bobina N°" name="number_coil" value={formData.number_coil} onChange={handleChange} />
-                        <FormInput label="Enumeración Inicial" name="initial_enumeration" value={formData.initial_enumeration} onChange={handleChange} />
-                        <FormInput label="Enumeración Final" name="final_enumeration" value={formData.final_enumeration} onChange={handleChange} />
-                        <FormInput label="Peso Bruto (kg)" name="gross_weight" value={formData.gross_weight} onChange={handleChange} />
-                        <FormInput label="Peso Neto (kg)" name="net_weight" value={formData.net_weight} onChange={handleChange} />
-                        <FormInput label="Stock Inicial" name="initial_stock_quantity" value={formData.initial_stock_quantity} onChange={handleChange} />
-                        <FormSelect label="Ubicación" name="location" value={formData.location} onChange={handleChange} options={locationOptions} />
+                        <FormSelect
+                            label="Tipo de Forma"
+                            name="form_type"
+                            value={formData.form_type}
+                            onChange={handleChange}
+                            options={formTypeOptions}
+                            required
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
+                            <FormInput label="Número de Bobina" name="number_coil" value={formData.number_coil} onChange={handleChange} />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormInput label="Enumeración Inicial" name="initial_enumeration" value={formData.initial_enumeration} onChange={handleChange} />
+                            <FormInput label="Enumeración Final" name="final_enumeration" value={formData.final_enumeration} onChange={handleChange} />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormInput label="Peso Bruto (kg)" name="gross_weight" value={formData.gross_weight} onChange={handleChange} />
+                            <FormInput label="Peso Neto (kg)" name="net_weight" value={formData.net_weight} onChange={handleChange} />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormInput label="Stock Inicial" name="initial_stock_quantity" value={formData.initial_stock_quantity} onChange={handleChange} />
+                            <FormSelect label="Ubicación" name="location" value={formData.location} onChange={handleChange} options={locationOptions} required />
+                        </div>
                         <FormInput label="Observaciones" name="observations" value={formData.observations} onChange={handleChange} textarea />
 
                         {/* Upload */}

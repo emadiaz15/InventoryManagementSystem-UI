@@ -69,6 +69,10 @@ const ViewProductModal = ({ product, isOpen, onClose, children }) => {
                         {product.status ? "Activo" : "Inactivo"}
                     </p>
                     <p>
+                        <span className="font-semibold">Tiene subproductos? (Cables):</span>{" "}
+                        {product.has_subproducts ? "Si" : "No"}
+                    </p>
+                    <p>
                         <span className="font-semibold">Stock actual:</span>{" "}
                         {product.current_stock ?? 0}
                     </p>
