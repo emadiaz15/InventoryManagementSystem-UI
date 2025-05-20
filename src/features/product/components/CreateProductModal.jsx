@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+
 import Modal from "../../../components/ui/Modal";
 import FormInput from "../../../components/ui/form/FormInput";
 import FormSelect from "../../../components/ui/form/FormSelect";
@@ -19,7 +20,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     const [types, setTypes] = useState([]);
     const [products, setProducts] = useState([]);
     const [filteredTypes, setFilteredTypes] = useState([]);
-
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
@@ -35,16 +35,15 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         location: "",
         position: "",
         category: "",
-        type: "",               // opcional
+        type: "",
         initial_stock_quantity: "",
         images: [],
+        has_subproduct: false,
     });
 
-    // Carga inicial y reset cuando se abre el modal
     useEffect(() => {
         if (!isOpen) return;
 
-        // Limpiar errores y estado del formulario
         clearUploadError();
         setError("");
         setShowSuccess(false);
@@ -60,9 +59,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             type: "",
             initial_stock_quantity: "",
             images: [],
+            has_subproduct: false,
         });
 
-        // Cargar categorías, tipos y productos
         const fetchData = async () => {
             try {
                 const [catResp, typeResp, prodResp] = await Promise.all([
@@ -72,11 +71,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                 ]);
 
                 setCategories(catResp.results || []);
-                // Unificar estructura de tipos
-                const allTypes =
-                    typeResp.results ??
-                    typeResp.activeTypes ??
-                    (Array.isArray(typeResp) ? typeResp : []);
+                const allTypes = typeResp.results ?? typeResp.activeTypes ?? (Array.isArray(typeResp) ? typeResp : []);
                 setTypes(allTypes);
                 setProducts(prodResp.results || []);
             } catch (err) {
@@ -88,37 +83,36 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         fetchData();
     }, [isOpen]);
 
-    // Filtrar tipos según categoría seleccionada
     useEffect(() => {
         if (!formData.category) {
             setFilteredTypes(types);
             return;
         }
+
         const catId = parseInt(formData.category, 10);
         setFilteredTypes(
             types.filter((t) => {
-                // Puede venir en distintos formatos: objeto, id directo o category_id
-                if (t.category && typeof t.category === "object") {
-                    return t.category.id === catId;
-                }
-                if (typeof t.category_id !== "undefined") {
-                    return t.category_id === catId;
-                }
+                if (t.category && typeof t.category === "object") return t.category.id === catId;
+                if (typeof t.category_id !== "undefined") return t.category_id === catId;
                 return t.category === catId;
             })
         );
     }, [formData.category, types]);
 
-    // Handlers de formulario
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        const { name, type, value, checked } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: type === "checkbox" ? checked : value,
+        }));
     };
+
     const handleStockChange = (e) =>
         setFormData((prev) => ({
             ...prev,
             initial_stock_quantity: e.target.value,
         }));
+
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         if (formData.images.length + files.length > 5) {
@@ -129,6 +123,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         setFormData((prev) => ({ ...prev, images: imgs }));
         setPreviewFiles(imgs.map((f) => f.name));
     };
+
     const removeFile = (idx) => {
         setFormData((prev) => ({
             ...prev,
@@ -137,7 +132,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         setPreviewFiles((prev) => prev.filter((_, i) => i !== idx));
     };
 
-    // Validación de código único
     const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "");
     const validateCodeUnique = () => {
         const codeStr = normalize(formData.code);
@@ -151,7 +145,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         return true;
     };
 
-    // Envío del formulario
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
@@ -165,12 +158,12 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
         const data = new FormData();
         data.append("name", formData.name.trim());
-
         const codeNum = parseInt(formData.code.trim(), 10);
         if (isNaN(codeNum)) {
             setError("El código debe ser un número válido.");
             return;
         }
+
         data.append("code", codeNum);
         data.append("description", formData.description.trim());
         data.append("brand", formData.brand.trim());
@@ -178,7 +171,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         data.append("position", formData.position.trim());
         data.append("category", parseInt(formData.category, 10));
 
-        // type opcional: sólo añadir si seleccionó uno
         if (formData.type) {
             data.append("type", parseInt(formData.type, 10));
         }
@@ -187,6 +179,8 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         if (parseFloat(stockVal) > 0) {
             data.append("initial_stock_quantity", stockVal);
         }
+
+        data.append("has_subproduct", formData.has_subproduct ? "true" : "false");
 
         try {
             setLoading(true);
@@ -215,9 +209,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Producto">
             <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
                 {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-                {uploadError && (
-                    <ErrorMessage message={uploadError} onClose={clearUploadError} />
-                )}
+                {uploadError && <ErrorMessage message={uploadError} onClose={clearUploadError} />}
 
                 <FormSelect
                     label="Categoría"
@@ -236,12 +228,10 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     name="type"
                     value={formData.type}
                     onChange={handleChange}
-                    options={[
-                        ...filteredTypes.map((t) => ({
-                            value: String(t.id),
-                            label: t.name,
-                        })),
-                    ]}
+                    options={filteredTypes.map((t) => ({
+                        value: String(t.id),
+                        label: t.name,
+                    }))}
                 />
 
                 <FormInput
@@ -253,19 +243,8 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormInput
-                        label="Código"
-                        name="code"
-                        value={formData.code}
-                        onChange={handleChange}
-                        required
-                    />
-                    <FormInput
-                        label="Marca"
-                        name="brand"
-                        value={formData.brand}
-                        onChange={handleChange}
-                    />
+                    <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
+                    <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -276,26 +255,25 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                         onChange={handleStockChange}
                         placeholder="Ej: 100"
                     />
-                    <FormInput
-                        label="Ubicación"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleChange}
-                    />
-                    <FormInput
-                        label="Posición"
-                        name="position"
-                        value={formData.position}
-                        onChange={handleChange}
-                    />
+                    <FormInput label="Ubicación" name="location" value={formData.location} onChange={handleChange} />
+                    <FormInput label="Posición" name="position" value={formData.position} onChange={handleChange} />
                 </div>
 
-                <FormInput
-                    label="Descripción"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                />
+                <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
+
+                <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
+                    <input
+                        id="has_subproduct"
+                        type="checkbox"
+                        name="has_subproduct"
+                        checked={formData.has_subproduct}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2"
+                    />
+                    <label htmlFor="has_subproduct" className="ms-2 text-sm font-medium">
+                        Este producto tiene subproductos (Cables)
+                    </label>
+                </div>
 
                 <div>
                     <label className="block mb-2 text-sm font-medium">Archivos (máx. 5)</label>
@@ -307,9 +285,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                             Seleccionar archivos
                         </label>
                         <span className="text-sm text-text-secondary">
-                            {previewFiles.length
-                                ? `${previewFiles.length} archivo(s)`
-                                : "Sin archivos"}
+                            {previewFiles.length ? `${previewFiles.length} archivo(s)` : "Sin archivos"}
                         </span>
                     </div>
 

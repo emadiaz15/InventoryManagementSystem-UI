@@ -58,7 +58,10 @@ const SubproductModals = ({
 
     const [files, setFiles] = useState([]);
     const [loadingFiles, setLoadingFiles] = useState(false);
-
+    const handleCreateSuccess = () => {
+        closeModal(); // importante para desmontar el modal ANTES del siguiente render
+        onCreateSubproduct(); // actualiza lista
+    };
     const loadFiles = useCallback(async () => {
         if (!subproductData || !parentProduct?.id) return;
 
@@ -108,9 +111,9 @@ const SubproductModals = ({
         <>
             {type === "create" && parentProduct && (
                 <CreateSubproductModal
-                    isOpen
+                    isOpen={modalState?.type === "create"}
                     onClose={closeModal}
-                    onSave={onCreateSubproduct}
+                    onSave={handleCreateSuccess}
                     product={parentProduct}
                 />
             )}

@@ -25,7 +25,7 @@ const ViewSubproductModal = ({ subproduct, isOpen, onClose, mediaPanel }) => {
                             Stock: {subproduct.current_stock ?? 0} Mts
                         </span>
                     </p>
-                    <p><span className="font-semibold">Código:</span> {subproduct.code || "N/A"}</p>
+                    <p><span className="font-semibold">Código:</span> {subproduct.parent_code || "N/A"}</p>
                     <p><span className="font-semibold">Marca:</span> {subproduct.brand || "N/A"}</p>
                     <p><span className="font-semibold">Bobina N°:</span> {subproduct.number_coil || "N/A"}</p>
                     <p><span className="font-semibold">Enumeración Inicial:</span> {subproduct.initial_enumeration ?? "N/A"}</p>

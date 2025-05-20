@@ -88,6 +88,7 @@ const CuttingOrders = () => {
     if (nextPage) {
       fetchOrders(nextPage);
       setCurrentPage((prev) => prev + 1);
+
     }
   };
 

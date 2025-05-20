@@ -76,7 +76,6 @@ const Login = () => {
                   >
                     {loading ? (
                       <div className="flex items-center">
-                        <span className="text-sm justify-center"> Ingresando...</span>
                         <Spinner size="5" color="text-white" />
                       </div>
                     ) : (
