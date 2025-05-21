@@ -28,7 +28,7 @@ const TypeList = () => {
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [errorCategories, setErrorCategories] = useState(null);
-  const [isInitialMount, setIsInitialMount] = useState(true);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const fetchTypes = useCallback(async (url) => {
     setLoading(true);
@@ -69,21 +69,22 @@ const TypeList = () => {
   }, []);
 
   useEffect(() => {
-    const initialQuery = buildQueryString(filters);
-    const initialUrl = `/inventory/types/${initialQuery}`;
-    fetchTypes(initialUrl);
-    fetchAllCategories();
+    const init = async () => {
+      const query = buildQueryString(filters);
+      const initialUrl = `/inventory/types/${query}`;
+      await Promise.all([fetchTypes(initialUrl), fetchAllCategories()]);
+      setInitialLoaded(true); // 🚀 solo cuando ambas cargas se completan
+    };
+    init();
   }, [fetchTypes, buildQueryString, fetchAllCategories]);
 
   useEffect(() => {
-    if (!isInitialMount) {
+    if (initialLoaded) {
       const query = buildQueryString(filters);
       const url = `/inventory/types/${query}`;
       fetchTypes(url);
-    } else {
-      setIsInitialMount(false);
     }
-  }, [filters, buildQueryString, fetchTypes]);
+  }, [filters, buildQueryString, fetchTypes, initialLoaded]);
 
   const openModal = useCallback((type, data = null) => {
     setModalState({ type, typeData: data });
@@ -131,7 +132,7 @@ const TypeList = () => {
 
   const categoryOptionsForFilter = useMemo(() => [
     { value: "", label: "Todas las Categorías" },
-    ...categories.map(cat => ({ value: cat.name, label: cat.name })) // filtramos por nombre
+    ...categories.map(cat => ({ value: cat.name, label: cat.name }))
   ], [categories]);
 
   const columns = useMemo(() => [
@@ -145,6 +146,15 @@ const TypeList = () => {
     return categories.find(cat => cat.id === id)?.name || "SIN CATEGORÍA";
   }, [categories, loadingCategories]);
 
+  // 🚨 Spinner pantalla completa si aún no se ha cargado nada
+  if (!initialLoaded) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
+        <Spinner size="10" />
+      </div>
+    );
+  }
+
   return (
     <>
       <Layout>
@@ -153,6 +163,7 @@ const TypeList = () => {
             <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
           </div>
         )}
+
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar title="Lista de Tipos" onButtonClick={() => openModal("create")} buttonText="Nuevo Tipo" />
           <Filter columns={columns} onFilterChange={handleFilterChange} />
@@ -162,16 +173,19 @@ const TypeList = () => {
               <ErrorMessage message={error} onClose={() => setError(null)} />
             </div>
           )}
+
           {loading && (
             <div className="flex justify-center items-center h-32">
               <Spinner />
             </div>
           )}
+
           {!loading && types.length === 0 && (
             <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
               <p className="text-gray-500">No se encontraron tipos que coincidan con los filtros.</p>
             </div>
           )}
+
           {!loading && types.length > 0 && (
             <TypeTable
               types={types}
@@ -187,6 +201,7 @@ const TypeList = () => {
           )}
         </div>
       </Layout>
+
       <TypeModals
         modalState={modalState}
         closeModal={closeModal}

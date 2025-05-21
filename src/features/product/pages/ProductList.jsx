@@ -28,9 +28,9 @@ const ProductsList = () => {
   const [types, setTypes] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [errorCategories, setErrorCategories] = useState(null);
-
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [initialLoaded, setInitialLoaded] = useState(false); // 🆕
 
   const {
     products,
@@ -44,7 +44,6 @@ const ProductsList = () => {
     currentUrl
   } = useProducts(filters);
 
-  // Carga de tipos
   const fetchTypesData = useCallback(async () => {
     try {
       const data = await listTypes("/inventory/types/");
@@ -54,7 +53,6 @@ const ProductsList = () => {
     }
   }, []);
 
-  // Carga de categorías
   const fetchCategoriesData = useCallback(async () => {
     setLoadingCategories(true);
     setErrorCategories(null);
@@ -75,30 +73,41 @@ const ProductsList = () => {
     fetchTypesData();
   }, [isAuthenticated, fetchCategoriesData, fetchTypesData]);
 
+  // Detectar cuando se ha hecho la primera carga
+  useEffect(() => {
+    if (!loadingProducts) {
+      setInitialLoaded(true);
+    }
+  }, [loadingProducts]); // 🆕
+
   const getTypeName = useCallback(
     (typeId) => types.find((t) => t.id === typeId)?.name || "Sin tipo",
     [types]
   );
+
   const getCategoryName = useCallback(
     (categoryId) => categories.find((c) => c.id === categoryId)?.name || "Sin categoría",
     [categories]
   );
 
-  // Handlers de apertura de modales y navegación
   const handleViewProduct = (product) =>
     setModalState({ type: "view", productData: product, showCarousel: true });
+
   const handleViewSubproducts = (product) =>
     navigate(`/products/${product.id}/subproducts`);
+
   const handleEditProduct = (product) =>
     setModalState({ type: "edit", productData: product });
+
   const handleDeleteClick = (modalConfig) =>
     setModalState(modalConfig);
+
   const handleViewHistory = (product) =>
     navigate(`/products/${product.id}/history`);
+
   const handleCloseModal = () =>
     setModalState({ type: null, productData: null });
 
-  // Tras crear o editar recarga la lista
   const handleSaveProduct = () => {
     fetchProducts(currentUrl);
     setSuccessMessage("¡Producto actualizado con éxito!");
@@ -106,7 +115,6 @@ const ProductsList = () => {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  // Confirmación y ejecución de borrado
   const handleConfirmDelete = async (product) => {
     setIsDeletingProduct(true);
     setDeleteError(null);
@@ -132,13 +140,12 @@ const ProductsList = () => {
     []
   );
 
-  if (loadingProducts && products.length === 0) {
+  // Spinner pantalla completa en carga inicial
+  if (!initialLoaded) {
     return (
-      <Layout>
-        <div className="flex justify-center items-center min-h-screen">
-          <Spinner />
-        </div>
-      </Layout>
+      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
+        <Spinner size="10" />
+      </div>
     );
   }
 
@@ -155,15 +162,19 @@ const ProductsList = () => {
           <Toolbar
             title="Lista de Productos"
             buttonText="Crear Producto"
-            onButtonClick={() =>
-              setModalState({ type: "create", productData: null })
-            }
+            onButtonClick={() => setModalState({ type: "create", productData: null })}
           />
 
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
 
-          {fetchError ? (
+          {fetchError && (
             <div className="text-red-500 text-center mt-4">{fetchError}</div>
+          )}
+
+          {loadingProducts ? (
+            <div className="flex justify-center py-6">
+              <Spinner />
+            </div>
           ) : (
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
               <ProductTable

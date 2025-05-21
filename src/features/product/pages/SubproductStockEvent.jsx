@@ -11,6 +11,7 @@ import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
 import DateFilter from '../../../components/common/DateFilter';
 import Layout from '../../../pages/Layout';
+import Spinner from '../../../components/ui/Spinner';
 import { listStockSubproductEvents } from '../services/listStockSubproductEvents';
 
 const mockSubproductEvents = [
@@ -47,13 +48,16 @@ const SubproductStockEvent = () => {
     const { subproductId } = useParams();
     const [stockEvents, setStockEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [initialLoaded, setInitialLoaded] = useState(false); // ✅ clave
     const [error, setError] = useState(null);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [nextPage, setNextPage] = useState(null);
     const [previousPage, setPreviousPage] = useState(null);
 
-    const fetchStockEvents = async (url = `/api/v1/stocks/subproducts/${subproductId}/stock/events/`) => {
+    const fetchStockEvents = async (
+        url = `/api/v1/stocks/subproducts/${subproductId}/stock/events/`
+    ) => {
         setLoading(true);
         try {
             const data = await listStockSubproductEvents(url, startDate, endDate);
@@ -66,11 +70,12 @@ const SubproductStockEvent = () => {
             setStockEvents(mockSubproductEvents);
         } finally {
             setLoading(false);
+            setInitialLoaded(true); // ✅ habilita contenido luego de primera carga
         }
     };
 
     useEffect(() => {
-        fetchStockEvents();
+        if (subproductId) fetchStockEvents();
     }, [startDate, endDate]);
 
     const handleFilterChange = (start, end) => {
@@ -137,41 +142,59 @@ const SubproductStockEvent = () => {
         };
     });
 
+    // 🌀 Spinner global si es la primera carga
+    if (!initialLoaded) {
+        return (
+            <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
+                <Spinner size="10" />
+            </div>
+        );
+    }
+
     return (
         <Layout>
             <div className="flex-1 p-2 mt-14">
                 <Toolbar title="Historial de Stock del Subproducto" />
                 <DateFilter onFilterChange={handleFilterChange} />
+
                 {error && (
                     <div className="text-yellow-500 text-center mt-4">
                         {error} - Mostrando datos simulados.
                     </div>
                 )}
-                <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
-                    <Table
-                        headers={[
-                            'Fecha',
-                            'Tipo',
-                            'Cantidad',
-                            'Nro Orden de Corte',
-                            'Nro de Pedido',
-                            'Usuario',
-                            'Descripción',
-                            'Stock Resultante',
-                        ]}
-                        rows={rows}
-                        columnClasses={[
-                            'w-28', // Fecha
-                            'w-28', // Tipo
-                            'w-28', // Cantidad
-                            'w-44', // Nro OC
-                            'w-40', // Nro Pedido
-                            'w-32', // Usuario
-                            'w-72', // Descripción
-                            'w-32', // Stock
-                        ]}
-                    />
-                </div>
+
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
+                        <Table
+                            headers={[
+                                'Fecha',
+                                'Tipo',
+                                'Cantidad',
+                                'Nro Orden de Corte',
+                                'Nro de Pedido',
+                                'Usuario',
+                                'Descripción',
+                                'Stock Resultante',
+                            ]}
+                            rows={rows}
+                            columnClasses={[
+                                'w-28', // Fecha
+                                'w-28', // Tipo
+                                'w-28', // Cantidad
+                                'w-44', // Nro OC
+                                'w-40', // Nro Pedido
+                                'w-32', // Usuario
+                                'w-72', // Descripción
+                                'w-32', // Stock
+                            ]}
+                        />
+                    </div>
+                )}
+
                 <Pagination
                     onNext={() => nextPage && fetchStockEvents(nextPage)}
                     onPrevious={() => previousPage && fetchStockEvents(previousPage)}

@@ -30,6 +30,7 @@ const SubproductList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [filters, setFilters] = useState({ status: "" });
+  const [initialLoaded, setInitialLoaded] = useState(false); // ✅ clave para control inicial
 
   const fetchSubproducts = async (
     url = `/inventory/products/${productId}/subproducts/?page_size=${PAGE_SIZE}`
@@ -45,13 +46,13 @@ const SubproductList = () => {
       setError("Error al obtener los subproductos.");
     } finally {
       setLoading(false);
+      setInitialLoaded(true); // ✅ activación tras primer intento
     }
   };
 
   useEffect(() => {
     if (productId) fetchSubproducts();
   }, [productId, filters]);
-
 
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
@@ -100,6 +101,15 @@ const SubproductList = () => {
     }
   };
 
+  // ⏳ Mostrar spinner pantalla completa en carga inicial
+  if (!initialLoaded) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
+        <Spinner size="10" />
+      </div>
+    );
+  }
+
   return (
     <Layout>
       {showSuccess && (
@@ -116,21 +126,18 @@ const SubproductList = () => {
         />
 
         <SubproductFilters filters={filters} onChange={setFilters} />
+
         {error && !loading && <ErrorMessage message={error} onClose={() => setError(null)} />}
 
-        {loading && (
+        {loading ? (
           <div className="flex justify-center py-12">
             <Spinner />
           </div>
-        )}
-
-        {!loading && subproducts.length === 0 && (
+        ) : subproducts.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-lg shadow">
             <p className="text-gray-500">No existen subproductos registrados para este producto.</p>
           </div>
-        )}
-
-        {!loading && subproducts.length > 0 && (
+        ) : (
           <div className="mt-4 grid grid-cols-4 gap-4">
             {subproducts.map((sp) => (
               <SubproductCard
