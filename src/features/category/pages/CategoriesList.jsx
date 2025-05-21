@@ -115,23 +115,14 @@ const CategoryList = () => {
     }
   }, [handleActionSuccess]);
 
-  // 🧠 Spinner inicial de carga absoluta antes de mostrar layout
-  if (loadingCategories && categories.length === 0) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
-        <Spinner size="10" />
-      </div>
-    );
-  }
 
   return (
     <>
-      <Layout>
-        {showSuccess && (
-          <div className="fixed top-20 right-5 z-[10000]">
-            <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
-          </div>
-        )}
+      <Layout isLoading={loadingCategories && categories.length === 0}>        {showSuccess && (
+        <div className="fixed top-20 right-5 z-[10000]">
+          <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+        </div>
+      )}
 
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar
