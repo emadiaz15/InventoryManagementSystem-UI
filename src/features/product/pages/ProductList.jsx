@@ -164,7 +164,7 @@ const ProductsList = () => {
             </div>
           )}
 
-          {loadingProducts ? (
+          {!initialLoaded ? (
             <div className="my-8 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
