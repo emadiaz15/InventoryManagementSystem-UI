@@ -115,8 +115,14 @@ const CategoryList = () => {
     }
   }, [handleActionSuccess]);
 
-  const initialLoaded = categories.length > 0 || !loadingCategories;
-
+  const isInitialLoading = loadingCategories && categories.length === 0;
+  if (isInitialLoading) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-3.5rem)] bg-background-100">
+        <Spinner size="8" color="text-primary-500" />
+      </div>
+    );
+  }
   return (
     <>
       <Layout isLoading={!initialLoaded}>
