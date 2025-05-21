@@ -140,18 +140,9 @@ const ProductsList = () => {
     []
   );
 
-  // Spinner pantalla completa en carga inicial
-  if (!initialLoaded) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
-        <Spinner size="10" />
-      </div>
-    );
-  }
-
   return (
     <>
-      <Layout>
+      <Layout isLoading={!initialLoaded}>
         {showSuccess && (
           <div className="fixed top-20 right-5 z-[10000]">
             <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />

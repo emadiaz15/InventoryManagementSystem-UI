@@ -147,18 +147,9 @@ const UserList = () => {
     }
   }, [handleActionSuccess]);
 
-  // ⛔ Modo pantalla completa solo mientras no haya cargado por primera vez
-  if (!initialLoaded) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
-        <Spinner size="10" />
-      </div>
-    );
-  }
-
   return (
     <>
-      <Layout>
+      <Layout isLoading={!initialLoaded}>
         {showSuccess && (
           <div className="fixed top-20 right-5 z-[10000]">
             <SuccessMessage

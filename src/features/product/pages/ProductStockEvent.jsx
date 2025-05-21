@@ -10,9 +10,9 @@ import Toolbar from '../../../components/common/Toolbar';
 import Table from '../../../components/common/Table';
 import Pagination from '../../../components/ui/Pagination';
 import DateFilter from '../../../components/common/DateFilter';
-import { listStockProductEvents } from '../services/listStockProductEvents';
 import Layout from '../../../pages/Layout';
 import Spinner from '../../../components/ui/Spinner';
+import { listStockProductEvents } from '../services/listStockProductEvents';
 
 const mockEvents = [
     {
@@ -48,14 +48,16 @@ const ProductStockEvent = () => {
     const { productId } = useParams();
     const [stockEvents, setStockEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [initialLoaded, setInitialLoaded] = useState(false);
     const [error, setError] = useState(null);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [nextPage, setNextPage] = useState(null);
     const [previousPage, setPreviousPage] = useState(null);
-    const [initialLoaded, setInitialLoaded] = useState(false); // ✅ clave para controlar carga inicial
 
-    const fetchStockEvents = async (url = `/api/v1/stocks/products/${productId}/stock/events/`) => {
+    const fetchStockEvents = async (
+        url = `/api/v1/stocks/products/${productId}/stock/events/`
+    ) => {
         setLoading(true);
         try {
             const data = await listStockProductEvents(url, startDate, endDate);
@@ -68,7 +70,7 @@ const ProductStockEvent = () => {
             setStockEvents(mockEvents);
         } finally {
             setLoading(false);
-            setInitialLoaded(true); // ✅ activa visual completa
+            setInitialLoaded(true);
         }
     };
 
@@ -83,10 +85,10 @@ const ProductStockEvent = () => {
 
     const getStyledBadge = (type, value, isQuantity = false) => {
         const base = 'px-2 py-1 rounded text-sm font-semibold inline-flex items-center gap-1';
-        let icon = null;
-        let colorClass = '';
-        let sign = '';
-        let absValue = Math.abs(value);
+        let icon = null,
+            colorClass = '',
+            sign = '',
+            absValue = Math.abs(value);
 
         if (type === 'Ingreso') {
             icon = <ArrowDownIcon className="h-4 w-4" />;
@@ -143,22 +145,10 @@ const ProductStockEvent = () => {
         };
     });
 
-    // ⏳ Spinner pantalla completa si no se ha cargado nada aún
-    if (!initialLoaded) {
-        return (
-            <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
-                <Spinner size="10" />
-            </div>
-        );
-    }
-
     return (
-        <Layout>
+        <Layout isLoading={!initialLoaded}>
             <div className="flex-1 p-2 mt-14">
-                <Toolbar
-                    title="Historial de Stock"
-                    buttonText="Modificar Stock"
-                />
+                <Toolbar title="Historial de Stock" buttonText="Modificar Stock" />
                 <DateFilter onFilterChange={handleFilterChange} />
 
                 {error && (
@@ -167,11 +157,13 @@ const ProductStockEvent = () => {
                     </div>
                 )}
 
-                {loading ? (
+                {loading && stockEvents.length > 0 && (
                     <div className="flex justify-center py-12">
                         <Spinner />
                     </div>
-                ) : (
+                )}
+
+                {!loading && (
                     <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
                         <Table
                             headers={[

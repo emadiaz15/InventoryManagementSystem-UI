@@ -146,15 +146,6 @@ const TypeList = () => {
     return categories.find(cat => cat.id === id)?.name || "SIN CATEGORÍA";
   }, [categories, loadingCategories]);
 
-  // 🚨 Spinner pantalla completa si aún no se ha cargado nada
-  if (!initialLoaded) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
-        <Spinner size="10" />
-      </div>
-    );
-  }
-
   return (
     <>
       <Layout>

@@ -15,7 +15,7 @@ const CuttingOrders = () => {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState(null);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [initialLoaded, setInitialLoaded] = useState(false); // ✅ Control inicial
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [nextPage, setNextPage] = useState(null);
@@ -73,7 +73,7 @@ const CuttingOrders = () => {
       setError(err);
     } finally {
       setLoadingOrders(false);
-      setInitialLoaded(true); // ✅ Activar visibilidad de contenido
+      setInitialLoaded(true);
     }
   };
 
@@ -157,18 +157,13 @@ const CuttingOrders = () => {
     ),
   }));
 
-  // 🔒 Primera carga total → Spinner pantalla completa
-  if (!initialLoaded) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
-        <Spinner size="10" />
-      </div>
-    );
-  }
-
   return (
-    <>
-      <Layout>
+    <Layout>
+      {!initialLoaded ? (
+        <div className="flex justify-center items-center min-h-[calc(100vh-100px)]">
+          <Spinner size="10" />
+        </div>
+      ) : (
         <div className="flex-1 flex flex-col p-1 mt-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <OrderFilter
@@ -204,7 +199,7 @@ const CuttingOrders = () => {
             hasPrevious={Boolean(previousPage)}
           />
         </div>
-      </Layout>
+      )}
 
       {showSuccess && (
         <SuccessMessage
@@ -212,7 +207,7 @@ const CuttingOrders = () => {
           onClose={() => setShowSuccess(false)}
         />
       )}
-    </>
+    </Layout>
   );
 };
 

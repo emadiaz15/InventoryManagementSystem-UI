@@ -48,7 +48,7 @@ const SubproductStockEvent = () => {
     const { subproductId } = useParams();
     const [stockEvents, setStockEvents] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [initialLoaded, setInitialLoaded] = useState(false); // ✅ clave
+    const [initialLoaded, setInitialLoaded] = useState(false);
     const [error, setError] = useState(null);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -70,7 +70,7 @@ const SubproductStockEvent = () => {
             setStockEvents(mockSubproductEvents);
         } finally {
             setLoading(false);
-            setInitialLoaded(true); // ✅ habilita contenido luego de primera carga
+            setInitialLoaded(true);
         }
     };
 
@@ -142,7 +142,6 @@ const SubproductStockEvent = () => {
         };
     });
 
-    // 🌀 Spinner global si es la primera carga
     if (!initialLoaded) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
@@ -163,11 +162,13 @@ const SubproductStockEvent = () => {
                     </div>
                 )}
 
-                {loading ? (
+                {loading && stockEvents.length > 0 && (
                     <div className="flex justify-center py-12">
                         <Spinner />
                     </div>
-                ) : (
+                )}
+
+                {!loading && (
                     <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
                         <Table
                             headers={[
