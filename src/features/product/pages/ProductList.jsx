@@ -31,7 +31,6 @@ const ProductsList = () => {
   const [errorCategories, setErrorCategories] = useState(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
-  const [initialLoaded, setInitialLoaded] = useState(false); // 🆕
 
   const {
     products,
@@ -44,6 +43,14 @@ const ProductsList = () => {
     previous,
     currentUrl,
   } = useProducts(filters);
+
+  // 🌀 Inicialización completa solo cuando loadingProducts === false y products !== null
+  const [initialLoaded, setInitialLoaded] = useState(false);
+  useEffect(() => {
+    if (!loadingProducts && products !== null) {
+      setInitialLoaded(true);
+    }
+  }, [loadingProducts, products]);
 
   const fetchTypesData = useCallback(async () => {
     try {
@@ -73,13 +80,6 @@ const ProductsList = () => {
     fetchCategoriesData();
     fetchTypesData();
   }, [isAuthenticated, fetchCategoriesData, fetchTypesData]);
-
-  // 🌀 Controlar loading inicial solo una vez
-  useEffect(() => {
-    if (!loadingProducts) {
-      setInitialLoaded(true);
-    }
-  }, [loadingProducts]);
 
   const getTypeName = useCallback(
     (typeId) => types.find((t) => t.id === typeId)?.name || "Sin tipo",
@@ -165,13 +165,11 @@ const ProductsList = () => {
             </div>
           )}
 
-          {loadingProducts && (
-            <div className="my-8 flex justify-center items-center min-h-[30vh]">
+          {!initialLoaded ? (
+            <div className="my-12 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
-          )}
-
-          {initialLoaded && !loadingProducts && products.length > 0 && (
+          ) : products?.length > 0 ? (
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
               <ProductTable
                 products={products}
@@ -185,9 +183,7 @@ const ProductsList = () => {
                 user={user}
               />
             </div>
-          )}
-
-          {initialLoaded && !loadingProducts && Array.isArray(products) && products.length === 0 && (
+          ) : (
             <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
               <p className="text-gray-500">No se encontraron productos.</p>
             </div>
