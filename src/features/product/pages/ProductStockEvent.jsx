@@ -12,6 +12,7 @@ import Pagination from '../../../components/ui/Pagination';
 import DateFilter from '../../../components/common/DateFilter';
 import { listStockProductEvents } from '../services/listStockProductEvents';
 import Layout from '../../../pages/Layout';
+import Spinner from '../../../components/ui/Spinner';
 
 const mockEvents = [
     {
@@ -52,6 +53,7 @@ const ProductStockEvent = () => {
     const [endDate, setEndDate] = useState(null);
     const [nextPage, setNextPage] = useState(null);
     const [previousPage, setPreviousPage] = useState(null);
+    const [initialLoaded, setInitialLoaded] = useState(false); // ✅ clave para controlar carga inicial
 
     const fetchStockEvents = async (url = `/api/v1/stocks/products/${productId}/stock/events/`) => {
         setLoading(true);
@@ -63,9 +65,10 @@ const ProductStockEvent = () => {
             setError(null);
         } catch (err) {
             setError('Error al obtener los eventos de stock.');
-            setStockEvents(mockEvents); // fallback para visualización
+            setStockEvents(mockEvents);
         } finally {
             setLoading(false);
+            setInitialLoaded(true); // ✅ activa visual completa
         }
     };
 
@@ -140,43 +143,62 @@ const ProductStockEvent = () => {
         };
     });
 
+    // ⏳ Spinner pantalla completa si no se ha cargado nada aún
+    if (!initialLoaded) {
+        return (
+            <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
+                <Spinner size="10" />
+            </div>
+        );
+    }
+
     return (
         <Layout>
             <div className="flex-1 p-2 mt-14">
-                <Toolbar title="Historial de Stock"
+                <Toolbar
+                    title="Historial de Stock"
                     buttonText="Modificar Stock"
                 />
                 <DateFilter onFilterChange={handleFilterChange} />
+
                 {error && (
                     <div className="text-yellow-500 text-center mt-4">
                         {error} - Mostrando datos simulados.
                     </div>
                 )}
-                <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
-                    <Table
-                        headers={[
-                            'Fecha',
-                            'Tipo',
-                            'Cantidad',
-                            'Nro Orden de Corte',
-                            'Nro de Pedido',
-                            'Usuario',
-                            'Descripción',
-                            'Stock Resultante',
-                        ]}
-                        rows={rows}
-                        columnClasses={[
-                            'w-28', // Fecha
-                            'w-28', // Tipo
-                            'w-28', // Cantidad
-                            'w-44', // Nro OC
-                            'w-40', // Nro Pedido
-                            'w-32', // Usuario
-                            'w-72', // Descripción
-                            'w-32', // Stock
-                        ]}
-                    />
-                </div>
+
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
+                        <Table
+                            headers={[
+                                'Fecha',
+                                'Tipo',
+                                'Cantidad',
+                                'Nro Orden de Corte',
+                                'Nro de Pedido',
+                                'Usuario',
+                                'Descripción',
+                                'Stock Resultante',
+                            ]}
+                            rows={rows}
+                            columnClasses={[
+                                'w-28', // Fecha
+                                'w-28', // Tipo
+                                'w-28', // Cantidad
+                                'w-44', // Nro OC
+                                'w-40', // Nro Pedido
+                                'w-32', // Usuario
+                                'w-72', // Descripción
+                                'w-32', // Stock
+                            ]}
+                        />
+                    </div>
+                )}
+
                 <Pagination
                     onNext={() => nextPage && fetchStockEvents(nextPage)}
                     onPrevious={() => previousPage && fetchStockEvents(previousPage)}

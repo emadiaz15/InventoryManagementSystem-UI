@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react"; // 🆕 Agregado useEffect
 import Toolbar from "../../../components/common/Toolbar";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import ErrorMessage from "../../../components/common/ErrorMessage";
@@ -30,6 +30,7 @@ const UserList = () => {
   const [modalState, setModalState] = useState({ type: null, userData: null });
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState(null);
+  const [initialLoaded, setInitialLoaded] = useState(false); // 🆕 Track de carga inicial
 
   const {
     users,
@@ -42,6 +43,12 @@ const UserList = () => {
     previous: goToPreviousPage,
     currentUrl: currentUsersUrl,
   } = useUsers(filters);
+
+  useEffect(() => {
+    if (!loadingUsers && users.length >= 0) {
+      setInitialLoaded(true);
+    }
+  }, [loadingUsers, users]); // 🆕 Detecta si ya cargó algo para cortar el spinner pantalla completa
 
   const openCreateModal = useCallback(() => {
     setModalState({ type: "create", userData: null });
@@ -140,13 +147,12 @@ const UserList = () => {
     }
   }, [handleActionSuccess]);
 
-  if (loadingUsers && users.length === 0) {
+  // ⛔ Modo pantalla completa solo mientras no haya cargado por primera vez
+  if (!initialLoaded) {
     return (
-      <Layout>
-        <div className="flex justify-center items-center min-h-screen">
-          <Spinner />
-        </div>
-      </Layout>
+      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
+        <Spinner size="10" />
+      </div>
     );
   }
 

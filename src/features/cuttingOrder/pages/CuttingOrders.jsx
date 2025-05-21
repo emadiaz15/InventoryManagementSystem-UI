@@ -4,6 +4,7 @@ import Toolbar from "../../../components/common/Toolbar";
 import Table from "../../../components/common/Table";
 import Pagination from "../../../components/ui/Pagination";
 import SuccessMessage from "../../../components/common/SuccessMessage";
+import Spinner from "../../../components/ui/Spinner";
 import { listCuttingOrders } from "../services/listCuttingOrders";
 import { useAuth } from "../../../context/AuthProvider";
 import Layout from "../../../pages/Layout";
@@ -14,6 +15,7 @@ const CuttingOrders = () => {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState(null);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [initialLoaded, setInitialLoaded] = useState(false); // ✅ Control inicial
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [nextPage, setNextPage] = useState(null);
@@ -51,7 +53,7 @@ const CuttingOrders = () => {
       }
 
       if (selectedDate) {
-        queryParams.append("created_at", selectedDate); // Cambia esto si tu API espera otro campo
+        queryParams.append("created_at", selectedDate);
       }
 
       const finalUrl = `${baseUrl}?${queryParams.toString()}`;
@@ -71,6 +73,7 @@ const CuttingOrders = () => {
       setError(err);
     } finally {
       setLoadingOrders(false);
+      setInitialLoaded(true); // ✅ Activar visibilidad de contenido
     }
   };
 
@@ -88,7 +91,6 @@ const CuttingOrders = () => {
     if (nextPage) {
       fetchOrders(nextPage);
       setCurrentPage((prev) => prev + 1);
-
     }
   };
 
@@ -155,8 +157,13 @@ const CuttingOrders = () => {
     ),
   }));
 
-  if (error) {
-    return <p className="p-6">Error cargando órdenes de corte: {error.message}</p>;
+  // 🔒 Primera carga total → Spinner pantalla completa
+  if (!initialLoaded) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
+        <Spinner size="10" />
+      </div>
+    );
   }
 
   return (
@@ -164,8 +171,6 @@ const CuttingOrders = () => {
       <Layout>
         <div className="flex-1 flex flex-col p-1 mt-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-
-
             <OrderFilter
               onFilterChange={(updatedFilters) => {
                 setFilters(updatedFilters);
@@ -182,16 +187,16 @@ const CuttingOrders = () => {
             />
           </div>
 
-          {/* 📋 Tabla */}
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             {loadingOrders ? (
-              <p className="p-6">Cargando órdenes...</p>
+              <div className="flex justify-center py-12">
+                <Spinner />
+              </div>
             ) : (
               <Table headers={headers} rows={rows} />
             )}
           </div>
 
-          {/* 📄 Paginación */}
           <Pagination
             onNext={handleNextPage}
             onPrevious={handlePreviousPage}
