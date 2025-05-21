@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react"; // 🆕 Agregado useEffect
+import React, { useState, useCallback, useEffect } from "react";
 import Toolbar from "../../../components/common/Toolbar";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import ErrorMessage from "../../../components/common/ErrorMessage";
@@ -8,13 +8,10 @@ import UserTable from "../components/UserTable";
 import UserModals from "../components/UserModals";
 import UserFilters from "../components/UserFilters";
 
-// Servicios API
 import { registerUser } from "../services/registerUser";
 import { updateUser } from "../services/updateUser";
 import { resetUserPassword } from "../services/resetUserPassword";
 import { deleteUser } from "../services/deleteUser";
-
-// Hook useUsers
 import useUsers from "../hooks/useUsers";
 
 const UserList = () => {
@@ -30,7 +27,7 @@ const UserList = () => {
   const [modalState, setModalState] = useState({ type: null, userData: null });
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState(null);
-  const [initialLoaded, setInitialLoaded] = useState(false); // 🆕 Track de carga inicial
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const {
     users,
@@ -45,10 +42,10 @@ const UserList = () => {
   } = useUsers(filters);
 
   useEffect(() => {
-    if (!loadingUsers && users.length >= 0) {
+    if (!loadingUsers) {
       setInitialLoaded(true);
     }
-  }, [loadingUsers, users]); // 🆕 Detecta si ya cargó algo para cortar el spinner pantalla completa
+  }, [loadingUsers]);
 
   const openCreateModal = useCallback(() => {
     setModalState({ type: "create", userData: null });
@@ -82,14 +79,13 @@ const UserList = () => {
     [closeModal, fetchUsers, currentUsersUrl]
   );
 
-  const handleregisterUser = useCallback(async (newUserData) => {
+  const handleRegisterUser = useCallback(async (newUserData) => {
     setIsProcessing(true);
     setActionError(null);
     try {
       await registerUser(newUserData);
       handleActionSuccess("Usuario creado exitosamente.");
     } catch (err) {
-      console.error("Error creating user (UserList):", err);
       const errorMsg = err.response?.data?.detail || err.message || "Error al crear el usuario.";
       setActionError({ message: errorMsg });
       throw err;
@@ -106,7 +102,6 @@ const UserList = () => {
       const username = updatedResponse?.username || updatedResponse?.user?.username || "desconocido";
       handleActionSuccess(`Usuario "${username}" actualizado.`);
     } catch (err) {
-      console.error("Error updating user (UserList):", err);
       const errorMsg = err.response?.data?.detail || err.message || "Error al actualizar el usuario.";
       setActionError({ message: errorMsg });
       throw err;
@@ -122,7 +117,6 @@ const UserList = () => {
       await resetUserPassword(userId, passwordData);
       handleActionSuccess(`Contraseña actualizada para el usuario ID ${userId}.`);
     } catch (err) {
-      console.error("Error resetting password (UserList):", err);
       const errorMsg = err.response?.data?.detail || err.message || "Error al cambiar contraseña.";
       setActionError({ message: errorMsg });
       throw err;
@@ -139,7 +133,6 @@ const UserList = () => {
       await deleteUser(userToDelete.id);
       handleActionSuccess(`Usuario "${userToDelete.username}" eliminado (soft).`);
     } catch (err) {
-      console.error("Error deactivating user (UserList):", err);
       const errorMsg = err.response?.data?.detail || err.message || "Error al desactivar el usuario.";
       setActionError({ message: errorMsg });
     } finally {
@@ -158,12 +151,14 @@ const UserList = () => {
             />
           </div>
         )}
+
         <div className="p-3 md:p-4 lg:p-6 mt-6">
           <Toolbar
             title="Lista de Usuarios"
             onButtonClick={openCreateModal}
             buttonText="Crear Usuario"
           />
+
           <UserFilters filters={filters} onChange={setFilters} />
 
           {fetchError && !loadingUsers && (
@@ -176,8 +171,8 @@ const UserList = () => {
           )}
 
           {loadingUsers && (
-            <div className="my-4 flex justify-center">
-              <Spinner />
+            <div className="my-6 flex justify-center items-center min-h-[20vh]">
+              <Spinner size="6" color="text-primary-500" />
             </div>
           )}
 
@@ -205,7 +200,7 @@ const UserList = () => {
       <UserModals
         modalState={modalState}
         closeModal={closeModal}
-        onregisterUser={handleregisterUser}
+        onRegisterUser={handleRegisterUser}
         onUpdateUser={handleUpdateUser}
         onDeleteUser={handleDeleteUser}
         onPasswordReset={handlePasswordReset}

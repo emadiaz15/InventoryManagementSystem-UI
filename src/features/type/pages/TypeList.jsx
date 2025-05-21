@@ -73,7 +73,7 @@ const TypeList = () => {
       const query = buildQueryString(filters);
       const initialUrl = `/inventory/types/${query}`;
       await Promise.all([fetchTypes(initialUrl), fetchAllCategories()]);
-      setInitialLoaded(true); // 🚀 solo cuando ambas cargas se completan
+      setInitialLoaded(true);
     };
     init();
   }, [fetchTypes, buildQueryString, fetchAllCategories]);
@@ -165,19 +165,11 @@ const TypeList = () => {
             </div>
           )}
 
-          {loading && (
-            <div className="flex justify-center items-center h-32">
-              <Spinner />
+          {loading ? (
+            <div className="my-8 flex justify-center items-center min-h-[30vh]">
+              <Spinner size="6" color="text-primary-500" />
             </div>
-          )}
-
-          {!loading && types.length === 0 && (
-            <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
-              <p className="text-gray-500">No se encontraron tipos que coincidan con los filtros.</p>
-            </div>
-          )}
-
-          {!loading && types.length > 0 && (
+          ) : types.length > 0 ? (
             <TypeTable
               types={types}
               openViewModal={(data) => openModal("view", data)}
@@ -189,6 +181,10 @@ const TypeList = () => {
               nextPageUrl={nextPageUrl}
               previousPageUrl={previousPageUrl}
             />
+          ) : (
+            <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
+              <p className="text-gray-500">No se encontraron tipos que coincidan con los filtros.</p>
+            </div>
           )}
         </div>
       </Layout>

@@ -73,7 +73,7 @@ const CuttingOrders = () => {
       setError(err);
     } finally {
       setLoadingOrders(false);
-      setInitialLoaded(true);
+      setInitialLoaded(true); // ✅ Solo se activa una vez
     }
   };
 
@@ -105,6 +105,7 @@ const CuttingOrders = () => {
     setSuccessMessage(message);
     setShowSuccess(true);
     fetchOrders();
+    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   const handleView = (order) => {
@@ -158,48 +159,50 @@ const CuttingOrders = () => {
   }));
 
   return (
-    <Layout>
-      {!initialLoaded ? (
-        <div className="flex justify-center items-center min-h-[calc(100vh-100px)]">
-          <Spinner size="10" />
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col p-1 mt-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <OrderFilter
-              onFilterChange={(updatedFilters) => {
-                setFilters(updatedFilters);
-                fetchOrders();
-              }}
-              onDateChange={(date) => {
-                setSelectedDate(date);
-                fetchOrders();
-              }}
-            />
-            <Toolbar
-              onSearch={(query) => console.log("Buscar órdenes:", query)}
-              buttonText="Crear Order de Corte"
-            />
+    <Layout isLoading={!initialLoaded}>
+      <div className="flex-1 flex flex-col p-1 mt-6">
+        {!initialLoaded ? (
+          <div className="flex justify-center items-center min-h-[30vh]">
+            <Spinner size="8" color="text-primary-500" />
           </div>
+        ) : (
+          <>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <OrderFilter
+                onFilterChange={(updatedFilters) => {
+                  setFilters(updatedFilters);
+                  fetchOrders();
+                }}
+                onDateChange={(date) => {
+                  setSelectedDate(date);
+                  fetchOrders();
+                }}
+              />
+              <Toolbar
+                onSearch={(query) => console.log("Buscar órdenes:", query)}
+                buttonText="Crear Order de Corte"
+              />
+            </div>
 
-          <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
-            {loadingOrders ? (
-              <div className="flex justify-center py-12">
-                <Spinner />
-              </div>
-            ) : (
-              <Table headers={headers} rows={rows} />
-            )}
-          </div>
+            <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
+              {loadingOrders ? (
+                <div className="flex justify-center py-12">
+                  <Spinner />
+                </div>
+              ) : (
+                <Table headers={headers} rows={rows} />
+              )}
+            </div>
 
-          <Pagination
-            onNext={handleNextPage}
-            onPrevious={handlePreviousPage}
-            hasNext={Boolean(nextPage)}
-            hasPrevious={Boolean(previousPage)}
-          />
-        </div>
-      )}
+            <Pagination
+              onNext={handleNextPage}
+              onPrevious={handlePreviousPage}
+              hasNext={Boolean(nextPage)}
+              hasPrevious={Boolean(previousPage)}
+            />
+          </>
+        )}
+      </div>
 
       {showSuccess && (
         <SuccessMessage

@@ -75,7 +75,7 @@ const ProductStockEvent = () => {
     };
 
     useEffect(() => {
-        fetchStockEvents();
+        if (productId) fetchStockEvents();
     }, [startDate, endDate]);
 
     const handleFilterChange = (start, end) => {
@@ -85,10 +85,7 @@ const ProductStockEvent = () => {
 
     const getStyledBadge = (type, value, isQuantity = false) => {
         const base = 'px-2 py-1 rounded text-sm font-semibold inline-flex items-center gap-1';
-        let icon = null,
-            colorClass = '',
-            sign = '',
-            absValue = Math.abs(value);
+        let icon = null, colorClass = '', sign = '', absValue = Math.abs(value);
 
         if (type === 'Ingreso') {
             icon = <ArrowDownIcon className="h-4 w-4" />;
@@ -146,7 +143,7 @@ const ProductStockEvent = () => {
     });
 
     return (
-        <Layout isLoading={!initialLoaded}>
+        <Layout>
             <div className="flex-1 p-2 mt-14">
                 <Toolbar title="Historial de Stock" buttonText="Modificar Stock" />
                 <DateFilter onFilterChange={handleFilterChange} />
@@ -157,13 +154,11 @@ const ProductStockEvent = () => {
                     </div>
                 )}
 
-                {loading && stockEvents.length > 0 && (
-                    <div className="flex justify-center py-12">
-                        <Spinner />
+                {loading ? (
+                    <div className="my-8 flex justify-center items-center min-h-[30vh]">
+                        <Spinner size="6" color="text-primary-500" />
                     </div>
-                )}
-
-                {!loading && (
+                ) : (
                     <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
                         <Table
                             headers={[
