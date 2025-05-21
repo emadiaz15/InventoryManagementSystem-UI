@@ -21,10 +21,11 @@ const Layout = ({ children, isLoading = false }) => {
                 <Sidebar onToggle={handleSidebarToggle} />
 
                 <div
-                    className={`flex-1 min-h-[calc(100vh-64px)] transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} bg-background-100 p-4`}
+                    className={`flex-1 min-h-[calc(100vh-64px)] transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'
+                        } bg-background-100 p-4`}
                 >
                     {isLoading ? (
-                        <div className="flex justify-center items-center h-full">
+                        <div className="flex justify-center items-center min-h-[60vh]">
                             <Spinner size="10" />
                         </div>
                     ) : (
