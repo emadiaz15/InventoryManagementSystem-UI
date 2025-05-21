@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../../pages/Layout';
+import Layout from '../../../pages/Layout';
 import Spinner from '../../components/ui/Spinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
 
