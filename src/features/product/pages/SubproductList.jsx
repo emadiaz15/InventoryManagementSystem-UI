@@ -30,7 +30,6 @@ const SubproductList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [filters, setFilters] = useState({ status: "" });
-  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const fetchSubproducts = async (
     url = `/inventory/products/${productId}/subproducts/?page_size=${PAGE_SIZE}`
@@ -46,7 +45,6 @@ const SubproductList = () => {
       setError("Error al obtener los subproductos.");
     } finally {
       setLoading(false);
-      setInitialLoaded(true); // Activar luego del primer fetch
     }
   };
 
@@ -102,7 +100,7 @@ const SubproductList = () => {
   };
 
   return (
-    <Layout isLoading={!initialLoaded}>
+    <Layout>
       {showSuccess && (
         <div className="fixed top-20 right-5 z-[10000]">
           <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
@@ -120,20 +118,16 @@ const SubproductList = () => {
 
         {error && !loading && <ErrorMessage message={error} onClose={() => setError(null)} />}
 
-        {loading && subproducts.length > 0 ? (
-          <div className="flex justify-center py-12">
-            <Spinner />
+        {loading ? (
+          <div className="my-8 flex justify-center items-center min-h-[30vh]">
+            <Spinner size="6" color="text-primary-500" />
           </div>
-        ) : null}
-
-        {!loading && subproducts.length === 0 && (
-          <div className="text-center py-10 bg-white rounded-lg shadow">
+        ) : subproducts.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-lg shadow mt-4">
             <p className="text-gray-500">No existen subproductos registrados para este producto.</p>
           </div>
-        )}
-
-        {!loading && subproducts.length > 0 && (
-          <div className="mt-4 grid grid-cols-4 gap-4">
+        ) : (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {subproducts.map((sp) => (
               <SubproductCard
                 key={sp.id}

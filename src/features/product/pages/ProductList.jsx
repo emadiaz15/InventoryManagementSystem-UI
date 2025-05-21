@@ -20,6 +20,7 @@ import { deleteProduct } from "../services/deleteProduct";
 const ProductsList = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+
   const [modalState, setModalState] = useState({ type: null, productData: null });
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -30,7 +31,7 @@ const ProductsList = () => {
   const [errorCategories, setErrorCategories] = useState(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
-  const [initialLoaded, setInitialLoaded] = useState(false); // 🆕
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const {
     products,
@@ -41,7 +42,7 @@ const ProductsList = () => {
     fetchProducts,
     next,
     previous,
-    currentUrl
+    currentUrl,
   } = useProducts(filters);
 
   const fetchTypesData = useCallback(async () => {
@@ -73,12 +74,11 @@ const ProductsList = () => {
     fetchTypesData();
   }, [isAuthenticated, fetchCategoriesData, fetchTypesData]);
 
-  // Detectar cuando se ha hecho la primera carga
   useEffect(() => {
     if (!loadingProducts) {
       setInitialLoaded(true);
     }
-  }, [loadingProducts]); // 🆕
+  }, [loadingProducts]);
 
   const getTypeName = useCallback(
     (typeId) => types.find((t) => t.id === typeId)?.name || "Sin tipo",
@@ -142,7 +142,7 @@ const ProductsList = () => {
 
   return (
     <>
-      <Layout isLoading={!initialLoaded}>
+      <Layout>
         {showSuccess && (
           <div className="fixed top-20 right-5 z-[10000]">
             <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
@@ -159,14 +159,16 @@ const ProductsList = () => {
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
 
           {fetchError && (
-            <div className="text-red-500 text-center mt-4">{fetchError}</div>
+            <div className="my-4">
+              <ErrorMessage message={fetchError} />
+            </div>
           )}
 
           {loadingProducts ? (
-            <div className="flex justify-center py-6">
-              <Spinner />
+            <div className="my-8 flex justify-center items-center min-h-[30vh]">
+              <Spinner size="6" color="text-primary-500" />
             </div>
-          ) : (
+          ) : products.length > 0 ? (
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
               <ProductTable
                 products={products}
@@ -179,6 +181,10 @@ const ProductsList = () => {
                 getCategoryName={getCategoryName}
                 user={user}
               />
+            </div>
+          ) : (
+            <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
+              <p className="text-gray-500">No se encontraron productos.</p>
             </div>
           )}
 

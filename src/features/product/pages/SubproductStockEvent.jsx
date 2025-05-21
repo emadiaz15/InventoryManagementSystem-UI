@@ -48,7 +48,6 @@ const SubproductStockEvent = () => {
     const { subproductId } = useParams();
     const [stockEvents, setStockEvents] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [initialLoaded, setInitialLoaded] = useState(false);
     const [error, setError] = useState(null);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -70,7 +69,6 @@ const SubproductStockEvent = () => {
             setStockEvents(mockSubproductEvents);
         } finally {
             setLoading(false);
-            setInitialLoaded(true);
         }
     };
 
@@ -142,14 +140,6 @@ const SubproductStockEvent = () => {
         };
     });
 
-    if (!initialLoaded) {
-        return (
-            <div className="flex justify-center items-center min-h-screen bg-background-100 text-text-primary">
-                <Spinner size="10" />
-            </div>
-        );
-    }
-
     return (
         <Layout>
             <div className="flex-1 p-2 mt-14">
@@ -162,13 +152,11 @@ const SubproductStockEvent = () => {
                     </div>
                 )}
 
-                {loading && stockEvents.length > 0 && (
-                    <div className="flex justify-center py-12">
-                        <Spinner />
+                {loading ? (
+                    <div className="my-8 flex justify-center items-center min-h-[30vh]">
+                        <Spinner size="6" color="text-primary-500" />
                     </div>
-                )}
-
-                {!loading && (
+                ) : (
                     <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1 mt-2">
                         <Table
                             headers={[
@@ -183,14 +171,8 @@ const SubproductStockEvent = () => {
                             ]}
                             rows={rows}
                             columnClasses={[
-                                'w-28', // Fecha
-                                'w-28', // Tipo
-                                'w-28', // Cantidad
-                                'w-44', // Nro OC
-                                'w-40', // Nro Pedido
-                                'w-32', // Usuario
-                                'w-72', // Descripción
-                                'w-32', // Stock
+                                'w-28', 'w-28', 'w-28', 'w-44',
+                                'w-40', 'w-32', 'w-72', 'w-32',
                             ]}
                         />
                     </div>
