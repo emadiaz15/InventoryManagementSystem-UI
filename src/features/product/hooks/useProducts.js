@@ -4,7 +4,9 @@ import { useAuth } from '../../../context/AuthProvider';
 
 export const useProducts = (filters, initialUrl = "/inventory/products/") => {
   const { isAuthenticated } = useAuth();
-  const [products, setProducts] = useState([]);
+
+  // 👇 Inicialmente null para distinguir "loading" de "sin resultados"
+  const [products, setProducts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [nextPageUrl, setNextPageUrl] = useState(null);
@@ -18,13 +20,13 @@ export const useProducts = (filters, initialUrl = "/inventory/products/") => {
         queryParams.append(key, value);
       }
     });
-    const queryString = queryParams.toString();
-    return queryString ? `?${queryString}` : "";
+    return queryParams.toString() ? `?${queryParams}` : "";
   }, []);
 
   const fetchProducts = useCallback(async (url) => {
     if (!isAuthenticated) {
-      setError('No estás autenticado');
+      setError("No estás autenticado");
+      setProducts([]); // Limpia para prevenir mostrar data vieja
       setLoading(false);
       return;
     }
@@ -37,13 +39,14 @@ export const useProducts = (filters, initialUrl = "/inventory/products/") => {
         setNextPageUrl(data.next);
         setPreviousPageUrl(data.previous);
         setCurrentUrl(url);
+        setError(null); // 🧼 Limpia errores anteriores si fue exitoso
       } else {
-        throw new Error('Error en el formato de los datos de la API');
+        throw new Error("Formato de datos inválido desde la API");
       }
-    } catch (error) {
-      console.error('Error al cargar los productos:', error);
-      setProducts([]);
-      setError(error.message || 'Error al cargar los productos');
+    } catch (err) {
+      console.error("❌ Error al cargar productos:", err);
+      setProducts([]); // 👈 Limpia productos
+      setError(err.message || "Error al cargar los productos");
     } finally {
       setLoading(false);
     }
@@ -66,7 +69,7 @@ export const useProducts = (filters, initialUrl = "/inventory/products/") => {
 
   return {
     products,
-    loading,
+    loadingProducts: loading, // 🔁 Renombra aquí para mantener compatibilidad
     error,
     fetchProducts,
     next,
