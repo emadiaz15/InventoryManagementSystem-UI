@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../../../pages/Layout';
 import Spinner from '../../../components/ui/Spinner';
-import ErrorMessage from '../../components/common/ErrorMessage';
+import ErrorMessage from '../../../components/common/ErrorMessage';
 
 const CuttingOrderDetail = () => {
   const { id } = useParams();
