@@ -115,17 +115,9 @@ const CategoryList = () => {
     }
   }, [handleActionSuccess]);
 
-  const isInitialLoading = loadingCategories && categories.length === 0;
-  if (isInitialLoading) {
-    return (
-      <div className="flex justify-center items-center h-[calc(100vh-3.5rem)] bg-background-100">
-        <Spinner size="8" color="text-primary-500" />
-      </div>
-    );
-  }
   return (
     <>
-      <Layout isLoading={!initialLoaded}>
+      <Layout>
         {showSuccess && (
           <div className="fixed top-20 right-5 z-[10000]">
             <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
@@ -147,13 +139,11 @@ const CategoryList = () => {
             </div>
           )}
 
-          {loadingCategories && categories.length > 0 && (
-            <div className="my-4 flex justify-center">
-              <Spinner />
+          {loadingCategories ? (
+            <div className="my-8 flex justify-center items-center min-h-[30vh]">
+              <Spinner size="6" color="text-primary-500" />
             </div>
-          )}
-
-          {!loadingCategories && categories.length > 0 && (
+          ) : categories.length > 0 ? (
             <CategoryTable
               categories={categories}
               openViewModal={openViewModal}
@@ -164,9 +154,7 @@ const CategoryList = () => {
               nextPageUrl={nextPageUrl}
               previousPageUrl={previousPageUrl}
             />
-          )}
-
-          {!loadingCategories && categories.length === 0 && (
+          ) : (
             <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
               <p className="text-gray-500">No se encontraron categorías.</p>
             </div>
