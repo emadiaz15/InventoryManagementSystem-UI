@@ -187,7 +187,7 @@ const ProductsList = () => {
             </div>
           )}
 
-          {initialLoaded && !loadingProducts && products.length === 0 && (
+          {initialLoaded && !loadingProducts && Array.isArray(products) && products.length === 0 && (
             <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
               <p className="text-gray-500">No se encontraron productos.</p>
             </div>
