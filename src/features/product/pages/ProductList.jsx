@@ -31,7 +31,7 @@ const ProductsList = () => {
   const [errorCategories, setErrorCategories] = useState(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
-  const [initialLoaded, setInitialLoaded] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false); // 🆕
 
   const {
     products,
@@ -74,6 +74,7 @@ const ProductsList = () => {
     fetchTypesData();
   }, [isAuthenticated, fetchCategoriesData, fetchTypesData]);
 
+  // 🌀 Controlar loading inicial solo una vez
   useEffect(() => {
     if (!loadingProducts) {
       setInitialLoaded(true);
@@ -142,7 +143,7 @@ const ProductsList = () => {
 
   return (
     <>
-      <Layout>
+      <Layout isLoading={!initialLoaded}>
         {showSuccess && (
           <div className="fixed top-20 right-5 z-[10000]">
             <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
@@ -164,11 +165,13 @@ const ProductsList = () => {
             </div>
           )}
 
-          {!initialLoaded ? (
+          {loadingProducts && (
             <div className="my-8 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
-          ) : products.length > 0 ? (
+          )}
+
+          {initialLoaded && !loadingProducts && products.length > 0 && (
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
               <ProductTable
                 products={products}
@@ -182,7 +185,9 @@ const ProductsList = () => {
                 user={user}
               />
             </div>
-          ) : (
+          )}
+
+          {initialLoaded && !loadingProducts && products.length === 0 && (
             <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
               <p className="text-gray-500">No se encontraron productos.</p>
             </div>
