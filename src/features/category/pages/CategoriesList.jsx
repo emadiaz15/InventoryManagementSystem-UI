@@ -115,14 +115,16 @@ const CategoryList = () => {
     }
   }, [handleActionSuccess]);
 
+  const initialLoaded = categories.length > 0 || !loadingCategories;
 
   return (
     <>
-      <Layout isLoading={loadingCategories && categories.length === 0}>        {showSuccess && (
-        <div className="fixed top-20 right-5 z-[10000]">
-          <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
-        </div>
-      )}
+      <Layout isLoading={!initialLoaded}>
+        {showSuccess && (
+          <div className="fixed top-20 right-5 z-[10000]">
+            <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+          </div>
+        )}
 
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar
@@ -133,13 +135,12 @@ const CategoryList = () => {
 
           <Filter columns={filterColumns} onFilterChange={setFilters} initialFilters={filters} />
 
-          {fetchError && !loadingCategories && (
+          {fetchError && (
             <div className="my-4">
               <ErrorMessage message={fetchError.message || "Error al cargar datos."} />
             </div>
           )}
 
-          {/* Spinner solo para cambios dinámicos */}
           {loadingCategories && categories.length > 0 && (
             <div className="my-4 flex justify-center">
               <Spinner />
