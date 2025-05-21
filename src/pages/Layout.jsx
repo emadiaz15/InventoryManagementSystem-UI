@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
 import Footer from "../components/common/Footer";
-import Spinner from "../components/ui/Spinner";
 import { useAuth } from "../context/AuthProvider";
 
-const Layout = ({ children, isLoading = false }) => {
+const Layout = ({ children }) => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
     const { profileImage } = useAuth();
 
@@ -24,13 +23,7 @@ const Layout = ({ children, isLoading = false }) => {
                     className={`flex-1 min-h-[calc(100vh-64px)] transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'
                         } bg-background-100 p-4`}
                 >
-                    {isLoading ? (
-                        <div className="flex justify-center items-center min-h-[60vh]">
-                            <Spinner size="10" />
-                        </div>
-                    ) : (
-                        children
-                    )}
+                    {children}
                 </div>
             </div>
 
