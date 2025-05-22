@@ -1,9 +1,9 @@
-import React from 'react';
-import { Route } from 'react-router-dom';
-import ProtectedRoute from '../../../components/common/ProtectedRoute';
-import CuttingOrdersList from '../pages/CuttingOrdersList';
-import CuttingOrderDetail from '../pages/CuttingOrderDetail';
-import CuttingOrderCart from '../pages/CuttingOrderCart';
+import React from "react";
+import { Route } from "react-router-dom";
+import ProtectedRoute from "../../../components/common/ProtectedRoute";
+import CuttingOrdersList from "../pages/CuttingOrdersList";
+import CuttingOrderDetail from "../pages/CuttingOrderDetail";
+import CuttingOrderCart from "../pages/CuttingOrderCart";
 
 const cuttingOrderRoutes = [
   <Route
@@ -34,4 +34,5 @@ const cuttingOrderRoutes = [
     }
   />,
 ];
+
 export default cuttingOrderRoutes;

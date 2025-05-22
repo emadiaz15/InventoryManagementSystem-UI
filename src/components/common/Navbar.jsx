@@ -30,13 +30,13 @@ const Navbar = () => {
 
           {/* Notificaciones, Órdenes de Corte y Usuario */}
           <div className="flex items-center space-x-4 relative">
-            {/* Botón Órdenes de Corte */}
+            {/* Órdenes de Corte (icono de carrito) */}
             <button
               type="button"
-              className="relative rounded-full bg-primary-500 p-1 text-neutral-50 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 hover:bg-primary-600 transition-all"
               onClick={() => navigate("/cutting-cart")}
+              className="relative rounded-full bg-primary-500 p-1 text-neutral-50 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 hover:bg-primary-600 transition-all"
             >
-              <span className="sr-only">Ver órdenes de corte</span>
+              <span className="sr-only">Ver Carrito de Corte</span>
               <ClipboardDocumentListIcon className="h-6 w-6" aria-hidden="true" />
             </button>
             {/* Botón Notificaciones */}
