@@ -1,11 +1,13 @@
 import React from "react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { BellIcon, UserIcon } from "@heroicons/react/24/outline";
+import { BellIcon, UserIcon, ClipboardDocumentListIcon } from "@heroicons/react/24/outline";
 import UserIndicator from "../UserIndicator";
 import { useAuth } from "../../context/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const { user, profileImage, logout } = useAuth();
+  const navigate = useNavigate();
 
   const userFullName =
     user?.name || user?.last_name
@@ -26,39 +28,51 @@ const Navbar = () => {
             </a>
           </div>
 
-          {/* Notificaciones y Usuario */}
+          {/* Notificaciones, Órdenes de Corte y Usuario */}
           <div className="flex items-center space-x-4 relative">
-            {/* Botón Notificaciones */}
+            {/* Botón Órdenes de Corte */}
             <button
               type="button"
               className="relative rounded-full bg-primary-500 p-1 text-neutral-50 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 hover:bg-primary-600 transition-all"
+              onClick={() => navigate("/cutting-cart")}
             >
+              <span className="sr-only">Ver órdenes de corte</span>
+              <ClipboardDocumentListIcon className="h-6 w-6" aria-hidden="true" />
+            </button>
+            {/* Botón Notificaciones */}
+            <button
+              type="button"
+              className="relative rounded-full bg-primary-500 p-1 text-neutral-50 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 hover:bg-primary-600 transition-all"            >
               <span className="sr-only">Ver notificaciones</span>
-              <BellIcon className="size-6" aria-hidden="true" />
+              <BellIcon className="h-6 w-6" aria-hidden="true" />
             </button>
 
+
+
+            {/* Menú de usuario */}
             <Menu as="div" className="relative flex items-center">
               <UserIndicator />
 
-              <MenuButton className="...">
+              <MenuButton className="ml-2">
                 {profileImage && typeof profileImage === "string" ? (
                   <img
-                    key={profileImage} // fuerza re-render si cambia la URL
+                    key={profileImage}
                     src={profileImage}
                     alt="User Profile"
-                    className="size-8 rounded-full object-cover border border-white"
+                    className="h-8 w-8 rounded-full object-cover border border-white"
                   />
                 ) : (
-                  <UserIcon className="size-8 text-white p-1 bg-primary-600 rounded-full" />
+                  <UserIcon className="h-8 w-8 text-white p-1 bg-primary-600 rounded-full" />
                 )}
               </MenuButton>
 
-              <MenuItems className="absolute right-0 z-10 mt-40 w-48 origin-top-right rounded-md bg-neutral-100 py-1 shadow-lg ring-1 ring-black/5 focus:outline-none">
+              <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-neutral-100 py-1 shadow-lg ring-1 ring-black/5 focus:outline-none">
                 <MenuItem>
                   {({ active }) => (
                     <a
                       href="/my-profile"
-                      className={`block px-4 py-2 text-sm text-neutral-700 ${active ? "bg-neutral-200" : ""}`}
+                      className={`block px-4 py-2 text-sm text-neutral-700 ${active ? "bg-neutral-200" : ""
+                        }`}
                     >
                       Mi Perfil
                     </a>

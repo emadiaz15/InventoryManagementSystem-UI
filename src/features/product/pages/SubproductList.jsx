@@ -16,6 +16,18 @@ import { deleteSubproduct } from "../services/deleteSubproduct";
 
 const PAGE_SIZE = 8;
 
+// Construye la query string a partir de un objeto de filtros
+const buildQueryString = (filtersObj) => {
+  const params = new URLSearchParams();
+  Object.entries(filtersObj).forEach(([key, value]) => {
+    // sólo añadimos los filtros que no estén vacíos
+    if (value !== "") {
+      params.append(key, value);
+    }
+  });
+  return params.toString() ? `?${params.toString()}` : "";
+};
+
 const SubproductList = () => {
   const { productId } = useParams();
 
@@ -24,20 +36,27 @@ const SubproductList = () => {
   const [error, setError] = useState(null);
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
   const [modalState, setModalState] = useState({ type: null, subproductData: null });
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
-  const [filters, setFilters] = useState({ status: "" });
 
-  const fetchSubproducts = async (
-    url = `/inventory/products/${productId}/subproducts/?page_size=${PAGE_SIZE}`
-  ) => {
+  // Aquí mantenemos el filtro de status (por defecto "true" = Disponible)
+  const [filters, setFilters] = useState({ status: "true" });
+
+  const fetchSubproducts = async (url = null) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await listSubproducts(productId, url);
+      // Construimos la query con status + page_size
+      const query = buildQueryString({ ...filters, page_size: PAGE_SIZE });
+      const baseUrl = `/inventory/products/${productId}/subproducts/`;
+      // si ya nos pasan url de paginación, la usamos; si no, montamos la nueva
+      const fullUrl = url || `${baseUrl}${query}`;
+      const data = await listSubproducts(productId, fullUrl);
       setSubproducts(data.results || []);
       setNextPage(data.next);
       setPreviousPage(data.previous);
@@ -48,8 +67,11 @@ const SubproductList = () => {
     }
   };
 
+  // Cuando cambie el producto o los filtros, recargamos
   useEffect(() => {
-    if (productId) fetchSubproducts();
+    if (productId) {
+      fetchSubproducts();
+    }
   }, [productId, filters]);
 
   const handleShowSuccess = (message) => {
@@ -60,7 +82,6 @@ const SubproductList = () => {
   };
 
   const clearDeleteError = () => setDeleteError(null);
-
   const handleCloseModal = () => {
     setModalState({ type: null, subproductData: null });
     clearDeleteError();
@@ -98,6 +119,10 @@ const SubproductList = () => {
       setIsDeleting(false);
     }
   };
+  const handleCreateOrder = () => {
+    handleShowSuccess("Orden de corte creada correctamente");
+    handleCloseModal();
+  };
 
   return (
     <Layout>
@@ -114,6 +139,7 @@ const SubproductList = () => {
           onButtonClick={() => setModalState({ type: "create", subproductData: null })}
         />
 
+        {/* Aquí inyectamos el filtro */}
         <SubproductFilters filters={filters} onChange={setFilters} />
 
         {error && !loading && <ErrorMessage message={error} onClose={() => setError(null)} />}
@@ -124,7 +150,9 @@ const SubproductList = () => {
           </div>
         ) : subproducts.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-lg shadow mt-4">
-            <p className="text-gray-500">No existen subproductos registrados para este producto.</p>
+            <p className="text-gray-500">
+              No existen subproductos registrados para este producto.
+            </p>
           </div>
         ) : (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -156,6 +184,7 @@ const SubproductList = () => {
         onCreateSubproduct={handleCreate}
         onUpdateSubproduct={handleUpdate}
         onDeleteSubproduct={handleDelete}
+        onCreateOrder={handleCreateOrder}
         isDeleting={isDeleting}
         deleteError={deleteError}
         clearDeleteError={clearDeleteError}

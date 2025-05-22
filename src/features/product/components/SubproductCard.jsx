@@ -7,7 +7,7 @@ import {
     ScissorsIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../context/AuthProvider";
-import { useNavigate } from "react-router-dom"; // ✅ IMPORTANTE
+import { useNavigate } from "react-router-dom";
 
 const getDefaultImage = (subType) => {
     const typeNormalized = (subType || "").toLowerCase();
@@ -29,7 +29,6 @@ const SubproductCard = ({
 
     const { user } = useAuth();
     const isStaff = user?.is_staff;
-
     const navigate = useNavigate();
 
     const handleViewStockHistory = () => {
@@ -57,9 +56,15 @@ const SubproductCard = ({
                 />
                 <ul className="flex-1 text-sm text-gray-700 space-y-1 overflow-hidden">
                     <li><strong>Marca:</strong> {subproduct.brand}</li>
-                    <li><strong>Bobina N°:</strong> {subproduct.number_coil}</li>
-                    <li><strong>Ubicación:</strong> {subproduct.location}</li>
-                    <li><strong>Estado:</strong> {subproduct.status ? "Disponible" : "Completada"}</li>
+                    <li><strong>Tipo:</strong> {subproduct.form_type}</li>
+                    <li><strong>N°:</strong> {subproduct.number_coil}</li>
+                    <li className="flex items-center">
+                        <span
+                            className={`inline-block w-3 h-3 mr-2 rounded-full ${subproduct.status ? "bg-green-500" : "bg-red-500"
+                                }`}
+                        />
+                        {subproduct.status ? "Disponible" : "Terminada"}
+                    </li>
                 </ul>
             </div>
 
@@ -87,7 +92,7 @@ const SubproductCard = ({
                     <>
                         {/* 🛒 Agregar Orden */}
                         <button
-                            onClick={onAddToOrder}
+                            onClick={() => onAddToOrder({ type: "createOrder", subproductData: subproduct })}
                             title="Agregar Orden de Corte"
                             className="bg-indigo-500 hover:bg-indigo-600 transition-colors rounded p-2"
                         >

@@ -36,7 +36,14 @@ const ViewSubproductModal = ({ subproduct, isOpen, onClose, mediaPanel }) => {
                     <p><span className="font-semibold">Ubicación:</span> {subproduct.location || "N/A"}</p>
                     <p><span className="font-semibold">Tipo de Forma:</span> {subproduct.form_type || "N/A"}</p>
                     <p><span className="font-semibold">Observaciones:</span> {subproduct.observations || "N/A"}</p>
-                    <p><span className="font-semibold">Estado:</span> {subproduct.status ? "Activo" : "Inactivo"}</p>
+                    <p className="flex items-center">
+                        <span className="font-semibold mr-2">Estado:</span>
+                        <span
+                            className={`inline-block w-3 h-3 mr-2 rounded-full ${subproduct.status ? "bg-green-500" : "bg-red-500"
+                                }`}
+                        />
+                        {subproduct.status ? "Disponible" : "Terminada"}
+                    </p>
                     <p><span className="font-semibold">Fecha de Ingreso:</span> {subproduct.created_at || "N/A"}</p>
                     <p><span className="font-semibold">Modificado en:</span> {subproduct.modified_at || "N/A"}</p>
                     <p><span className="font-semibold">Ingresado por:</span> {subproduct.created_by || "N/A"}</p>
@@ -44,7 +51,7 @@ const ViewSubproductModal = ({ subproduct, isOpen, onClose, mediaPanel }) => {
                     <p><span className="font-semibold">ID:</span> {subproduct.id}</p>
                 </div>
 
-                {/* MEDIA PANEL EXPLÍCITO */}
+                {/* PANEL DE MEDIOS */}
                 <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
                     {mediaPanel}
                 </div>
@@ -66,7 +73,7 @@ ViewSubproductModal.propTypes = {
     subproduct: PropTypes.object.isRequired,
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    mediaPanel: PropTypes.node.isRequired, // ← Cambiado
+    mediaPanel: PropTypes.node.isRequired,
 };
 
 export default ViewSubproductModal;

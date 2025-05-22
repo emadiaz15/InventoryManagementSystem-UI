@@ -1,8 +1,9 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 import ProtectedRoute from '../../../components/common/ProtectedRoute';
-import CuttingOrders from '../pages/CuttingOrders';
+import CuttingOrdersList from '../pages/CuttingOrdersList';
 import CuttingOrderDetail from '../pages/CuttingOrderDetail';
+import CuttingOrderCart from '../pages/CuttingOrderCart';
 
 const cuttingOrderRoutes = [
   <Route
@@ -10,7 +11,7 @@ const cuttingOrderRoutes = [
     path="/cutting-orders"
     element={
       <ProtectedRoute>
-        <CuttingOrders />
+        <CuttingOrdersList />
       </ProtectedRoute>
     }
   />,
@@ -23,6 +24,14 @@ const cuttingOrderRoutes = [
       </ProtectedRoute>
     }
   />,
+  <Route
+    key="cutting-order-cart"
+    path="/cutting-cart"
+    element={
+      <ProtectedRoute>
+        <CuttingOrderCart />
+      </ProtectedRoute>
+    }
+  />,
 ];
-
 export default cuttingOrderRoutes;
