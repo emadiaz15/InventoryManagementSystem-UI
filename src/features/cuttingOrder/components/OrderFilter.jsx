@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import FormSelect from "../../../components/ui/form/FormSelect";
-import DateFilter from "../../../components/common/DateFilter"; // Ajusta el path si es necesario
+import DateFilter from "../../../components/common/DateFilter";
 
 const OrderFilter = ({ filters = {}, onChange, onDateChange }) => {
     const handleInputChange = useCallback(

@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
+import { useAuth } from "../../../context/AuthProvider";
+
 import CreateSubproductModal from "./CreateSubproductModal";
 import EditSubproductModal from "./EditSubproductModal";
 import ViewSubproductModal from "./ViewSubproductModal";
+import CreateCuttingOrderModal from "../../cuttingOrder/components/CreateCuttingOrderModal"
+import CreateCuttingOrderWizard from "../../cuttingOrder/components/CreateCuttingOrderWizard";
 import DeleteMessage from "../../../components/common/DeleteMessage";
 import Spinner from "../../../components/ui/Spinner";
 import ProductCarouselOverlay from "./ProductCarouselOverlay";
@@ -17,7 +21,6 @@ const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose })
             </div>
         );
     }
-
     if (files.length > 0) {
         return (
             <ProductCarouselOverlay
@@ -30,7 +33,6 @@ const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose })
             />
         );
     }
-
     return (
         <div className="p-4 text-center text-sm text-gray-600">
             No hay archivos multimedia.
@@ -47,6 +49,7 @@ const SubproductModals = ({
     onCreateSubproduct,
     onUpdateSubproduct,
     onDeleteSubproduct,
+    onCreateOrder,          // ← Nueva prop
     isDeleting = false,
     deleteError = null,
     clearDeleteError,
@@ -54,24 +57,25 @@ const SubproductModals = ({
 }) => {
     if (!modalState?.type) return null;
 
-    const { type, subproductData } = modalState;
+    const { user } = useAuth();
+    const isStaff = user?.is_staff;
 
+    const { type, subproductData } = modalState;
     const [files, setFiles] = useState([]);
     const [loadingFiles, setLoadingFiles] = useState(false);
+
     const handleCreateSuccess = () => {
-        closeModal(); // importante para desmontar el modal ANTES del siguiente render
-        onCreateSubproduct(); // actualiza lista
+        closeModal(); // desmonta el modal antes de refrescar
+        onCreateSubproduct();
     };
+
     const loadFiles = useCallback(async () => {
         if (!subproductData || !parentProduct?.id) return;
-
         setLoadingFiles(true);
-
         try {
             const res = await djangoApi.get(
                 `/inventory/products/${parentProduct.id}/subproducts/${subproductData.id}/files/`
             );
-
             const fetched = await Promise.all(
                 (res.data.files || []).map(async (f) => {
                     const url = await fetchProtectedFile(
@@ -80,10 +84,8 @@ const SubproductModals = ({
                         "django",
                         subproductData.id
                     );
-
                     const contentType =
                         f.contentType || f.content_type || f.mimeType || "application/octet-stream";
-
                     return {
                         id: f.drive_file_id,
                         filename: f.filename || f.drive_file_id,
@@ -92,7 +94,6 @@ const SubproductModals = ({
                     };
                 })
             );
-
             setFiles(fetched);
         } catch (e) {
             console.error("❌ No se pudieron cargar los archivos:", e);
@@ -102,29 +103,30 @@ const SubproductModals = ({
         }
     }, [subproductData, parentProduct]);
 
-
     useEffect(() => {
         loadFiles();
     }, [loadFiles]);
 
     return (
         <>
+            {/* Crear Subproducto */}
             {type === "create" && parentProduct && (
                 <CreateSubproductModal
-                    isOpen={modalState?.type === "create"}
+                    isOpen
                     onClose={closeModal}
                     onSave={handleCreateSuccess}
                     product={parentProduct}
                 />
             )}
 
+            {/* Editar Subproducto */}
             {type === "edit" && subproductData && (
                 <EditSubproductModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
                     subproduct={subproductData}
                     onSave={onUpdateSubproduct}
-                    onDeleteSuccess={loadFiles} // importante para refrescar el carousel tras eliminar
+                    onDeleteSuccess={loadFiles}
                 >
                     {loadingFiles ? (
                         <div className="flex items-center justify-center h-full">
@@ -133,11 +135,11 @@ const SubproductModals = ({
                     ) : files.length > 0 ? (
                         <ProductCarouselOverlay
                             images={files}
-                            productId={parentProduct?.id}
-                            subproductId={subproductData?.id}
+                            productId={parentProduct.id}
+                            subproductId={subproductData.id}
                             onClose={closeModal}
                             onDeleteSuccess={loadFiles}
-                            editable={true}
+                            editable
                             isEmbedded
                             source="django"
                         />
@@ -149,7 +151,7 @@ const SubproductModals = ({
                 </EditSubproductModal>
             )}
 
-
+            {/* Ver Subproducto */}
             {type === "view" && subproductData && (
                 <ViewSubproductModal
                     isOpen
@@ -165,10 +167,18 @@ const SubproductModals = ({
                         />
                     }
                 />
-
-
             )}
 
+            {/* Crear Orden de Corte (botón tijera) */}
+            {type === "createOrder" && isStaff && subproductData && (
+                <CreateCuttingOrderWizard
+                    isOpen
+                    productId={modalState.productId}
+                    onClose={closeModal}
+                />
+            )}
+
+            {/* Confirmación de eliminación */}
             {type === "deleteConfirm" && subproductData && (
                 <DeleteMessage
                     isOpen
@@ -187,13 +197,20 @@ const SubproductModals = ({
 
 SubproductModals.propTypes = {
     modalState: PropTypes.shape({
-        type: PropTypes.oneOf(["create", "edit", "view", "deleteConfirm"]),
+        type: PropTypes.oneOf([
+            "create",
+            "edit",
+            "view",
+            "createOrder",    // ← Añadido
+            "deleteConfirm"
+        ]),
         subproductData: PropTypes.object,
     }),
     closeModal: PropTypes.func.isRequired,
     onCreateSubproduct: PropTypes.func.isRequired,
     onUpdateSubproduct: PropTypes.func.isRequired,
     onDeleteSubproduct: PropTypes.func.isRequired,
+    onCreateOrder: PropTypes.func.isRequired,    // ← Nueva
     isDeleting: PropTypes.bool,
     deleteError: PropTypes.string,
     clearDeleteError: PropTypes.func.isRequired,
