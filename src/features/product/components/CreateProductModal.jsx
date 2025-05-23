@@ -81,7 +81,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         };
 
         fetchData();
-    }, [isOpen]);
+    }, [isOpen, clearUploadError]);
 
     useEffect(() => {
         if (!formData.category) {
@@ -163,29 +163,28 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             setError("El código debe ser un número válido.");
             return;
         }
-
-        data.append("code", codeNum);
+        data.append("code", codeNum.toString());
         data.append("description", formData.description.trim());
         data.append("brand", formData.brand.trim());
         data.append("location", formData.location.trim());
         data.append("position", formData.position.trim());
-        data.append("category", parseInt(formData.category, 10));
-        data.append("type", formData.type ? parseInt(formData.type, 10) : "");
-
-
+        data.append("category", parseInt(formData.category, 10).toString());
+        // ¡Importante! solo enviar "type" si el usuario seleccionó uno:
+        if (formData.type) {
+            data.append("type", parseInt(formData.type, 10).toString());
+        }
         const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
-        if (parseFloat(stockVal) > 0) {
+        if (stockVal && parseFloat(stockVal) > 0) {
             data.append("initial_stock_quantity", stockVal);
         }
-
         data.append("has_subproduct", formData.has_subproduct ? "true" : "false");
 
         try {
             setLoading(true);
-            const newP = await createProduct(data);
+            const newProduct = await createProduct(data);
 
             if (formData.images.length) {
-                const ok = await uploadFiles(newP.id, formData.images);
+                const ok = await uploadFiles(newProduct.id, formData.images);
                 if (!ok && uploadError) {
                     setError(uploadError);
                     return;
@@ -196,8 +195,15 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             onClose();
             onSave?.();
         } catch (err) {
-            console.error("Error al crear:", err);
-            setError(err.message || "No se pudo guardar el producto.");
+            console.error("Error al crear:", err.response?.data || err);
+            // mostramos el primer mensaje de validación que venga del servidor
+            const serverErrors = err.response?.data;
+            const msg =
+                serverErrors?.detail ||
+                (serverErrors?.type && Array.isArray(serverErrors.type) ? serverErrors.type[0] : null) ||
+                err.message ||
+                "No se pudo guardar el producto.";
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -241,8 +247,19 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
-                    <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
+                    <FormInput
+                        label="Código"
+                        name="code"
+                        value={formData.code}
+                        onChange={handleChange}
+                        required
+                    />
+                    <FormInput
+                        label="Marca"
+                        name="brand"
+                        value={formData.brand}
+                        onChange={handleChange}
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -253,11 +270,26 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                         onChange={handleStockChange}
                         placeholder="Ej: 100"
                     />
-                    <FormInput label="Ubicación" name="location" value={formData.location} onChange={handleChange} />
-                    <FormInput label="Posición" name="position" value={formData.position} onChange={handleChange} />
+                    <FormInput
+                        label="Ubicación"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                    />
+                    <FormInput
+                        label="Posición"
+                        name="position"
+                        value={formData.position}
+                        onChange={handleChange}
+                    />
                 </div>
 
-                <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
+                <FormInput
+                    label="Descripción"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                />
 
                 <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
                     <input
@@ -283,10 +315,11 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                             Seleccionar archivos
                         </label>
                         <span className="text-sm text-text-secondary">
-                            {previewFiles.length ? `${previewFiles.length} archivo(s)` : "Sin archivos"}
+                            {previewFiles.length
+                                ? `${previewFiles.length} archivo(s)`
+                                : "Sin archivos"}
                         </span>
                     </div>
-
                     <input
                         id="images"
                         type="file"
