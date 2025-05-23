@@ -41,6 +41,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         has_subproduct: false,
     });
 
+    // Al abrir el modal, resetear todo y traer datos
     useEffect(() => {
         if (!isOpen) return;
 
@@ -62,43 +63,40 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             has_subproduct: false,
         });
 
-        const fetchData = async () => {
+        (async () => {
             try {
                 const [catResp, typeResp, prodResp] = await Promise.all([
                     listCategories("/inventory/categories/?limit=1000&status=true"),
                     listTypes("/inventory/types/?limit=1000&status=true"),
                     listProducts("/inventory/products/"),
                 ]);
-
                 setCategories(catResp.results || []);
-                const allTypes = typeResp.results ?? typeResp.activeTypes ?? (Array.isArray(typeResp) ? typeResp : []);
+                const allTypes = typeResp.results ?? typeResp.activeTypes ?? [];
                 setTypes(allTypes);
                 setProducts(prodResp.results || []);
-            } catch (err) {
-                console.error("Error al cargar datos iniciales:", err);
+            } catch {
                 setError("No se pudo conectar con el servidor.");
             }
-        };
-
-        fetchData();
+        })();
     }, [isOpen, clearUploadError]);
 
+    // Filtrar tipos cuando cambie la categoría
     useEffect(() => {
         if (!formData.category) {
             setFilteredTypes(types);
             return;
         }
-
-        const catId = parseInt(formData.category, 10);
+        const catId = +formData.category;
         setFilteredTypes(
             types.filter((t) => {
-                if (t.category && typeof t.category === "object") return t.category.id === catId;
-                if (typeof t.category_id !== "undefined") return t.category_id === catId;
+                if (t.category?.id != null) return t.category.id === catId;
+                if (t.category_id != null) return t.category_id === catId;
                 return t.category === catId;
             })
         );
     }, [formData.category, types]);
 
+    // Control genérico de inputs
     const handleChange = (e) => {
         const { name, type, value, checked } = e.target;
         setFormData((prev) => ({
@@ -108,11 +106,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     };
 
     const handleStockChange = (e) =>
-        setFormData((prev) => ({
-            ...prev,
-            initial_stock_quantity: e.target.value,
-        }));
+        setFormData((prev) => ({ ...prev, initial_stock_quantity: e.target.value }));
 
+    // Archivos
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         if (formData.images.length + files.length > 5) {
@@ -132,13 +128,11 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         setPreviewFiles((prev) => prev.filter((_, i) => i !== idx));
     };
 
-    const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "");
+    // Validar unicidad de código frente a la lista ya cargada
+    const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, "");
     const validateCodeUnique = () => {
-        const codeStr = normalize(formData.code);
-        const clash = products.find(
-            (p) => p.code && normalize(String(p.code)) === codeStr
-        );
-        if (clash) {
+        const c = normalize(formData.code);
+        if (products.some((p) => normalize(String(p.code)) === c)) {
             setError("El código ya está en uso por otro producto.");
             return false;
         }
@@ -152,39 +146,38 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
         if (!validateCodeUnique()) return;
         if (!formData.category) {
-            setError("Por favor, selecciona una categoría.");
+            setError("Selecciona una categoría.");
             return;
         }
 
-        const data = new FormData();
-        data.append("name", formData.name.trim());
-        const codeNum = parseInt(formData.code.trim(), 10);
+        const payload = new FormData();
+        payload.append("name", formData.name.trim());
+
+        const codeNum = parseInt(formData.code, 10);
         if (isNaN(codeNum)) {
             setError("El código debe ser un número válido.");
             return;
         }
-        data.append("code", codeNum.toString());
-        data.append("description", formData.description.trim());
-        data.append("brand", formData.brand.trim());
-        data.append("location", formData.location.trim());
-        data.append("position", formData.position.trim());
-        data.append("category", parseInt(formData.category, 10).toString());
-        // ¡Importante! solo enviar "type" si el usuario seleccionó uno:
-        if (formData.type) {
-            data.append("type", parseInt(formData.type, 10).toString());
-        }
+        payload.append("code", codeNum.toString());
+        payload.append("description", formData.description.trim());
+        payload.append("brand", formData.brand.trim());
+        payload.append("location", formData.location.trim());
+        payload.append("position", formData.position.trim());
+        payload.append("category", formData.category);
+        if (formData.type) payload.append("type", formData.type);
+
         const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
         if (stockVal && parseFloat(stockVal) > 0) {
-            data.append("initial_stock_quantity", stockVal);
+            payload.append("initial_stock_quantity", stockVal);
         }
-        data.append("has_subproduct", formData.has_subproduct ? "true" : "false");
+        payload.append("has_subproduct", formData.has_subproduct ? "true" : "false");
 
         try {
             setLoading(true);
-            const newProduct = await createProduct(data);
+            const newProd = await createProduct(payload);
 
             if (formData.images.length) {
-                const ok = await uploadFiles(newProduct.id, formData.images);
+                const ok = await uploadFiles(newProd.id, formData.images);
                 if (!ok && uploadError) {
                     setError(uploadError);
                     return;
@@ -195,14 +188,13 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             onClose();
             onSave?.();
         } catch (err) {
-            console.error("Error al crear:", err.response?.data || err);
-            // mostramos el primer mensaje de validación que venga del servidor
-            const serverErrors = err.response?.data;
+            // Mostrar mensajes de validación del servidor si los hay
+            const data = err.response?.data;
             const msg =
-                serverErrors?.detail ||
-                (serverErrors?.type && Array.isArray(serverErrors.type) ? serverErrors.type[0] : null) ||
+                data?.detail ||
+                (data?.code && Array.isArray(data.code) ? data.code[0] : null) ||
                 err.message ||
-                "No se pudo guardar el producto.";
+                "Error al crear el producto.";
             setError(msg);
         } finally {
             setLoading(false);
@@ -220,10 +212,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    options={categories.map((c) => ({
-                        value: String(c.id),
-                        label: c.name,
-                    }))}
+                    options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
                     required
                 />
 
@@ -232,10 +221,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     name="type"
                     value={formData.type}
                     onChange={handleChange}
-                    options={filteredTypes.map((t) => ({
-                        value: String(t.id),
-                        label: t.name,
-                    }))}
+                    options={filteredTypes.map((t) => ({ value: String(t.id), label: t.name }))}
                 />
 
                 <FormInput
@@ -291,22 +277,22 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                     onChange={handleChange}
                 />
 
-                <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
+                <div className="flex items-center ps-4 border rounded-sm bg-background-100 h-[46px]">
                     <input
                         id="has_subproduct"
                         type="checkbox"
                         name="has_subproduct"
                         checked={formData.has_subproduct}
                         onChange={handleChange}
-                        className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2"
+                        className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
                     />
-                    <label htmlFor="has_subproduct" className="ms-2 text-sm font-medium">
-                        Este producto tiene subproductos (Cables)
+                    <label htmlFor="has_subproduct" className="ms-2 text-sm">
+                        Este producto tiene subproductos
                     </label>
                 </div>
 
                 <div>
-                    <label className="block mb-2 text-sm font-medium">Archivos (máx. 5)</label>
+                    <label className="block mb-2 text-sm">Archivos (máx. 5)</label>
                     <div className="flex items-center space-x-4">
                         <label
                             htmlFor="images"
@@ -314,7 +300,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
                         >
                             Seleccionar archivos
                         </label>
-                        <span className="text-sm text-text-secondary">
+                        <span className="text-sm">
                             {previewFiles.length
                                 ? `${previewFiles.length} archivo(s)`
                                 : "Sin archivos"}
