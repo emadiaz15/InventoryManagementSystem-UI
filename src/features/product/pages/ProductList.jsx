@@ -11,8 +11,6 @@ import ProductModals from "../components/ProductModals";
 import ProductTable from "../components/ProductTable";
 import Filter from "../../../components/ui/Filter";
 
-import { listTypes } from "../../type/services/listType";
-import { listCategories } from "../../category/services/listCategory";
 import { useProducts } from "../hooks/useProducts";
 import { useAuth } from "../../../context/AuthProvider";
 import { deleteProduct } from "../services/deleteProduct";
@@ -25,10 +23,6 @@ const ProductsList = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [filters, setFilters] = useState({ code: "" });
-  const [categories, setCategories] = useState([]);
-  const [types, setTypes] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [errorCategories, setErrorCategories] = useState(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
@@ -44,52 +38,12 @@ const ProductsList = () => {
     currentUrl,
   } = useProducts(filters);
 
-  // 🌀 Inicialización completa solo cuando loadingProducts === false y products !== null
   const [initialLoaded, setInitialLoaded] = useState(false);
   useEffect(() => {
     if (!loadingProducts && products !== null) {
       setInitialLoaded(true);
     }
   }, [loadingProducts, products]);
-
-  const fetchTypesData = useCallback(async () => {
-    try {
-      const data = await listTypes("/inventory/types/");
-      setTypes(data.activeTypes || data.results || []);
-    } catch (err) {
-      console.error("Error al obtener los tipos:", err);
-    }
-  }, []);
-
-  const fetchCategoriesData = useCallback(async () => {
-    setLoadingCategories(true);
-    setErrorCategories(null);
-    try {
-      const data = await listCategories("/inventory/categories/");
-      setCategories(data.results || []);
-    } catch (err) {
-      console.error("Error al obtener las categorías:", err);
-      setErrorCategories(err.message);
-    } finally {
-      setLoadingCategories(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetchCategoriesData();
-    fetchTypesData();
-  }, [isAuthenticated, fetchCategoriesData, fetchTypesData]);
-
-  const getTypeName = useCallback(
-    (typeId) => types.find((t) => t.id === typeId)?.name || "Sin tipo",
-    [types]
-  );
-
-  const getCategoryName = useCallback(
-    (categoryId) => categories.find((c) => c.id === categoryId)?.name || "Sin categoría",
-    [categories]
-  );
 
   const handleViewProduct = (product) =>
     setModalState({ type: "view", productData: product, showCarousel: true });
@@ -178,8 +132,6 @@ const ProductsList = () => {
                 onEdit={handleEditProduct}
                 onDelete={handleDeleteClick}
                 onViewHistory={handleViewHistory}
-                getTypeName={getTypeName}
-                getCategoryName={getCategoryName}
                 user={user}
               />
             </div>

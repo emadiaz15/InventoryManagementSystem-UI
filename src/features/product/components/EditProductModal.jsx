@@ -231,12 +231,11 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                         />
 
                         <FormSelect
-                            label="Tipo"
+                            label="Tipo (opcional)"
                             name="type"
                             value={formData.type}
                             onChange={handleChange}
                             options={filteredTypes.map((t) => ({ value: String(t.id), label: t.name }))}
-                            required
                             disabled={!formData.category}
                         />
 
