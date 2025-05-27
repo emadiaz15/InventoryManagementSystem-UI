@@ -35,7 +35,7 @@ const ProductTable = ({
         ),
         "Artículo": (
             <div className="min-w-[300px] max-w-[400px] truncate">
-                {`${getTypeName?.(product.type) ?? "Sin tipo"} - ${product.name || "Sin nombre"}`}
+                {product.type_name ? `${product.type_name} - ${product.name || "Sin nombre"}` : (product.name || "Sin nombre")}
             </div>
         ),
         "Stock": (
@@ -46,7 +46,7 @@ const ProductTable = ({
         ),
         "Categoría": (
             <div className="w-[100px] truncate">
-                {getCategoryName?.(product.category) ?? "Sin categoría"}
+                {product.category_name || "Sin categoría"}
             </div>
         ),
         "Acciones": (

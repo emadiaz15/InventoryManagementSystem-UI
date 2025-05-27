@@ -30,8 +30,8 @@ const ViewProductModal = ({ product, isOpen, onClose, children }) => {
     if (!product) return null;
 
     // Buscar el objeto para tener su nombre
-    const categoryObj = categories.find((c) => c.id === product.category);
-    const typeObj = types.find((t) => t.id === product.type);
+    const categoryName = product.category_name || "Sin categoría";
+    const typeName = product.type_name || "Sin tipo";
 
     return (
         <Modal
@@ -49,8 +49,7 @@ const ViewProductModal = ({ product, isOpen, onClose, children }) => {
                         <span className="font-semibold">Código:</span> {product.code || "N/A"}
                     </p>
                     <p>
-                        <span className="font-semibold">Tipo:</span>{" "}
-                        {typeObj?.name || "Sin tipo"}
+                        <span className="font-semibold">Tipo:</span> {typeName}
                     </p>
                     <p>
                         <span className="font-semibold">Nombre/Medida:</span>{" "}
@@ -61,8 +60,7 @@ const ViewProductModal = ({ product, isOpen, onClose, children }) => {
                         {product.description || "SIN DESCRIPCIÓN"}
                     </p>
                     <p>
-                        <span className="font-semibold">Categoría:</span>{" "}
-                        {categoryObj?.name || "Sin categoría"}
+                        <span className="font-semibold">Categoría:</span> {categoryName}
                     </p>
                     <p>
                         <span className="font-semibold">Estado:</span>{" "}
