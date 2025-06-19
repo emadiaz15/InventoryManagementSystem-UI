@@ -1,4 +1,4 @@
-import { djangoApi, fastapiApi } from "@/services/clients";
+import { djangoApi } from "@/services/clients";
 
 // ─────────────────────────────────────────────────────────────
 // 🛤️ URL Builders
@@ -15,7 +15,6 @@ const getSubproductDownloadUrl = (productId, subproductId, fileId) =>
 export const fetchProtectedFile = async (
   productId,
   fileId,
-  source = "django", // puede ser: "django" o "fastapi"
   subproductId = null,
   signal = null
 ) => {
@@ -23,10 +22,8 @@ export const fetchProtectedFile = async (
     ? getSubproductDownloadUrl(productId, subproductId, fileId)
     : getProductDownloadUrl(productId, fileId);
 
-  const apiClient = source === "fastapi" ? fastapiApi : djangoApi;
-
   try {
-    const response = await apiClient.get(url, {
+    const response = await djangoApi.get(url, {
       responseType: "blob",
       signal,
     });
@@ -53,11 +50,8 @@ export const fetchProtectedFile = async (
 // 🖼️ Descargar archivo desde URL absoluta (e.g. imagen externa)
 // ─────────────────────────────────────────────────────────────
 export const fetchBlobFromUrl = async (url) => {
-  const isDjango = url.includes("/api/v1/");
-  const apiClient = isDjango ? djangoApi : fastapiApi;
-
   try {
-    const response = await apiClient.get(url, {
+    const response = await djangoApi.get(url, {
       responseType: "blob",
     });
 
