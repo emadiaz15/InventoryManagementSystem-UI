@@ -9,11 +9,10 @@ import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
 
 // Servicios API
-import { createCategory } from "../services/createCategory";
-import { updateCategory } from "../services/updateCategory";
+// Las mutaciones se manejan con React Query
 
 // Hooks
-import useCategories from "../hooks/useCategories";
+import { useCategoriesQuery } from "../queries/useCategoriesQuery";
 
 const CategoryList = () => {
   const [filters, setFilters] = useState({ name: "" });
@@ -33,7 +32,9 @@ const CategoryList = () => {
     next: goToNextPage,
     previous: goToPreviousPage,
     currentUrl: currentCategoriesUrl,
-  } = useCategories(filters);
+    createMutation,
+    updateMutation,
+  } = useCategoriesQuery(filters);
 
   const filterColumns = useMemo(() => [
     { key: "name", label: "Nombre Categoría", filterType: "text" },
@@ -62,7 +63,7 @@ const CategoryList = () => {
     setIsProcessing(true);
     setActionError(null);
     try {
-      const createdCategory = await createCategory(newCategoryData);
+      const createdCategory = await createMutation.mutateAsync(newCategoryData);
       handleActionSuccess(`Categoría "${createdCategory.name}" creada.`);
     } catch (err) {
       const errorMsg = err.response?.data?.detail || err.message || "Error al crear categoría.";
@@ -71,17 +72,16 @@ const CategoryList = () => {
           ? err.response.data
           : null;
       setActionError({ message: errorMsg, details: validationErrs });
-      throw err;
     } finally {
       setIsProcessing(false);
     }
-  }, [handleActionSuccess]);
+  }, [createMutation, handleActionSuccess]);
 
   const handleUpdateCategory = useCallback(async (categoryId, updatedData) => {
     setIsProcessing(true);
     setActionError(null);
     try {
-      const updatedCategory = await updateCategory(categoryId, updatedData);
+      const updatedCategory = await updateMutation.mutateAsync({ id: categoryId, data: updatedData });
       handleActionSuccess(`Categoría "${updatedCategory.name}" actualizada.`);
     } catch (err) {
       const errorMsg = err.response?.data?.detail || err.message || "Error al actualizar categoría.";
@@ -90,21 +90,23 @@ const CategoryList = () => {
           ? err.response.data
           : null;
       setActionError({ message: errorMsg, details: validationErrs });
-      throw err;
     } finally {
       setIsProcessing(false);
     }
-  }, [handleActionSuccess]);
+  }, [updateMutation, handleActionSuccess]);
 
   const handleDeleteCategory = useCallback(async (categoryToDelete) => {
     if (!categoryToDelete) return;
     setIsProcessing(true);
     setActionError(null);
     try {
-      await updateCategory(categoryToDelete.id, {
-        name: categoryToDelete.name,
-        description: categoryToDelete.description,
-        status: false
+      await updateMutation.mutateAsync({
+        id: categoryToDelete.id,
+        data: {
+          name: categoryToDelete.name,
+          description: categoryToDelete.description,
+          status: false,
+        },
       });
       handleActionSuccess(`Categoría "${categoryToDelete.name}" desactivada.`);
     } catch (err) {
@@ -113,7 +115,7 @@ const CategoryList = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [handleActionSuccess]);
+  }, [updateMutation, handleActionSuccess]);
 
   return (
     <>
