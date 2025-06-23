@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { listProductFiles } from "../services/listProductFiles";
+import { listProductFiles } from "../services/listProductFile"; // singular recomendado
 
 /**
  * Hook para listar los archivos (imágenes/videos) asociados a un producto.
- * @param {string} productId
+ *
+ * @param {string|number} productId - ID del producto
  */
 export const useProductFileList = (productId) => {
   const [files, setFiles] = useState([]);
@@ -11,6 +12,8 @@ export const useProductFileList = (productId) => {
   const [listError, setListError] = useState(null);
 
   const fetchFiles = async () => {
+    if (!productId) return;
+
     setLoading(true);
     setListError(null);
 
@@ -26,7 +29,7 @@ export const useProductFileList = (productId) => {
   };
 
   useEffect(() => {
-    if (productId) fetchFiles();
+    fetchFiles();
   }, [productId]);
 
   return {

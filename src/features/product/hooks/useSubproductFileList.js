@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
-import { axiosInstance } from "../../../services/api";
+import { listSubproductFiles } from "../services/listSubproductFile";
 
 /**
  * Hook para listar archivos multimedia asociados a un subproducto.
+ *
+ * @param {string|number} productId
+ * @param {string|number} subproductId
  */
 export const useSubproductFileList = (productId, subproductId) => {
   const [files, setFiles] = useState([]);
@@ -10,14 +13,14 @@ export const useSubproductFileList = (productId, subproductId) => {
   const [listError, setListError] = useState(null);
 
   const fetchFiles = async () => {
+    if (!productId || !subproductId) return;
+
     setLoading(true);
     setListError(null);
 
     try {
-      const res = await axiosInstance.get(
-        `/inventory/products/${productId}/subproducts/${subproductId}/files/`
-      );
-      setFiles(res.data);
+      const result = await listSubproductFiles(productId, subproductId);
+      setFiles(result);
     } catch (err) {
       console.error("❌ Error al listar archivos de subproducto:", err);
       setListError(err.message || "Error al obtener archivos.");
@@ -27,7 +30,7 @@ export const useSubproductFileList = (productId, subproductId) => {
   };
 
   useEffect(() => {
-    if (productId && subproductId) fetchFiles();
+    fetchFiles();
   }, [productId, subproductId]);
 
   return {

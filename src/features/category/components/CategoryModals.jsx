@@ -13,10 +13,11 @@ const CategoryModals = ({
     deleteError,
     clearDeleteError,
     handleActionSuccess,
-    fetchCategories,
 }) => {
+    const isView = modalState.type === "view";
+
     const commonProps = {
-        isOpen: modalState.type !== null && modalState.type !== "view",
+        isOpen: modalState.type !== null,
         onClose: closeModal,
     };
 
@@ -24,11 +25,10 @@ const CategoryModals = ({
         <>
             {modalState.type === "create" && (
                 <CategoryCreateModal
-                    isOpen={modalState.type === "create"}
-                    onClose={closeModal}
-                    onCreateSuccess={(message) => {
-                        handleActionSuccess(message || "Categoría creada con éxito.");
-                    }}
+                    {...commonProps}
+                    onCreateSuccess={(message) =>
+                        handleActionSuccess(message || "Categoría creada con éxito.")
+                    }
                 />
             )}
 
@@ -42,7 +42,7 @@ const CategoryModals = ({
                 />
             )}
 
-            {modalState.type === "view" && modalState.category && (
+            {isView && modalState.category && (
                 <CategoryViewModal {...commonProps} category={modalState.category} />
             )}
 

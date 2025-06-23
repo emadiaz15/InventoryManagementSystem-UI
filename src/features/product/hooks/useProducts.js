@@ -1,81 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
-import { listProducts } from '../services/listProducts';
-import { useAuth } from '../../../context/AuthProvider';
+import { useQuery } from "@tanstack/react-query";
+import { listProducts } from "../services/listProducts";
+import { useAuth } from "../../../context/AuthProvider";
+import { buildQueryString } from "@/utils/queryUtils";
 
-export const useProducts = (filters, initialUrl = "/inventory/products/") => {
+/**
+ * Hook optimizado con React Query para obtener productos con filtros y cache TTL.
+ * @param {object} filters - Objeto de filtros (ej: { status: 'true', page_size: 20 })
+ * @param {string} baseUrl - Endpoint base, por defecto /inventory/products/
+ */
+export const useProducts = (filters = {}, baseUrl = "/inventory/products/") => {
   const { isAuthenticated } = useAuth();
+  const queryString = buildQueryString(filters);
+  const fullUrl = `${baseUrl}${queryString}`;
 
-  // 👇 Inicialmente null para distinguir "loading" de "sin resultados"
-  const [products, setProducts] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [nextPageUrl, setNextPageUrl] = useState(null);
-  const [previousPageUrl, setPreviousPageUrl] = useState(null);
-  const [currentUrl, setCurrentUrl] = useState(initialUrl);
-
-  const buildQueryString = useCallback((filterObj) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(filterObj).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        queryParams.append(key, value);
+  return useQuery({
+    queryKey: ["products", filters],
+    queryFn: () => {
+      if (!isAuthenticated) {
+        return Promise.reject(new Error("No estás autenticado"));
       }
-    });
-    return queryParams.toString() ? `?${queryParams}` : "";
-  }, []);
-
-  const fetchProducts = useCallback(async (url) => {
-    if (!isAuthenticated) {
-      setError("No estás autenticado");
-      setProducts([]); // Limpia para prevenir mostrar data vieja
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const data = await listProducts(url);
-      if (data && Array.isArray(data.results)) {
-        setProducts(data.results);
-        setNextPageUrl(data.next);
-        setPreviousPageUrl(data.previous);
-        setCurrentUrl(url);
-        setError(null); // 🧼 Limpia errores anteriores si fue exitoso
-      } else {
-        throw new Error("Formato de datos inválido desde la API");
-      }
-    } catch (err) {
-      console.error("❌ Error al cargar productos:", err);
-      setProducts([]); // 👈 Limpia productos
-      setError(err.message || "Error al cargar los productos");
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    const query = buildQueryString(filters);
-    const baseUrl = initialUrl.split('?')[0];
-    const fullUrl = `${baseUrl}${query}`;
-    fetchProducts(fullUrl);
-  }, [filters, initialUrl, buildQueryString, fetchProducts]);
-
-  const next = useCallback(() => {
-    if (nextPageUrl) fetchProducts(nextPageUrl);
-  }, [nextPageUrl, fetchProducts]);
-
-  const previous = useCallback(() => {
-    if (previousPageUrl) fetchProducts(previousPageUrl);
-  }, [previousPageUrl, fetchProducts]);
-
-  return {
-    products,
-    loadingProducts: loading, // 🔁 Renombra aquí para mantener compatibilidad
-    error,
-    fetchProducts,
-    next,
-    previous,
-    nextPageUrl,
-    previousPageUrl,
-    currentUrl
-  };
+      return listProducts(fullUrl);
+    },
+    enabled: !!isAuthenticated,
+    staleTime: 1000 * 60 * 5, // 5 minutos (TTL)
+    cacheTime: 1000 * 60 * 10, // permanece en caché por 10 minutos si no se usa
+    keepPreviousData: true,    // mantiene la data previa durante el refetch
+    refetchOnWindowFocus: false, // evita refetch innecesario al volver al tab
+  });
 };

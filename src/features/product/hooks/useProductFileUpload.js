@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { uploadProductFiles } from "../services/uploadProductFiles";
+import { uploadFileProduct } from "../services/uploadFileProduct"; // o usa nombre singular
 
 /**
- * 🧠 Hook para subir múltiples archivos multimedia (imágenes/videos) al producto
+ * 🧠 Hook para subir múltiples archivos multimedia (imágenes/videos) a un producto.
  */
 export const useProductFileUpload = () => {
   const [uploading, setUploading] = useState(false);
@@ -10,7 +10,7 @@ export const useProductFileUpload = () => {
   const [failedFiles, setFailedFiles] = useState([]);
 
   /**
-   * Sube archivos multimedia a GDrive, creando la carpeta si no existe
+   * Sube archivos multimedia a un producto (usa backend Django/MinIO)
    * @param {string|number} productId
    * @param {File[]} filesArray
    * @returns {Promise<boolean>} true si todo ok, false si falló alguno
@@ -31,11 +31,11 @@ export const useProductFileUpload = () => {
     setFailedFiles([]);
 
     try {
-      const { success, failed } = await uploadProductFiles(productId, filesArray);
+      const { success, failed } = await uploadFileProduct(productId, filesArray);
 
       if (failed && failed.length > 0) {
         const names = failed.map(f => f.file?.name || "archivo_desconocido");
-        setUploadError(`Falló la subida de: ${names.join(', ')}`);
+        setUploadError(`Falló la subida de: ${names.join(", ")}`);
         setFailedFiles(failed);
         return false;
       }
@@ -50,9 +50,6 @@ export const useProductFileUpload = () => {
     }
   };
 
-  /**
-   * Limpia el mensaje de error de subida
-   */
   const clearUploadError = () => {
     setUploadError(null);
   };

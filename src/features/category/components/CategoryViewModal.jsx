@@ -1,44 +1,57 @@
 import React from "react";
-import Modal from '../../../components/ui/Modal'; // Asegúrate de que la ruta sea correcta
+import Modal from "../../../components/ui/Modal";
+
+const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleString(); // Puedes usar dayjs o date-fns si quieres más control
+};
 
 const CategoryViewModal = ({ category, onClose }) => {
     if (!category) return null;
 
     return (
         <Modal isOpen={true} onClose={onClose} title="Detalles de la Categoría">
-            <div className="flex flex-col h-full"> {/* Contenedor principal con Flexbox */}
-                <div className="space-y-2 flex-grow"> {/* Contenedor para el contenido principal */}
-                    <p>
-                        <strong>ID:</strong> {category.id}
-                    </p>
-                    <p>
-                        <strong>Nombre:</strong> {category.name}
-                    </p>
-                    <p>
-                        <strong>Descripción:</strong>{" "}
-                        {category.description ? category.description : "Sin descripción"}
-                    </p>
-                    <p>
-                        <strong>Estado:</strong> {category.status ? "Activo" : "Inactivo"}
-                    </p>
-                    <p>
-                        <strong>Creado en:</strong> {category.created_at}
-                    </p>
-                    <p>
-                        <strong>Modificado en:</strong>{" "}
-                        {category.modified_at ? category.modified_at : "N/A"}
-                    </p>
-                    <p>
-                        <strong>Creado por:</strong> {category.created_by}
-                    </p>
-                    <p>
-                        <strong>Modificado por:</strong>{" "}
-                        {category.modified_by ? category.modified_by : "N/A"}
-                    </p>
-                </div>
-                <div className="flex justify-end mt-4"> {/* Contenedor para el botón "Cerrar" */}
+            <div className="flex flex-col h-full">
+                <dl className="space-y-2 flex-grow text-text-primary">
+                    <div>
+                        <dt className="font-semibold">ID:</dt>
+                        <dd>{category.id}</dd>
+                    </div>
+                    <div>
+                        <dt className="font-semibold">Nombre:</dt>
+                        <dd>{category.name}</dd>
+                    </div>
+                    <div>
+                        <dt className="font-semibold">Descripción:</dt>
+                        <dd>{category.description || "Sin descripción"}</dd>
+                    </div>
+                    <div>
+                        <dt className="font-semibold">Estado:</dt>
+                        <dd>{category.status ? "Activo" : "Inactivo"}</dd>
+                    </div>
+                    <div>
+                        <dt className="font-semibold">Creado en:</dt>
+                        <dd>{formatDate(category.created_at)}</dd>
+                    </div>
+                    <div>
+                        <dt className="font-semibold">Modificado en:</dt>
+                        <dd>{formatDate(category.modified_at)}</dd>
+                    </div>
+                    <div>
+                        <dt className="font-semibold">Creado por:</dt>
+                        <dd>{category.created_by || "N/A"}</dd>
+                    </div>
+                    <div>
+                        <dt className="font-semibold">Modificado por:</dt>
+                        <dd>{category.modified_by || "N/A"}</dd>
+                    </div>
+                </dl>
+
+                <div className="flex justify-end mt-6">
                     <button
                         onClick={onClose}
+                        aria-label="Cerrar modal"
                         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                     >
                         Cerrar

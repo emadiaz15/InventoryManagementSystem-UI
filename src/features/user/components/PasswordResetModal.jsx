@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
-
-import Modal from '../../../components/ui/Modal'; // Usa tu Modal base
+import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
-import ErrorMessage from '../../../components/common/ErrorMessage'; // Para mostrar errores
+import ErrorMessage from '../../../components/common/ErrorMessage';
 
-// Recibe userId, isOpen, onClose, y onSave (la función que llama al servicio resetUserPassword)
 const PasswordResetModal = ({ userId, isOpen, onClose, onSave }) => {
-  // --- Estados Internos ---
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState(''); // Para errores generales o de validación simple
-  const [loading, setLoading] = useState(false); // NUEVO: Estado de carga
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Limpiar estado al cerrar (buena práctica)
   useEffect(() => {
     if (!isOpen) {
       setPassword('');
@@ -22,12 +18,10 @@ const PasswordResetModal = ({ userId, isOpen, onClose, onSave }) => {
     }
   }, [isOpen]);
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Limpia errores previos
+    setError('');
 
-    // Validación frontend simple
     if (!password || !confirmPassword) {
       setError('Debes ingresar y confirmar la nueva contraseña.');
       return;
@@ -36,100 +30,75 @@ const PasswordResetModal = ({ userId, isOpen, onClose, onSave }) => {
       setError('Las contraseñas no coinciden.');
       return;
     }
-    if (password.length < 8) { // Validación básica de longitud
+    if (password.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
-    setLoading(true); // Inicia estado de carga
-
+    setLoading(true);
     try {
-      // Llama a la función onSave (que debería llamar a resetUserPassword)
-      // Pasamos ambas contraseñas por si el backend las necesita/valida
-      await onSave(userId, { password: password, confirmPassword: confirmPassword });
-
-      // Si onSave tuvo éxito (no lanzó error), cerramos el modal
-      // El mensaje de éxito lo puede mostrar el componente padre (UserEditModal)
+      await onSave(userId, { password, confirmPassword });
       onClose();
-
     } catch (err) {
-      // Muestra el error devuelto por el servicio/hook onSave
       setError(err.message || 'Error desconocido al cambiar la contraseña.');
-      console.error("Error en onSave de PasswordResetModal:", err);
+      console.error('Error al restablecer contraseña:', err);
     } finally {
-      setLoading(false); // Termina estado de carga
+      setLoading(false);
     }
   };
 
-  // No renderizar si no está abierto
   if (!isOpen) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Restablecer Contraseña">
-      {/* Contenido (children) */}
-      <>
-        {/* Muestra errores */}
-        {error && <ErrorMessage message={error} onClose={() => setError('')} />}
+      {error && <ErrorMessage message={error} onClose={() => setError('')} />}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Usamos FormInput si tiene estilos consistentes */}
-          <FormInput
-            label="Nueva Contraseña"
-            type="password"
-            name="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading} // Deshabilitar si está cargando
-          // Podrías pasar 'error' aquí si tu FormInput lo maneja
-          // error={error && error.includes('contraseña') ? error : ''}
-          />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormInput
+          label="Nueva Contraseña"
+          type="password"
+          name="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          disabled={loading}
+        />
 
-          <FormInput
-            label="Confirmar Nueva Contraseña"
-            type="password"
-            name="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
+        <FormInput
+          label="Confirmar Nueva Contraseña"
+          type="password"
+          name="confirmPassword"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          disabled={loading}
+          error={error && error.includes('coinciden') ? error : ''}
+        />
+
+        <div className="flex justify-end space-x-2 border-t border-neutral-200 pt-4 mt-4">
+          <button
+            type="button"
+            onClick={onClose}
             disabled={loading}
-            // Podrías pasar 'error' aquí si tu FormInput lo maneja
-            error={error && error.includes('coinciden') ? error : ''}
-          />
-
-          {/* Botones de Acción */}
-          <div className="flex justify-end space-x-2 border-t border-neutral-200 pt-4 mt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading} // Deshabilitar si está cargando
-              className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading} // Deshabilitar si está cargando
-              className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center`} // Añadido justify-center
-            >
-              {loading ? (
-                <>
-                  {/* Spinner SVG (opcional) */}
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Guardando...
-                </>
-              ) : (
-                'Guardar Contraseña'
-              )
-              }
-            </button>
-          </div>
-        </form>
-      </>
-      {/* Fin Contenido */}
+            className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading && (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4zm2 5.29A7.96 7.96 0 014 12H0c0 3.04 1.13 5.82 3 7.94l3-2.65z" />
+              </svg>
+            )}
+            {loading ? 'Guardando...' : 'Guardar Contraseña'}
+          </button>
+        </div>
+      </form>
     </Modal>
   );
 };

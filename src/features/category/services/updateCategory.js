@@ -1,28 +1,27 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
 
-// Servicio para actualizar una categoría (incluyendo el status)
+/**
+ * ✏️ Servicio para actualizar una categoría existente.
+ * @param {number|string} categoryId - ID de la categoría.
+ * @param {Object} updatedData - Campos a modificar: name, description, status.
+ * @returns {Object} - Categoría actualizada.
+ */
 export const updateCategory = async (categoryId, updatedData) => {
   try {
-    // Asegurar que se envían todos los campos requeridos por el backend
+    // Prepara payload evitando valores null
     const dataToSend = {
-      name: updatedData.name || "",  // Evita null en el backend
+      name: updatedData.name || "",
       description: updatedData.description || "",
-      status: updatedData.status,    // Asegurar que el estado es enviado
+      status: updatedData.status,
     };
 
-    const response = await axiosInstance.put(`/inventory/categories/${categoryId}/`, dataToSend);
-
-    return response.data; // Devuelve los datos actualizados de la categoría
+    const response = await djangoApi.put(`/inventory/categories/${categoryId}/`, dataToSend);
+    return response.data;
   } catch (error) {
-    console.error('Error al actualizar la categoría:', error.response?.data || error.message);
+    console.error("❌ Error al actualizar la categoría:", error.response?.data || error.message);
 
-    // Manejo de errores detallado:
-    if (error.response && error.response.data) {
-      const errorDetail = error.response.data.detail || 'Error al actualizar la categoría.';
-      throw new Error(errorDetail);
-    } else {
-      throw new Error('Error en la conexión o en el servidor.');
-    }
+    const detail = error.response?.data?.detail || "No se pudo actualizar la categoría.";
+    throw new Error(detail);
   }
 };
 

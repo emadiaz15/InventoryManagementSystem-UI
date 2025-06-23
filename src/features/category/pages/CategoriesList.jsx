@@ -9,8 +9,7 @@ import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
 
 // Hooks
-import { useCategoriesQuery } from "../queries/useCategoriesQuery";
-
+import { useCategoriesQuery } from "@/features/category/queries/useCategoriesList"
 const CategoryList = () => {
   const [filters, setFilters] = useState({ name: "" });
   const [showSuccess, setShowSuccess] = useState(false);

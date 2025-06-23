@@ -4,9 +4,9 @@ FROM node:18-slim
 # 📁 Directorio de trabajo
 WORKDIR /app
 
-# 📦 Copia e instala dependencias
+# 📦 Copia e instala dependencias (con opción para conflictos de peer dependencies)
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 RUN npm install -g serve
 
 # 📁 Copia todo el código

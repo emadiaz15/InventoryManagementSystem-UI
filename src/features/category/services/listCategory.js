@@ -1,31 +1,24 @@
-import { axiosInstance } from '../../../services/api'; // Asegúrate de que esta es tu instancia configurada de Axios
+import { djangoApi } from "@/api/clients";
 
-// Servicio para obtener la lista de categorías con paginación
-export const listCategories = async (url = '/inventory/categories/') => {
+/**
+ * 📋 Servicio para listar categorías con paginación.
+ * @param {string} [url="/inventory/categories/"] - Endpoint completo si se desea paginar.
+ * @returns {Object} - { results, next, previous }
+ */
+export const listCategories = async (url = "/inventory/categories/") => {
   try {
-    const response = await axiosInstance.get(url);
-    console.log('Categorias obtenidas:', response.data.results); // Verifica las categorías obtenidas
-    return response.data; // Devuelve los datos completos con 'results', 'next', 'previous', etc.
+    const response = await djangoApi.get(url);
+    return response.data;
   } catch (error) {
-    if (error.response) {
-      // El servidor respondió con un código de estado fuera del rango 2xx
-      console.error('Error de la API:', error.response.data);
-      if (error.response.status === 404) {
-        throw new Error('Categorías no encontradas.');
-      } else if (error.response.status === 500) {
-        throw new Error('Error interno del servidor.');
-      } else {
-        throw new Error(error.response.data.detail || 'Error al obtener las categorías.');
-      }
-    } else if (error.request) {
-      // La solicitud fue hecha, pero no se recibió respuesta
-      console.error('Error de conexión:', error.request);
-      throw new Error('No se pudo conectar con el servidor.');
-    } else {
-      // Algo sucedió en la configuración de la solicitud que desencadenó un error
-      console.error('Error de configuración:', error.message);
-      throw new Error('Error en la configuración de la solicitud.');
-    }
+    const status = error.response?.status;
+    const detail = error.response?.data?.detail;
+
+    // Manejo de errores con mensajes detallados
+    if (status === 404) throw new Error("Categorías no encontradas.");
+    if (status === 500) throw new Error("Error interno del servidor.");
+    if (detail) throw new Error(detail);
+
+    throw new Error("Error al obtener las categorías.");
   }
 };
 

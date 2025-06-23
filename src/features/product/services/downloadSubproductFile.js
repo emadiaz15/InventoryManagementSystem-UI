@@ -1,4 +1,4 @@
-import { djangoApi } from "@/services/clients";
+import { fetchProtectedFile } from "@/services/files/downloadService";
 
 /**
  * 📥 Descarga un archivo multimedia de un subproducto desde Django.
@@ -16,22 +16,22 @@ export const downloadSubproductFile = async (
   fileId,
   signal = null
 ) => {
-  const url = `/inventory/products/${productId}/subproducts/${subproductId}/files/${fileId}/download/`;
-
-  try {
-    const response = await djangoApi.get(url, {
-      responseType: "blob",
-      signal,
-    });
-    return URL.createObjectURL(response.data);
-  } catch (err) {
-    if (err.name === "AbortError") {
-      console.warn(`🚫 Descarga cancelada manualmente: ${fileId}`);
-      return null;
-    }
-
-    const status = err.response?.status || "???";
-    console.error(`❌ (${status}) Error al descargar subproduct file ${fileId}:`, err);
+  if (!productId || !subproductId || !fileId) {
+    console.warn("⚠️ Faltan parámetros para descargar archivo de subproducto.");
     return null;
   }
+
+  try {
+    return await fetchProtectedFile(productId, fileId, subproductId, signal);
+  } catch (error) {
+    console.error(
+      `❌ Error al descargar archivo ${fileId} del subproducto ${subproductId}:`,
+      error
+    );
+    return null;
+  }
+};
+
+export default {
+  downloadSubproductFile,
 };

@@ -1,171 +1,138 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Toolbar from "../../../components/common/Toolbar";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import ErrorMessage from "../../../components/common/ErrorMessage";
-import { listTypes } from "../services/listType";
-import { updateType } from "../services/updateType";
-import { createType } from "../services/createType";
-import { listCategories } from "../../category/services/listCategory";
 import Filter from "../../../components/ui/Filter";
 import Layout from "../../../pages/Layout";
 import Spinner from "../../../components/ui/Spinner";
 import TypeTable from "../components/TypeTable";
 import TypeModals from "../components/TypeModals";
+import { useTypesQuery } from "../queries/useTypesQuery";
+import { useQuery } from "@tanstack/react-query";
+import { listCategories } from "../../category/services/listCategory";
+import useTypeModal from "../hooks/useTypeModal";
+import { buildQueryString } from "@/utils/queryUtils";
 
 const TypeList = () => {
-  const [types, setTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [nextPageUrl, setNextPageUrl] = useState(null);
-  const [previousPageUrl, setPreviousPageUrl] = useState(null);
-  const [currentPageUrl, setCurrentPageUrl] = useState("/inventory/types/");
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [modalState, setModalState] = useState({ type: null, typeData: null });
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState(null);
   const [filters, setFilters] = useState({ name: "", category: "" });
-  const [categories, setCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [errorCategories, setErrorCategories] = useState(null);
-  const [initialLoaded, setInitialLoaded] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const fetchTypes = useCallback(async (url) => {
-    setLoading(true);
-    try {
-      const response = await listTypes(url);
-      setTypes(response.results || []);
-      setNextPageUrl(response.next);
-      setPreviousPageUrl(response.previous);
-      setCurrentPageUrl(url);
-      setError(null);
-    } catch (err) {
-      setError(err.message || "Error al obtener los tipos.");
-      setTypes([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { modalState, openModal, closeModal } = useTypeModal();
 
-  const fetchAllCategories = useCallback(async () => {
-    setLoadingCategories(true);
-    setErrorCategories(null);
-    try {
-      const response = await listCategories("/inventory/categories/?limit=1000&status=true");
-      setCategories(response.results || []);
-    } catch (err) {
-      setErrorCategories(err.message || "Error al obtener las categorías.");
-    } finally {
-      setLoadingCategories(false);
-    }
-  }, []);
+  const {
+    types,
+    loadingTypes,
+    error,
+    nextPageUrl,
+    previousPageUrl,
+    createMutation,
+    updateMutation,
+    deleteMutation,
+  } = useTypesQuery(filters);
 
-  const buildQueryString = useCallback((filterObj) => {
-    const queryParams = new URLSearchParams();
-    Object.entries(filterObj).forEach(([key, value]) => {
-      if (value) queryParams.append(key, value);
-    });
-    return queryParams.toString() ? `?${queryParams.toString()}` : "";
-  }, []);
+  const {
+    data: categories,
+    isLoading: loadingCategories,
+    error: errorCategories,
+  } = useQuery({
+    queryKey: ["categories", "all"],
+    queryFn: () =>
+      listCategories("/inventory/categories/?limit=1000&status=true").then(
+        (res) => res.results
+      ),
+    staleTime: 1000 * 60 * 5,
+  });
 
-  useEffect(() => {
-    const init = async () => {
-      const query = buildQueryString(filters);
-      const initialUrl = `/inventory/types/${query}`;
-      await Promise.all([fetchTypes(initialUrl), fetchAllCategories()]);
-      setInitialLoaded(true);
-    };
-    init();
-  }, [fetchTypes, buildQueryString, fetchAllCategories]);
-
-  useEffect(() => {
-    if (initialLoaded) {
-      const query = buildQueryString(filters);
-      const url = `/inventory/types/${query}`;
-      fetchTypes(url);
-    }
-  }, [filters, buildQueryString, fetchTypes, initialLoaded]);
-
-  const openModal = useCallback((type, data = null) => {
-    setModalState({ type, typeData: data });
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setModalState({ type: null, typeData: null });
-    setDeleteError(null);
-  }, []);
-
-  const handleActionSuccess = useCallback((message) => {
-    setSuccessMessage(message);
-    setShowSuccess(true);
+  const handleActionSuccess = (msg) => {
+    setSuccessMessage(msg);
     closeModal();
-    fetchTypes(currentPageUrl);
-    setTimeout(() => setShowSuccess(false), 3000);
-  }, [currentPageUrl, fetchTypes, closeModal]);
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
 
-  const handleDeleteType = useCallback(async (typeToDelete) => {
-    if (!typeToDelete) return;
-    setIsDeleting(true);
+  const handleCreateType = async (newTypeData) => {
     try {
-      await updateType(typeToDelete.id, { status: false });
+      await createMutation.mutateAsync(newTypeData);
+      handleActionSuccess(`Tipo "${newTypeData.name}" creado exitosamente.`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateType = async (typeId, updatedData) => {
+    try {
+      await updateMutation.mutateAsync({ id: typeId, ...updatedData });
+      handleActionSuccess(`Tipo "${updatedData.name}" actualizado.`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteType = async (typeToDelete) => {
+    try {
+      await deleteMutation.mutateAsync(typeToDelete.id);
       handleActionSuccess(`Tipo "${typeToDelete.name}" eliminado.`);
     } catch (err) {
-      setDeleteError(err.message || "Error al eliminar el tipo.");
-    } finally {
-      setIsDeleting(false);
+      console.error(err);
     }
-  }, [handleActionSuccess]);
-
-  const handleCreateType = useCallback(async (newTypeData) => {
-    const createdType = await createType(newTypeData);
-    handleActionSuccess(`Tipo "${createdType.name}" creado exitosamente.`);
-  }, [handleActionSuccess]);
-
-  const handleUpdateType = useCallback(async (typeId, updatedData) => {
-    await updateType(typeId, updatedData);
-    handleActionSuccess(`Tipo "${updatedData.name}" actualizado.`);
-  }, [handleActionSuccess]);
+  };
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   }, []);
 
-  const categoryOptionsForFilter = useMemo(() => [
-    { value: "", label: "Todas las Categorías" },
-    ...categories.map(cat => ({ value: cat.name, label: cat.name }))
-  ], [categories]);
+  const categoryOptionsForFilter = useMemo(() => {
+    if (!categories) return [{ value: "", label: "Todas las Categorías" }];
+    return [
+      { value: "", label: "Todas las Categorías" },
+      ...categories.map((cat) => ({ value: cat.name, label: cat.name })),
+    ];
+  }, [categories]);
 
-  const columns = useMemo(() => [
-    { key: "name", label: "Tipo", filterable: true, type: "text" },
-    { key: "category", label: "Categoría", filterable: true, type: "select", options: categoryOptionsForFilter }
-  ], [categoryOptionsForFilter]);
+  const columns = useMemo(
+    () => [
+      { key: "name", label: "Tipo", filterable: true, type: "text" },
+      {
+        key: "category",
+        label: "Categoría",
+        filterable: true,
+        type: "select",
+        options: categoryOptionsForFilter,
+      },
+    ],
+    [categoryOptionsForFilter]
+  );
 
-  const getCategoryName = useCallback((categoryId) => {
-    const id = typeof categoryId === "string" ? parseInt(categoryId, 10) : categoryId;
-    if (loadingCategories) return "Cargando...";
-    return categories.find(cat => cat.id === id)?.name || "SIN CATEGORÍA";
-  }, [categories, loadingCategories]);
+  const getCategoryName = useCallback(
+    (categoryId) => {
+      if (loadingCategories) return "Cargando...";
+      return (
+        categories?.find((cat) => cat.id === categoryId)?.name || "SIN CATEGORÍA"
+      );
+    },
+    [categories, loadingCategories]
+  );
 
   return (
     <>
       <Layout>
-        {showSuccess && (
+        {successMessage && (
           <div className="fixed top-20 right-5 z-[10000]">
-            <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+            <SuccessMessage message={successMessage} onClose={() => setSuccessMessage("")} />
           </div>
         )}
 
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar title="Lista de Tipos" onButtonClick={() => openModal("create")} buttonText="Nuevo Tipo" />
-          <Filter columns={columns} onFilterChange={handleFilterChange} />
 
-          {error && !loading && (
+          <Filter columns={columns} onFilterChange={handleFilterChange} initialFilters={filters} />
+
+          {error && (
             <div className="my-4">
-              <ErrorMessage message={error} onClose={() => setError(null)} />
+              <ErrorMessage message={error.message || "Error al cargar los tipos."} />
             </div>
           )}
 
-          {loading ? (
+          {loadingTypes ? (
             <div className="my-8 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
@@ -176,10 +143,6 @@ const TypeList = () => {
               openEditModal={(data) => openModal("edit", data)}
               openDeleteConfirmModal={(data) => openModal("deleteConfirm", data)}
               getCategoryName={getCategoryName}
-              goToNextPage={nextPageUrl ? () => fetchTypes(nextPageUrl) : null}
-              goToPreviousPage={previousPageUrl ? () => fetchTypes(previousPageUrl) : null}
-              nextPageUrl={nextPageUrl}
-              previousPageUrl={previousPageUrl}
             />
           ) : (
             <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
@@ -195,10 +158,7 @@ const TypeList = () => {
         onCreateType={handleCreateType}
         onUpdateType={handleUpdateType}
         onDeleteType={handleDeleteType}
-        isDeleting={isDeleting}
-        deleteError={deleteError}
-        clearDeleteError={() => setDeleteError(null)}
-        categories={categories}
+        categories={categories || []}
         loadingCategories={loadingCategories}
         getCategoryName={getCategoryName}
       />

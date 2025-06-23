@@ -2,12 +2,13 @@ import {
     createContext,
     useState,
     useEffect,
-    useContext
+    useContext,
 } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
-import { axiosInstance } from "../services/api";
+import { djangoApi } from "@/api/clients";
 import { logoutHelper } from "./authHelpers";
+import { getAccessToken, clearTokens } from "@/utils/sessionUtils";
 
 const AuthContext = createContext(null);
 
@@ -20,45 +21,28 @@ export const AuthProvider = ({ children }) => {
 
     const navigate = useNavigate();
 
-    // 📷 Cargar imagen de perfil si es protegida (usa blob), sino setea directamente
     const loadProfileImage = async (userData) => {
         const url = userData?.image_url;
-        if (!url) {
-            setProfileImage(null);
-            return;
-        }
-
-        // 👉 Si necesitas proteger las imágenes, puedes reactivar esta lógica:
-        // try {
-        //   const blobUrl = await fetchBlobFromUrl(url);
-        //   setProfileImage(blobUrl);
-        // } catch (err) {
-        //   console.warn("❌ Imagen de perfil no cargada:", err);
-        //   setProfileImage(null);
-        // }
-
-        // ✅ Si es una URL pública servida desde MinIO o Django, úsala directamente:
-        setProfileImage(url);
+        setProfileImage(url || null);
     };
 
     useEffect(() => {
         const validateToken = async () => {
-            const accessToken = sessionStorage.getItem("accessToken");
-            const fastapiToken = sessionStorage.getItem("fastapiToken");
+            const accessToken = getAccessToken();
 
-            if (!accessToken || !fastapiToken) {
+            if (!accessToken) {
                 setIsAuthenticated(false);
                 setLoading(false);
                 return;
             }
 
             try {
-                const { data } = await axiosInstance.get("/users/profile/");
+                const { data } = await djangoApi.get("/users/profile/");
                 setUser(data);
                 setIsAuthenticated(true);
                 await loadProfileImage(data);
             } catch (e) {
-                await logout(); // 🔐 Cierra sesión si falla
+                await logout(); // manejar expiración
             } finally {
                 setLoading(false);
             }
@@ -72,7 +56,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
 
         try {
-            const res = await axiosInstance.post("/users/login/", {
+            const res = await djangoApi.post("/users/login/", {
                 username,
                 password,
             });
@@ -80,19 +64,16 @@ export const AuthProvider = ({ children }) => {
             const {
                 access_token,
                 refresh_token,
-                fastapi_token,
                 user: userData,
             } = res.data;
 
             sessionStorage.setItem("accessToken", access_token);
             sessionStorage.setItem("refreshToken", refresh_token);
-            sessionStorage.setItem("fastapiToken", fastapi_token);
 
             setUser(userData);
             setIsAuthenticated(true);
             await loadProfileImage(userData);
 
-            // 🚀 Forzar reload para recargar estado y UI
             window.location.href = "/dashboard";
         } catch (err) {
             setError(err?.response?.data?.detail || "Credenciales inválidas");
@@ -105,9 +86,9 @@ export const AuthProvider = ({ children }) => {
         try {
             await logoutHelper();
         } catch {
-            /* noop */
+            // noop
         } finally {
-            sessionStorage.clear();
+            clearTokens();
             setUser(null);
             setIsAuthenticated(false);
             setProfileImage(null);
@@ -126,7 +107,7 @@ export const AuthProvider = ({ children }) => {
                 error,
                 profileImage,
                 login,
-                logout
+                logout,
             }}
         >
             {children}

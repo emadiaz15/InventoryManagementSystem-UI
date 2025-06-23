@@ -1,4 +1,4 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
 
 /**
  * Actualiza una orden de corte específica
@@ -10,7 +10,7 @@ import { axiosInstance } from '../../../services/api';
  */
 export const updateCuttingOrder = async (orderId, updateData, method = 'PUT') => {
   try {
-    const response = await axiosInstance({
+    const response = await djangoApi({
       url: `/cutting/cutting-orders/${orderId}/`,
       method,
       data: updateData

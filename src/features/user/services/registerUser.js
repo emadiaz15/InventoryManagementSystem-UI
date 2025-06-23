@@ -1,18 +1,26 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
+import { clearUsersCache } from "./userCache";
 
+/**
+ * 🧾 Registra un nuevo usuario en el sistema.
+ *
+ * @param {FormData} formData - Datos del formulario de registro.
+ * @returns {Promise<Object>} - Usuario creado.
+ */
 export const registerUser = async (formData) => {
-  try {
-    const token = sessionStorage.getItem('accessToken');
-    if (!token) {
-      throw new Error("Token de acceso no encontrado. Por favor, inicia sesión.");
-    }
+  if (!formData || !(formData instanceof FormData)) {
+    throw new Error("Datos del formulario inválidos.");
+  }
 
-    const response = await axiosInstance.post('/users/register/', formData, {
+  try {
+    const response = await djangoApi.post('/users/register/', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data', // axios lo infiere, pero lo dejamos explícito
       },
     });
+
+    // ✅ Limpiar cache al crear nuevo usuario
+    clearUsersCache();
 
     return response.data;
 
@@ -35,4 +43,8 @@ export const registerUser = async (formData) => {
 
     throw new Error('Error en la conexión o en el servidor');
   }
+};
+
+export default {
+  registerUser,
 };

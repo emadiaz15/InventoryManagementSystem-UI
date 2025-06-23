@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { registerUser } from '../services/registerUser';
+import { invalidateCachedUsersByUrl } from '../services/userCache';
 
 const useUserForm = (onSuccess = () => {}) => {
   const [formData, setFormData] = useState({
@@ -86,6 +87,10 @@ const useUserForm = (onSuccess = () => {}) => {
 
       const createdUser = await registerUser(dataToSend);
       onSuccess(createdUser);
+
+      // 🧹 Invalidar la caché para que se actualice la lista de usuarios
+      invalidateCachedUsersByUrl("/users/list/");
+
       return createdUser;
     } catch (error) {
       console.error('❌ Error al registrar usuario (hook):', error);

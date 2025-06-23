@@ -1,21 +1,20 @@
-import { axiosInstance } from '../../../services/api'; // Asegúrate de que esta es tu instancia configurada de Axios
+import { djangoApi } from "@/api/clients";
 
-// Servicio para crear una nueva categoría
+/**
+ * 🆕 Servicio para crear una nueva categoría.
+ * @param {Object} categoryData - Datos del formulario (nombre, descripción, estado).
+ * @returns {Object} - Objeto de categoría creada.
+ */
 export const createCategory = async (categoryData) => {
   try {
-    // Enviar solicitud POST para crear una nueva categoría
-    const response = await axiosInstance.post('/inventory/categories/create/', categoryData);
-    return response.data; // Devuelve los datos de la categoría creada
+    const response = await djangoApi.post("/inventory/categories/create/", categoryData);
+    return response.data;
   } catch (error) {
-    console.error('Error al crear la categoría:', error.response?.data || error.message);
-    
-    // Manejar errores específicos y retornar un mensaje de error apropiado
-    if (error.response && error.response.data) {
-      const errorDetail = error.response.data.detail || 'Error al crear la categoría.';
-      throw new Error(errorDetail); // Si existe un detalle en el error, lo usamos
-    } else {
-      throw new Error('Error en la conexión o en el servidor.'); // Error genérico si no hay respuesta
-    }
+    console.error("❌ Error al crear la categoría:", error.response?.data || error.message);
+
+    // Captura detalle específico o usa mensaje genérico
+    const detail = error.response?.data?.detail || "No se pudo crear la categoría.";
+    throw new Error(detail);
   }
 };
 

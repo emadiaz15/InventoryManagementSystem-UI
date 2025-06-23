@@ -1,22 +1,33 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
+import { getCachedUsers, setCachedUsers } from "./userCache";
 
 /**
- * Retrieves a filtered list of users.
+ * 🔍 Filtra usuarios con soporte de caché local.
  *
- * @param {Object} filters - An object with filter key-value pairs (e.g., { is_active: "true", is_staff: "false" }).
- * @param {string} [url='/users/list/'] - (Optional) The endpoint URL. It can be modified if needed.
- * @returns {Promise<Object>} - The API response data.
+ * @param {Object} filters - Filtros clave-valor (e.g., { is_active: "true" }).
+ * @param {string} [url='/users/list/'] - URL base del endpoint.
+ * @returns {Promise<Object>} - Respuesta paginada de la API.
  */
 export const filterUsers = async (filters = {}, url = '/users/list/') => {
-  // Build query parameters from the filters object
   const params = new URLSearchParams(filters).toString();
   const finalUrl = params ? `${url}?${params}` : url;
 
+  const cached = getCachedUsers(finalUrl);
+  if (cached) return cached;
+
   try {
-    const response = await axiosInstance.get(finalUrl);
+    const response = await djangoApi.get(finalUrl);
+
+    // Guardamos la respuesta en caché para esa URL
+    setCachedUsers(finalUrl, response.data);
+
     return response.data;
   } catch (error) {
-    console.error('Error filtering users:', error.response?.data || error.message);
-    throw error;
+    console.error('❌ Error filtrando usuarios:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.detail || 'Error al filtrar usuarios');
   }
+};
+
+export default {
+  filterUsers,
 };

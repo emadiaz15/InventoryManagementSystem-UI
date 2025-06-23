@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useDownloadProductFile } from "./useProductDownloadFile";
+import { getFileId } from "@/utils/fileUtils"; // nueva función compartida
 
-export const useEnrichedProductFiles = (productId, rawFiles = [], source = 'fastapi') => {
+export const useEnrichedProductFiles = (productId, rawFiles = [], source = "fastapi") => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -16,8 +17,8 @@ export const useEnrichedProductFiles = (productId, rawFiles = [], source = 'fast
     try {
       const enriched = await Promise.all(
         rawFiles.map(async (f) => {
-          const fileId = f.drive_file_id || f.id;
-          const url = f.url || await downloadFile(productId, fileId, source);
+          const fileId = getFileId(f);
+          const url = f.url || (await downloadFile(productId, fileId, source));
           return {
             ...f,
             id: fileId,
@@ -27,7 +28,7 @@ export const useEnrichedProductFiles = (productId, rawFiles = [], source = 'fast
           };
         })
       );
-      setFiles(enriched.filter(f => f.url));
+      setFiles(enriched.filter((f) => f.url));
     } catch (err) {
       console.error("❌ Error al enriquecer archivos:", err);
       setLoadError("No se pudieron cargar los archivos multimedia.");
@@ -38,7 +39,8 @@ export const useEnrichedProductFiles = (productId, rawFiles = [], source = 'fast
 
   useEffect(() => {
     enrichFiles();
-  }, [productId, JSON.stringify(rawFiles)]); // dependencias clave
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, rawFiles]);
 
   return {
     files,

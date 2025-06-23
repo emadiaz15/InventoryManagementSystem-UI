@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from "react";
-import { fetchProtectedFile } from "../../../services/mediaService";
+import { fetchProtectedFile } from "@/services/files/fileAccessService";
 
 /**
- * Hook para descargar un archivo multimedia protegido (FastAPI o Django).
+ * Hook para descargar un archivo multimedia protegido (solo Django).
+ *
  * @returns {{
  *   downloading: boolean,
  *   downloadError: string | null,
- *   downloadFile: (productId: number, fileId: string, source?: 'django') => Promise<string | null>
+ *   downloadFile: (productId: number, fileId: string) => Promise<string | null>,
+ *   abortDownload: () => void
  * }}
  */
 export const useDownloadProductFile = () => {
@@ -14,7 +16,7 @@ export const useDownloadProductFile = () => {
   const [downloadError, setDownloadError] = useState(null);
   const controllerRef = useRef(null);
 
-  const downloadFile = useCallback(async (productId, fileId, source = "django") => {
+  const downloadFile = useCallback(async (productId, fileId) => {
     if (!productId || !fileId) {
       setDownloadError("ID de producto o archivo no válidos.");
       return null;
@@ -25,7 +27,7 @@ export const useDownloadProductFile = () => {
     setDownloadError(null);
 
     try {
-      const blobUrl = await fetchProtectedFile(productId, fileId, source, controllerRef.current.signal);
+      const blobUrl = await fetchProtectedFile(productId, fileId, null, controllerRef.current.signal);
       return blobUrl;
     } catch (err) {
       if (err.name === "AbortError") {
@@ -40,7 +42,6 @@ export const useDownloadProductFile = () => {
     }
   }, []);
 
-  // Limpia descargas pendientes al desmontar
   const abortDownload = () => {
     if (controllerRef.current) {
       controllerRef.current.abort();

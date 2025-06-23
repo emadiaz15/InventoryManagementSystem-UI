@@ -1,54 +1,56 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
+import { invalidateCachedUsersByUrl } from "./userCache";
 
-export const updateUser = async (userId, userData) => {
+/**
+ * ✏️ Actualiza los datos de un usuario.
+ *
+ * @param {number|string} userId - ID del usuario a actualizar.
+ * @param {Object} userData - Datos del usuario a enviar.
+ * @param {string} [listUrl="/users/list/"] - URL específica para invalidar cache si es necesario.
+ * @returns {Promise<Object>} - Usuario actualizado.
+ */
+export const updateUser = async (userId, userData, listUrl = "/users/list/") => {
+  if (!userId) throw new Error("ID de usuario requerido para actualizar.");
+
   try {
     let dataToSend;
-    // Verifica si se ha seleccionado un archivo para la imagen
+
+    // Si la imagen es un File, enviamos FormData
     if (userData.image && userData.image instanceof File) {
       dataToSend = new FormData();
-      // Añade todos los campos al FormData
-      for (const key in userData) {
-        if (userData.hasOwnProperty(key)) {
-          dataToSend.append(key, userData[key]);
+      Object.entries(userData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          dataToSend.append(key, value);
         }
-      }
+      });
     } else {
-      // Si no hay archivo, se envía el JSON directamente
+      // Caso contrario, envío JSON plano
       dataToSend = userData;
     }
 
-    // Realiza la petición PUT
-    const response = await axiosInstance.put(`/users/${userId}/`, dataToSend);
+    const response = await djangoApi.put(`/users/${userId}/`, dataToSend);
+
+    // 🧹 Invalidamos la caché solo si corresponde (ejemplo: listado cacheado)
+    if (listUrl) {
+      invalidateCachedUsersByUrl(listUrl);
+    }
+
     return response.data;
   } catch (error) {
-    console.error('Error al actualizar el perfil del usuario:', error.response?.data || error.message);
-    if (error.response && error.response.data) {
-      const errorMsg = error.response.data;
-      if (errorMsg.username) {
-        throw new Error("El nombre de usuario ya está en uso.");
-      }
-      if (errorMsg.email) {
-        throw new Error("El email ya está registrado.");
-      }
-      if (errorMsg.dni) {
-        throw new Error("El DNI ya está registrado.");
-      }
-      if (typeof errorMsg === 'object') {
-        const fieldErrors = Object.entries(errorMsg)
-          .map(([field, messages]) =>
-            Array.isArray(messages)
-              ? `${field}: ${messages.join(', ')}`
-              : `${field}: ${messages}`
-          );
-        throw new Error(fieldErrors.join(' | '));
-      }
-      throw new Error(errorMsg.detail || 'Error al actualizar el perfil del usuario.');
-    } else {
-      throw new Error('Error en la conexión o en el servidor.');
+    const responseData = error.response?.data;
+    console.error("❌ Error al actualizar el usuario:", responseData || error.message);
+
+    if (responseData && typeof responseData === "object") {
+      const fieldErrors = Object.entries(responseData).map(([field, messages]) =>
+        Array.isArray(messages)
+          ? `${field}: ${messages.join(", ")}`
+          : `${field}: ${messages}`
+      );
+      throw new Error(fieldErrors.join(" | "));
     }
+
+    throw new Error("Error al actualizar el usuario. Intenta nuevamente.");
   }
 };
 
-export default {
-  updateUser,
-};
+export default updateUser;

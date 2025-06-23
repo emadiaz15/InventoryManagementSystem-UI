@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useDownloadSubproductFile } from "./useDownloadSubproductFile";
+import { getFileId } from "@/utils/fileUtils"; // sugerido para DRY
 
 /**
- * Enriquecer archivos crudos con URL descargable, nombre y tipo MIME.
+ * Enriquecer archivos crudos de subproducto con URL descargable, nombre y tipo MIME.
  */
-export const useEnrichedSubproductFiles = (productId, subproductId, rawFiles = [], source = "django") => {
+export const useEnrichedSubproductFiles = (productId, subproductId, rawFiles = []) => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -19,8 +20,8 @@ export const useEnrichedSubproductFiles = (productId, subproductId, rawFiles = [
     try {
       const enriched = await Promise.all(
         rawFiles.map(async (f) => {
-          const fileId = f.drive_file_id || f.id;
-          const url = f.url || await downloadFile(productId, subproductId, fileId, source);
+          const fileId = getFileId(f);
+          const url = f.url || await downloadFile(productId, subproductId, fileId);
           return {
             ...f,
             id: fileId,
@@ -41,7 +42,7 @@ export const useEnrichedSubproductFiles = (productId, subproductId, rawFiles = [
 
   useEffect(() => {
     enrichFiles();
-  }, [productId, subproductId, JSON.stringify(rawFiles)]);
+  }, [productId, subproductId, rawFiles]); // eliminado stringify
 
   return {
     files,
