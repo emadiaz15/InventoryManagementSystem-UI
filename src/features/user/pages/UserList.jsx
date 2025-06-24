@@ -39,6 +39,7 @@ const UserList = () => {
     next: goToNextPage,
     previous: goToPreviousPage,
     currentUrl: currentUsersUrl,
+    invalidate,
   } = useUsers(filters);
 
   useEffect(() => {
@@ -73,10 +74,10 @@ const UserList = () => {
       setSuccessMessage(message);
       setShowSuccess(true);
       closeModal();
-      fetchUsers(currentUsersUrl);
+      invalidate();
       setTimeout(() => setShowSuccess(false), 3000);
     },
-    [closeModal, fetchUsers, currentUsersUrl]
+    [closeModal, invalidate]
   );
 
   const handleRegisterUser = useCallback(async (newUserData) => {
@@ -107,7 +108,7 @@ const UserList = () => {
         updatedResponse?.user?.username ||
         "desconocido";
       handleActionSuccess(`Usuario "${username}" actualizado.`);
-      return updatedResponse; // ✅ Asegura que `UserEditModal` pueda usar el valor retornado
+      return updatedResponse;
     } catch (err) {
       const errorMsg =
         err.response?.data?.detail ||

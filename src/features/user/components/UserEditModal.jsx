@@ -80,7 +80,6 @@ const UserEditModal = ({
             ...prev,
             image: null,
           }));
-
           user.image = deletedUser.image || '';
           user.image_url = deletedUser.image_url || null;
 
@@ -104,6 +103,7 @@ const UserEditModal = ({
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const errors = {};
+
     if (!formData.username.trim()) errors.username = 'El nombre de usuario es obligatorio.';
     if (!formData.name.trim()) errors.name = 'El nombre es obligatorio.';
     if (!formData.last_name.trim()) errors.last_name = 'El apellido es obligatorio.';
@@ -129,10 +129,11 @@ const UserEditModal = ({
     });
 
     setInternalLoading(true);
+
     try {
       const updatedUser = await onSave(user.id, dataToSend);
 
-      if (formData.image && user.image) {
+      if (formData.image) {
         try {
           const imageUpdateResult = await updateProfileImage(formData.image, user.image, user.id);
           user.image = imageUpdateResult.image;
@@ -151,10 +152,8 @@ const UserEditModal = ({
         onClose();
       }, 2000);
     } catch (err) {
-      const message = err?.message || 'Error al actualizar el usuario.';
-      const fieldErrors = err?.fieldErrors || {};
-      setInternalError(message);
-      setValidationErrors(fieldErrors);
+      setInternalError(err?.message || 'Error al actualizar el usuario.');
+      setValidationErrors(err?.fieldErrors || {});
     } finally {
       setInternalLoading(false);
     }
@@ -180,6 +179,7 @@ const UserEditModal = ({
           <SuccessMessage message={successMessage} onClose={() => setSuccessMessage('')} />
         </div>
       )}
+
       <Modal isOpen={isOpen} onClose={onClose} title={`Editar Usuario: ${user?.username || ''}`} position="center">
         <form onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
           {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}

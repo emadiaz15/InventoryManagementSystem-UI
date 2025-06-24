@@ -1,19 +1,22 @@
 import { djangoApi } from "@/api/clients";
-import { clearUsersCache } from "./userCache";  // Import correcto
+import { clearUsersCache } from "./userCache";
+import { extractFileName } from "@/utils/extractFileName";  // ✅ Import del helper
 
 /**
  * 🗑️ Elimina la imagen de perfil de un usuario.
  *
- * @param {string} fileId - ID del archivo actual en el sistema.
+ * @param {string} filePath - Ruta completa o parcial del archivo en el sistema.
  * @param {number|null} userId - ID del usuario (requerido solo si lo hace un admin).
  * @returns {Promise<Object>} - Usuario actualizado sin imagen de perfil.
  */
-export const deleteProfileImage = async (fileId, userId = null) => {
-  if (!fileId) throw new Error("Falta el ID del archivo a eliminar.");
+export const deleteProfileImage = async (filePath, userId = null) => {
+  if (!filePath) throw new Error("Falta el ID del archivo a eliminar.");
+
+  const fileName = extractFileName(filePath);
 
   const url = userId
-    ? `/users/image/${fileId}/delete/?user_id=${userId}`
-    : `/users/image/${fileId}/delete/`;
+    ? `/users/image/${fileName}/delete/?user_id=${userId}`
+    : `/users/image/${fileName}/delete/`;
 
   try {
     const response = await djangoApi.delete(url);

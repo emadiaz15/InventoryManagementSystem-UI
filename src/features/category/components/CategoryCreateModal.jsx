@@ -9,33 +9,41 @@ const CategoryCreateModal = ({ isOpen, onClose, onCreateSuccess }) => {
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const { createMutation } = useCategoriesQuery(); // 🧠 Ya tiene la mutación
-  const isLoading = createMutation.isPending;
+  const { createCategory, createStatus } = useCategoriesQuery();
+  const isLoading = createStatus === "pending";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-    if (!formData.name) {
+
+    if (!formData.name?.trim()) {
       setFormError('El nombre de la categoría es obligatorio.');
       return;
     }
 
     try {
-      const result = await createMutation.mutateAsync(formData);
+      const result = await createCategory(formData);
+
+      if (!result || !result.name) {
+        throw new Error('Error inesperado: la respuesta del servidor no contiene el nombre.');
+      }
+
       setSuccessMessage(`Categoría "${result.name}" creada con éxito.`);
-      onCreateSuccess && onCreateSuccess(`Categoría "${result.name}" creada con éxito.`);
+      if (onCreateSuccess) onCreateSuccess(`Categoría "${result.name}" creada con éxito.`);
+
       setTimeout(() => {
         setSuccessMessage('');
         setFormData({ name: '', description: '' });
         onClose();
       }, 2000);
+
     } catch (err) {
-      const msg = err.response?.data?.detail || err.message || 'Error al crear la categoría.';
+      const msg = err?.response?.data?.detail || err?.message || 'Error al crear la categoría.';
       setFormError(msg);
     }
   };

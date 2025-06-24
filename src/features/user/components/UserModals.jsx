@@ -9,7 +9,7 @@ import PasswordResetModal from './PasswordResetModal';
 const UserModals = ({
     modalState,
     closeModal,
-    onregisterUser,
+    onRegisterUser,
     onUpdateUser,
     onDeleteUser,
     onPasswordReset,
@@ -42,7 +42,7 @@ const UserModals = ({
                 <UserRegisterModal
                     isOpen
                     onClose={closeModal}
-                    onCreate={onregisterUser}
+                    onCreate={onRegisterUser}
                     onCreateSuccess={handleActionSuccess}
                 />
             )}

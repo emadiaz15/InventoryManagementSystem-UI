@@ -13,9 +13,8 @@ const CategoryModals = ({
     deleteError,
     clearDeleteError,
     handleActionSuccess,
+    handleCreateCategory,
 }) => {
-    const isView = modalState.type === "view";
-
     const commonProps = {
         isOpen: modalState.type !== null,
         onClose: closeModal,
@@ -36,14 +35,15 @@ const CategoryModals = ({
                 <CategoryEditModal
                     {...commonProps}
                     category={modalState.category}
-                    onSaveSuccess={(updatedData) =>
-                        handleUpdateCategory(modalState.category.id, updatedData)
-                    }
+                    onSaveSuccess={handleUpdateCategory}
                 />
             )}
 
-            {isView && modalState.category && (
-                <CategoryViewModal {...commonProps} category={modalState.category} />
+            {modalState.type === "view" && modalState.category && (
+                <CategoryViewModal
+                    {...commonProps}
+                    category={modalState.category}
+                />
             )}
 
             {modalState.type === "deleteConfirm" && modalState.category && (

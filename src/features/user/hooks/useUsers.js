@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { listUsers } from "../services/listUsers";
 import { invalidateCachedUsersByUrl } from "../services/userCache";
 
+/**
+ * 📦 Hook para gestionar listado de usuarios con filtros, paginación e invalidación de caché.
+ *
+ * @param {Object} filters - Filtros aplicados a la consulta.
+ * @param {string} initialUrl - Endpoint inicial de la API.
+ * @returns {Object} - Estado y funciones del listado.
+ */
 const useUsers = (filters, initialUrl = "/users/list/") => {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -10,55 +17,51 @@ const useUsers = (filters, initialUrl = "/users/list/") => {
   const [previousPageUrl, setPreviousPageUrl] = useState(null);
   const [currentUrl, setCurrentUrl] = useState(initialUrl);
 
+  // 🔧 Construye query string basado en filtros
   const buildQueryString = useCallback((filterObj) => {
     const queryParams = new URLSearchParams();
+
     Object.entries(filterObj).forEach(([key, value]) => {
-      let apiValue = value;
-      if (apiValue && apiValue !== '') {
+      if (value !== undefined && value !== null && value !== '') {
+        let apiValue = value;
+
         if (key === "is_active") {
-          if (typeof apiValue === 'string') {
-            if (apiValue.toLowerCase() === "activo") apiValue = "true";
-            else if (apiValue.toLowerCase() === "inactivo") apiValue = "false";
-            else if (apiValue !== 'true' && apiValue !== 'false') apiValue = '';
-          } else {
-            apiValue = apiValue ? 'true' : 'false';
-          }
-        } else if (key === "is_staff") {
-          if (typeof apiValue === 'string') {
-            if (apiValue.toLowerCase() === "admin") apiValue = "true";
-            else if (apiValue.toLowerCase() === "operario") apiValue = "false";
-            else if (apiValue !== 'true' && apiValue !== 'false') apiValue = '';
-          } else {
-            apiValue = apiValue ? 'true' : 'false';
-          }
+          apiValue = (apiValue === true || apiValue === "true" || apiValue.toLowerCase() === "activo") ? "true" :
+                     (apiValue === false || apiValue === "false" || apiValue.toLowerCase() === "inactivo") ? "false" : "";
         }
-        if (apiValue) {
-          queryParams.append(key, apiValue);
+
+        if (key === "is_staff") {
+          apiValue = (apiValue === true || apiValue === "true" || apiValue.toLowerCase() === "admin") ? "true" :
+                     (apiValue === false || apiValue === "false" || apiValue.toLowerCase() === "operario") ? "false" : "";
         }
+
+        if (apiValue) queryParams.append(key, apiValue);
       }
     });
+
     const queryString = queryParams.toString();
-    console.log("Built query string (HOOK):", queryString);
+    console.log("🔧 Query string generado (HOOK):", queryString);
     return queryString ? `?${queryString}` : "";
   }, []);
 
+  // 📥 Trae usuarios desde API
   const fetchUsers = useCallback(async (url) => {
-    const urlToFetch = url;
     setLoadingUsers(true);
     setError(null);
-    console.log(`Workspaceing users (hook) from URL: ${urlToFetch}`);
+    console.log(`📡 Consultando usuarios desde: ${url}`);
+
     try {
-      const data = await listUsers(urlToFetch);
+      const data = await listUsers(url);
       if (data && Array.isArray(data.results)) {
         setUsers(data.results);
         setNextPageUrl(data.next);
         setPreviousPageUrl(data.previous);
-        setCurrentUrl(urlToFetch);
+        setCurrentUrl(url);
       } else {
         throw new Error("Respuesta inesperada de la API.");
       }
     } catch (error) {
-      console.error("Error fetching users (hook):", error);
+      console.error("❌ Error al obtener usuarios:", error);
       setError(error);
       setUsers([]);
     } finally {
@@ -66,26 +69,25 @@ const useUsers = (filters, initialUrl = "/users/list/") => {
     }
   }, []);
 
+  // 📊 Reacciona a cambios de filtros
   useEffect(() => {
-    console.log("Filters changed in hook, triggering fetch:", filters);
     const query = buildQueryString(filters);
     const baseUrl = initialUrl.split('?')[0];
     const newUrl = `${baseUrl}${query}`;
     fetchUsers(newUrl);
   }, [filters, initialUrl, buildQueryString, fetchUsers]);
 
+  // ⏭ Paginación siguiente
   const next = useCallback(() => {
-    if (nextPageUrl) {
-      fetchUsers(nextPageUrl);
-    }
+    if (nextPageUrl) fetchUsers(nextPageUrl);
   }, [nextPageUrl, fetchUsers]);
 
+  // ⏮ Paginación anterior
   const previous = useCallback(() => {
-    if (previousPageUrl) {
-      fetchUsers(previousPageUrl);
-    }
+    if (previousPageUrl) fetchUsers(previousPageUrl);
   }, [previousPageUrl, fetchUsers]);
 
+  // ♻️ Invalidar cache y refrescar
   const invalidate = useCallback(() => {
     if (currentUrl) {
       invalidateCachedUsersByUrl(currentUrl);

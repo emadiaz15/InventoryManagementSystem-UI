@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/ui/Modal';
 import Spinner from '../../../components/ui/Spinner';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
-import { fetchProtectedBlob } from '@/services/files/fileAccessService';
+import { downloadProfileImage } from '../services/downloadProfileImage';
+
 const TIMEOUT_MS = 7000;
 
 const UserViewModal = ({ user, isOpen, onClose }) => {
@@ -15,7 +16,7 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
         setImageStatus('loading');
         setImageUrl(null);
 
-        let timeoutId;
+        let timeoutId = null;
         let isMounted = true;
 
         const loadImage = async () => {
@@ -25,18 +26,16 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
             }
 
             try {
-                const blobUrl = await fetchProtectedBlob(user.image_url);
-                if (isMounted && blobUrl) {
-                    clearTimeout(timeoutId);
-                    setImageUrl(blobUrl);
+                const url = await downloadProfileImage(user.image_url);
+                if (isMounted && url) {
+                    setImageUrl(url);
                     setImageStatus('loaded');
                 } else {
                     throw new Error('Sin URL válida');
                 }
             } catch (error) {
                 if (isMounted) {
-                    clearTimeout(timeoutId);
-                    console.warn('❌ Error cargando imagen protegida:', error);
+                    console.warn('❌ Error cargando imagen:', error);
                     setImageStatus('error');
                 }
             }
@@ -53,7 +52,7 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
 
         return () => {
             isMounted = false;
-            clearTimeout(timeoutId);
+            if (timeoutId) clearTimeout(timeoutId);
         };
     }, [user, isOpen]);
 
