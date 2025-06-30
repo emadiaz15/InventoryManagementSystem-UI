@@ -18,7 +18,6 @@ const TypeTable = ({ types, openViewModal, openEditModal, openDeleteConfirmModal
                 <button
                     key={`view-${type.id}`}
                     onClick={() => {
-                        console.log("Eye icon clicked for type:", type);
                         openViewModal(type);
                     }}
                     className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
