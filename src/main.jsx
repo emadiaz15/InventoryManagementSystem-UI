@@ -14,12 +14,16 @@ const isDev = import.meta.env.DEV;
 
 async function renderApp() {
   let Devtools = () => null;
+
+  // Carga dinámica solo en desarrollo
   if (isDev) {
     const mod = await import('@tanstack/react-query-devtools');
     Devtools = mod.ReactQueryDevtools;
   }
 
-  ReactDOM.createRoot(document.getElementById('root')).render(
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+
+  root.render(
     <React.StrictMode>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
@@ -28,7 +32,7 @@ async function renderApp() {
               <App />
             </DataPrefetchProvider>
           </AuthProvider>
-          <Devtools initialIsOpen={false} />
+          {isDev && <Devtools initialIsOpen={false} />}
         </QueryClientProvider>
       </BrowserRouter>
     </React.StrictMode>
