@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     ArrowUpIcon,
@@ -55,7 +55,7 @@ const ProductStockEvent = () => {
     const [nextPage, setNextPage] = useState(null);
     const [previousPage, setPreviousPage] = useState(null);
 
-    const fetchStockEvents = async (
+    const fetchStockEvents = useCallback(async (
         url = `/api/v1/stocks/products/${productId}/stock/events/`
     ) => {
         setLoading(true);
@@ -72,11 +72,11 @@ const ProductStockEvent = () => {
             setLoading(false);
             setInitialLoaded(true);
         }
-    };
+    }, [productId, startDate, endDate]);
 
     useEffect(() => {
         if (productId) fetchStockEvents();
-    }, [startDate, endDate]);
+    }, [productId, fetchStockEvents]);
 
     const handleFilterChange = (start, end) => {
         setStartDate(start);

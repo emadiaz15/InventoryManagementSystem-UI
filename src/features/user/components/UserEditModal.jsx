@@ -157,7 +157,7 @@ const UserEditModal = ({
     } finally {
       setInternalLoading(false);
     }
-  }, [formData, onSave, onSaveSuccess, user]);
+  }, [formData, onSave, onSaveSuccess, onClose, user]);
 
   const handleRestorePassword = () => setShowPasswordModal(true);
   const handleClosePasswordModal = () => setShowPasswordModal(false);

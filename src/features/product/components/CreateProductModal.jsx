@@ -81,7 +81,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         };
 
         fetchData();
-    }, [isOpen]);
+    }, [isOpen, clearUploadError]);
 
     useEffect(() => {
         if (!formData.category) {
