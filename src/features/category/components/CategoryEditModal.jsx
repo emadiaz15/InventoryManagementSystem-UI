@@ -63,7 +63,7 @@ const CategoryEditModal = ({ category, isOpen, onClose, onSaveSuccess }) => {
     }
 
     try {
-      await onSaveSuccess(category.id, {
+      await onSaveSuccess({
         name: cleanName,
         description: cleanDescription,
       });
