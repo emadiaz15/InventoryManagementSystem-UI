@@ -106,7 +106,7 @@
 
 [Repositorio en GitHub](https://github.com/emadiaz15/InventoryManagementSystem-UI.git)
 ## 📂 Integración con MiniO
-La interfaz hace uso de la API `InventoryManagementSystem-API` para almacenar y recuperar archivos en MiniO. Asegúrate de que el backend esté configurado y accesible.
+La interfaz no se comunica directamente con MiniO. Todas las operaciones de archivos se gestionan a través de la API `InventoryManagementSystem-API`, la cual genera las URL presignadas necesarias para cargar o descargar.
 
 ### Variables de entorno
 - `VITE_API_BASE_URL`: URL base de la API. Debe apuntar al despliegue de `InventoryManagementSystem-API`.
@@ -120,6 +120,6 @@ La interfaz hace uso de la API `InventoryManagementSystem-API` para almacenar y 
 - `DELETE /inventory/products/<productId>/subproducts/<subproductId>/files/<fileId>/delete/` – eliminar un archivo de subproducto.
 
 ### Habilitar subida y descarga
-1. Configura `InventoryManagementSystem-API` con acceso a MiniO y verifica que los endpoints anteriores estén disponibles.
+1. Configura `InventoryManagementSystem-API` con las credenciales de MiniO (por ejemplo `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` y `MINIO_SECRET_KEY`) y verifica que los endpoints anteriores estén disponibles.
 2. Establece `VITE_API_BASE_URL` en un archivo `.env` o como variable de entorno al ejecutar `npm run dev` o la imagen Docker.
 3. Inicia la UI; al subir o descargar archivos la aplicación enviará las solicitudes al backend, que se encargará de generar las URL presignadas de MiniO.
