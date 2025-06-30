@@ -9,6 +9,7 @@ import { AuthProvider } from './context/AuthProvider';
 import { DataPrefetchProvider } from './context/DataPrefetchContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
+
 const isDev = import.meta.env.DEV;
 
 async function renderApp() {
