@@ -1,0 +1,7 @@
+language: javascript
+tasks:
+  - name: Build y levantar frontend
+    script: |
+      npm install
+      npm run build
+      serve -s dist -l 3000
