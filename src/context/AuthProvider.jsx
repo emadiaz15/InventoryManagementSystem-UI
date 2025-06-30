@@ -28,6 +28,21 @@ export const AuthProvider = ({ children }) => {
         setProfileImage(url || null);
     };
 
+    const logout = useCallback(async () => {
+        try {
+            await logoutHelper();
+        } catch {
+            // noop
+        } finally {
+            clearTokens();
+            setUser(null);
+            setIsAuthenticated(false);
+            setProfileImage(null);
+            setError(null);
+            navigate("/login");
+        }
+    }, [navigate]);
+
     useEffect(() => {
         const validateToken = async () => {
             const accessToken = getAccessToken();
@@ -83,21 +98,6 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         }
     };
-
-    const logout = useCallback(async () => {
-        try {
-            await logoutHelper();
-        } catch {
-            // noop
-        } finally {
-            clearTokens();
-            setUser(null);
-            setIsAuthenticated(false);
-            setProfileImage(null);
-            setError(null);
-            navigate("/login");
-        }
-    }, [navigate]);
 
     return (
         <AuthContext.Provider
