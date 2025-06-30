@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { listUsers } from "../services/listUsers";
 import { invalidateCachedUsersByUrl } from "../services/userCache";
-import logger from "../../utils/logger";
-
+import logger from "../../../utils/logger"
 /**
  * 📦 Hook para gestionar listado de usuarios con filtros, paginación e invalidación de caché.
  *
