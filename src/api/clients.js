@@ -8,12 +8,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 // ─────────────────────────────────────────────────────────────
 // 🧠 Helpers para tokens
 // ─────────────────────────────────────────────────────────────
-const getAccessToken = () => sessionStorage.getItem("accessToken");
-const getRefreshToken = () => sessionStorage.getItem("refreshToken");
+const getAccessToken = () => localStorage.getItem("accessToken");
+const getRefreshToken = () => localStorage.getItem("refreshToken");
 
 const clearTokens = () => {
-  sessionStorage.removeItem("accessToken");
-  sessionStorage.removeItem("refreshToken");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
   window.dispatchEvent(new Event("sessionExpired"));
 };
 
