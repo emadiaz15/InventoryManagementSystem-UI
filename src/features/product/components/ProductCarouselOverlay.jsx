@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { TrashIcon, DocumentIcon } from "@heroicons/react/24/outline";
 import Spinner from "../../../components/ui/Spinner";
 import PropTypes from "prop-types";
@@ -83,17 +83,17 @@ const ProductCarouselOverlay = ({
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
-    }, [current, localImages, isEmbedded, onClose]);
+    }, [current, localImages, isEmbedded, onClose, nextSlide, prevSlide]);
 
-    const nextSlide = () => {
+    const nextSlide = useCallback(() => {
         setImgLoaded(false);
         setCurrent((i) => (i + 1) % localImages.length);
-    };
+    }, [localImages.length]);
 
-    const prevSlide = () => {
+    const prevSlide = useCallback(() => {
         setImgLoaded(false);
         setCurrent((i) => (i - 1 + localImages.length) % localImages.length);
-    };
+    }, [localImages.length]);
 
     const openInNewTab = (url) => window.open(url, "_blank");
 

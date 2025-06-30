@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { listProductFiles } from "../services/listProductFile"; // singular recomendado
 
 /**
@@ -11,7 +11,7 @@ export const useProductFileList = (productId) => {
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState(null);
 
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     if (!productId) return;
 
     setLoading(true);
@@ -26,11 +26,11 @@ export const useProductFileList = (productId) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
 
   useEffect(() => {
     fetchFiles();
-  }, [productId]);
+  }, [productId, fetchFiles]);
 
   return {
     files,

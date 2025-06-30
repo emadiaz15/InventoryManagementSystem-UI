@@ -76,7 +76,7 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                 setError("No se pudieron cargar los productos.");
             }
         })();
-    }, [isOpen, product]);
+    }, [isOpen, product, clearUploadError]);
 
     useEffect(() => {
         if (!formData.category) {

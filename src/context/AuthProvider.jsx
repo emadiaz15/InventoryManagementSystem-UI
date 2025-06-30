@@ -1,8 +1,10 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
     createContext,
     useState,
     useEffect,
     useContext,
+    useCallback,
 } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
@@ -49,7 +51,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         validateToken();
-    }, []);
+    }, [logout]);
 
     const login = async ({ username, password }) => {
         setError(null);
@@ -82,7 +84,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         try {
             await logoutHelper();
         } catch {
@@ -95,7 +97,7 @@ export const AuthProvider = ({ children }) => {
             setError(null);
             navigate("/login");
         }
-    };
+    }, [navigate]);
 
     return (
         <AuthContext.Provider

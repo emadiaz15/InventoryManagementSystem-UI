@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { listSubproductFiles } from "../services/listSubproductFile";
 
 /**
@@ -12,7 +12,7 @@ export const useSubproductFileList = (productId, subproductId) => {
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState(null);
 
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     if (!productId || !subproductId) return;
 
     setLoading(true);
@@ -27,11 +27,11 @@ export const useSubproductFileList = (productId, subproductId) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, subproductId]);
 
   useEffect(() => {
     fetchFiles();
-  }, [productId, subproductId]);
+  }, [productId, subproductId, fetchFiles]);
 
   return {
     files,

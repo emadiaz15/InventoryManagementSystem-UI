@@ -27,6 +27,8 @@ const CustomInput = forwardRef(({ value, onClick, label }, ref) => (
     </div>
 ));
 
+CustomInput.displayName = 'CustomInput';
+
 const DateFilter = ({ onFilterChange }) => {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);

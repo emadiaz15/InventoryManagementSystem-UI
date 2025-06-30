@@ -4,12 +4,9 @@ import Pagination from "../../../components/ui/Pagination";
 import { PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/outline";
 
 const TypeTable = ({ types, openViewModal, openEditModal, openDeleteConfirmModal, goToNextPage, goToPreviousPage, nextPageUrl, previousPageUrl, getCategoryName }) => {
-    // Verificación inicial de datos
-    if (!types || !getCategoryName) {
-        return <div>Cargando datos...</div>; // O un mensaje de carga más informativo
-    }
-
-    const tableRows = useMemo(() => types.map((type) => ({
+    const tableRows = useMemo(() => {
+        if (!types || !getCategoryName) return [];
+        return types.map((type) => ({
         Nombre: type.name || "N/A",
         Descripción: type.description || "Sin descripción",
         Categoría: getCategoryName(type.category) || "SIN CATEGORÍA",
@@ -46,9 +43,15 @@ const TypeTable = ({ types, openViewModal, openEditModal, openDeleteConfirmModal
                 </button>
             </div>
         ),
-    })), [types, openViewModal, openEditModal, openDeleteConfirmModal, getCategoryName]);
+        }));
+    }, [types, openViewModal, openEditModal, openDeleteConfirmModal, getCategoryName]);
 
     const tableHeaders = useMemo(() => ["Tipo", "Descripción", "Categoría", "Acciones"], []);
+
+    // Verificación inicial de datos
+    if (!types || !getCategoryName) {
+        return <div>Cargando datos...</div>; // O un mensaje de carga más informativo
+    }
 
     // No es necesario usar useMemo si paginationProps no es un cuello de botella
     const paginationProps = {
