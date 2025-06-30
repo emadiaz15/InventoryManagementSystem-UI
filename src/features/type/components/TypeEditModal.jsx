@@ -3,6 +3,7 @@ import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import FormSelect from '../../../components/ui/form/FormSelect';
 import ErrorMessage from '../../../components/common/ErrorMessage';
+import logger from '../../../utils/logger';
 
 const TypeEditModal = ({ type, isOpen, onClose, onSave, categories, loadingCategories }) => {
     // Estado interno para el formulario, carga y error del modal
@@ -17,7 +18,7 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave, categories, loadingCateg
     // Efecto para inicializar el formulario cuando 'type' cambia o se abre el modal
     useEffect(() => {
         if (isOpen && type) {
-            console.log("Initializing edit form with type:", type);
+            logger.log("Initializing edit form with type:", type);
             setFormData({
                 name: type.name || '',
                 description: type.description || '',
@@ -67,7 +68,7 @@ const TypeEditModal = ({ type, isOpen, onClose, onSave, categories, loadingCateg
             ...(categoryId !== null && { category: categoryId }),
         };
 
-        console.log(`Datos a enviar desde TypeEditModal para ID ${type.id}:`, dataToSend);
+        logger.log(`Datos a enviar desde TypeEditModal para ID ${type.id}:`, dataToSend);
 
         try {
             await onSave(type.id, dataToSend);

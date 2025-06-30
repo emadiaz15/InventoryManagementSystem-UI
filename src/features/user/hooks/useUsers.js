@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { listUsers } from "../services/listUsers";
 import { invalidateCachedUsersByUrl } from "../services/userCache";
+import logger from "../../utils/logger";
 
 /**
  * 📦 Hook para gestionar listado de usuarios con filtros, paginación e invalidación de caché.
@@ -40,7 +41,7 @@ const useUsers = (filters, initialUrl = "/users/list/") => {
     });
 
     const queryString = queryParams.toString();
-    console.log("🔧 Query string generado (HOOK):", queryString);
+    logger.log("🔧 Query string generado (HOOK):", queryString);
     return queryString ? `?${queryString}` : "";
   }, []);
 
@@ -48,7 +49,7 @@ const useUsers = (filters, initialUrl = "/users/list/") => {
   const fetchUsers = useCallback(async (url) => {
     setLoadingUsers(true);
     setError(null);
-    console.log(`📡 Consultando usuarios desde: ${url}`);
+    logger.log(`📡 Consultando usuarios desde: ${url}`);
 
     try {
       const data = await listUsers(url);

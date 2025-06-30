@@ -36,7 +36,6 @@ const ProductModals = ({
         setLoadingFiles(true);
         try {
             const rawFiles = await listProductFiles(productId);
-            console.log("📦 Archivos obtenidos del backend:", rawFiles);
 
             const enriched = await enrichFilesWithBlobUrls({ productId, rawFiles });
             setFiles(enriched);
