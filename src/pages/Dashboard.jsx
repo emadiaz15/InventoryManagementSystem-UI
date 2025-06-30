@@ -92,10 +92,6 @@ const Dashboard = () => {
                 <KanbanCard
                   key={order.id}
                   order={order}
-                  onAddToOrder={() => console.log("Agregar orden", order)}
-                  onEdit={() => console.log("Editar orden", order)}
-                  onDelete={() => console.log("Eliminar orden", order)}
-                  onViewComments={() => console.log("Ver comentarios", order)}
                 />
               ))
             ) : (
@@ -113,10 +109,6 @@ const Dashboard = () => {
                 <KanbanCard
                   key={order.id}
                   order={order}
-                  onAddToOrder={() => console.log("Agregar orden", order)}
-                  onEdit={() => console.log("Editar orden", order)}
-                  onDelete={() => console.log("Eliminar orden", order)}
-                  onViewComments={() => console.log("Ver comentarios", order)}
                 />
               ))
             ) : (
@@ -134,10 +126,6 @@ const Dashboard = () => {
                 <KanbanCard
                   key={order.id}
                   order={order}
-                  onAddToOrder={() => console.log("Agregar orden", order)}
-                  onEdit={() => console.log("Editar orden", order)}
-                  onDelete={() => console.log("Eliminar orden", order)}
-                  onViewComments={() => console.log("Ver comentarios", order)}
                 />
               ))
             ) : (

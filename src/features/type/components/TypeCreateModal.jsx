@@ -3,6 +3,7 @@ import Modal from '../../../components/ui/Modal';
 import FormInput from '../../../components/ui/form/FormInput';
 import FormSelect from '../../../components/ui/form/FormSelect';
 import ErrorMessage from '../../../components/common/ErrorMessage';
+import logger from '../../../utils/logger';
 
 const TypeCreateModal = ({ isOpen, onClose, onCreate, onCreateSuccess, categories, loadingCategories }) => {
   const initialFormData = useMemo(() => ({
@@ -47,7 +48,7 @@ const TypeCreateModal = ({ isOpen, onClose, onCreate, onCreateSuccess, categorie
       category: categoryId, // Siempre envía un ID numérico válido
     };
 
-    console.log("Datos a enviar desde TypeCreateModal:", dataToSend);
+    logger.log("Datos a enviar desde TypeCreateModal:", dataToSend);
 
     try {
       await onCreate(dataToSend);

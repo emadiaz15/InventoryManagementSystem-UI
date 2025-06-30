@@ -127,7 +127,6 @@ const ProductStockEvent = () => {
                     <button
                         className="bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors"
                         title="Ver orden de corte"
-                        onClick={() => console.log('Ver OC', event.cutting_order_id)}
                     >
                         <EyeIcon className="w-5 h-5 text-white" />
                     </button>
