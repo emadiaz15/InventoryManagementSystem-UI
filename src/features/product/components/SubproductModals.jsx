@@ -54,12 +54,10 @@ const SubproductModals = ({
     clearDeleteError,
     parentProduct = null,
 }) => {
-    if (!modalState?.type) return null;
-
     const { user } = useAuth();
     const isStaff = user?.is_staff;
 
-    const { type, subproductData } = modalState;
+    const { type, subproductData } = modalState || {};
     const [files, setFiles] = useState([]);
     const [loadingFiles, setLoadingFiles] = useState(false);
 
@@ -106,6 +104,8 @@ const SubproductModals = ({
     useEffect(() => {
         loadFiles();
     }, [loadFiles]);
+
+    if (!modalState?.type) return null;
 
     return (
         <>

@@ -60,7 +60,7 @@ const CreateSubproductModal = ({ product, isOpen, onClose, onSave }) => {
                 submitAbortRef.current.abort();
             }
         };
-    }, [isOpen]);
+    }, [isOpen, clearUploadError]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

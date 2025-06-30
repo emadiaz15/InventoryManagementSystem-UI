@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "../../../pages/Layout";
 import Toolbar from "../../../components/common/Toolbar";
@@ -47,7 +47,7 @@ const SubproductList = () => {
   // Aquí mantenemos el filtro de status (por defecto "true" = Disponible)
   const [filters, setFilters] = useState({ status: "true" });
 
-  const fetchSubproducts = async (url = null) => {
+  const fetchSubproducts = useCallback(async (url = null) => {
     setLoading(true);
     setError(null);
     try {
@@ -65,14 +65,14 @@ const SubproductList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, filters]);
 
   // Cuando cambie el producto o los filtros, recargamos
   useEffect(() => {
     if (productId) {
       fetchSubproducts();
     }
-  }, [productId, filters]);
+  }, [productId, fetchSubproducts]);
 
   const handleShowSuccess = (message) => {
     setSuccessMessage(message);
