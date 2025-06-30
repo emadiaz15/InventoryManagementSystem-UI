@@ -105,3 +105,21 @@
 - Interfaz frontend simple para mostrar catálogo de productos, detalles y estado de órdenes de corte.
 
 [Repositorio en GitHub](https://github.com/emadiaz15/InventoryManagementSystem-UI.git)
+## 📂 Integración con MiniO
+La interfaz hace uso de la API `InventoryManagementSystem-API` para almacenar y recuperar archivos en MiniO. Asegúrate de que el backend esté configurado y accesible.
+
+### Variables de entorno
+- `VITE_API_BASE_URL`: URL base de la API. Debe apuntar al despliegue de `InventoryManagementSystem-API`.
+
+### Endpoints relevantes
+- `POST /inventory/products/<productId>/files/` – subir archivos de un producto.
+- `GET /inventory/products/<productId>/files/<fileId>/download/` – descargar un archivo de producto.
+- `GET /inventory/products/<productId>/subproducts/<subproductId>/files/<fileId>/download/` – descargar un archivo de un subproducto.
+- `PUT /inventory/products/<productId>/subproducts/<subproductId>/files/<fileId>/` – actualizar un archivo de subproducto.
+- `DELETE /inventory/products/<productId>/files/<fileId>/delete/` – eliminar un archivo de producto.
+- `DELETE /inventory/products/<productId>/subproducts/<subproductId>/files/<fileId>/delete/` – eliminar un archivo de subproducto.
+
+### Habilitar subida y descarga
+1. Configura `InventoryManagementSystem-API` con acceso a MiniO y verifica que los endpoints anteriores estén disponibles.
+2. Establece `VITE_API_BASE_URL` en un archivo `.env` o como variable de entorno al ejecutar `npm run dev` o la imagen Docker.
+3. Inicia la UI; al subir o descargar archivos la aplicación enviará las solicitudes al backend, que se encargará de generar las URL presignadas de MiniO.
