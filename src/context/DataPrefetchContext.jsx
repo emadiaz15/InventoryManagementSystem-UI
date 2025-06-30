@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listCategories } from "../features/category/services/listCategory";

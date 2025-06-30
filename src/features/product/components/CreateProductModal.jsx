@@ -41,7 +41,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     has_subproduct: false,
   });
 
-  // Carga inicial al abrir
   useEffect(() => {
     if (!isOpen) return;
 
@@ -63,7 +62,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
       has_subproduct: false,
     });
 
-    (async () => {
+    const fetchData = async () => {
       try {
         const [catResp, typeResp, prodResp] = await Promise.all([
           listCategories("/inventory/categories/?limit=1000&status=true"),
@@ -74,21 +73,21 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         const allTypes = typeResp.results ?? typeResp.activeTypes ?? [];
         setTypes(allTypes);
         setProducts(prodResp.results || []);
-      } catch {
+      } catch (err) {
+        console.error("Error al cargar datos iniciales:", err);
         setError("No se pudo conectar con el servidor.");
       }
-    })();
+    };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+    fetchData();
+  }, [isOpen, clearUploadError]);
 
-  // Filtrar types cuando cambie categoría
   useEffect(() => {
     if (!formData.category) {
-      setFilteredTypes(types);
+      setFilteredTypes([]);
       return;
     }
-    const catId = +formData.category;
+    const catId = parseInt(formData.category, 10);
     setFilteredTypes(
       types.filter((t) => {
         if (t.category?.id != null) return t.category.id === catId;
@@ -106,8 +105,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     }));
   };
 
-  const handleStockChange = (e) =>
+  const handleStockChange = (e) => {
     setFormData((prev) => ({ ...prev, initial_stock_quantity: e.target.value }));
+  };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -128,10 +128,14 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     setPreviewFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const normalize = (s) => s.trim().toLowerCase().replace(/\s+/g, "");
+  const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "");
+
   const validateCodeUnique = () => {
-    const c = normalize(formData.code);
-    if (products.some((p) => normalize(String(p.code)) === c)) {
+    const codeStr = normalize(formData.code);
+    const clash = products.find(
+      (p) => p.code && normalize(String(p.code)) === codeStr
+    );
+    if (clash) {
       setError("El código ya está en uso por otro producto.");
       return false;
     }
@@ -146,10 +150,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     if (!validateCodeUnique()) return;
     if (!formData.category) {
       setError("Selecciona una categoría.");
-      return;
-    }
-    if (!formData.type) {
-      setError("Selecciona un tipo.");
       return;
     }
 
@@ -167,7 +167,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     payload.append("location", formData.location.trim());
     payload.append("position", formData.position.trim());
     payload.append("category", formData.category);
-    payload.append("type", formData.type);
+
+    // Si el usuario no seleccionó un tipo, se envía string vacío
+    payload.append("type", formData.type ? formData.type : "");
 
     const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
     if (stockVal && parseFloat(stockVal) > 0) {
@@ -219,12 +221,17 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         />
 
         <FormSelect
-          label="Tipo"
+          label="Tipo (opcional)"
           name="type"
           value={formData.type}
           onChange={handleChange}
-          options={filteredTypes.map((t) => ({ value: String(t.id), label: t.name }))}
-          required
+          options={[
+            { value: "", label: "N/A" },
+            ...filteredTypes.map((t) => ({
+              value: String(t.id),
+              label: t.name,
+            })),
+          ]}
         />
 
         <FormInput

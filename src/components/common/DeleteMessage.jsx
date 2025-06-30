@@ -25,7 +25,7 @@ const DeleteMessage = ({
 
             <p className="text-text-secondary mb-6">
                 ¿Estás seguro de que deseas eliminar {itemName}
-                <strong className="text-text-primary"> "{itemIdentifier}"</strong>?
+                <strong className="text-text-primary"> &quot;{itemIdentifier}&quot;</strong>?
             </p>
             <div className="flex justify-end space-x-3">
                 <button onClick={onClose} disabled={isDeleting} className="bg-neutral-500 text-text-white px-4 py-2 rounded hover:bg-neutral-600 transition-colors"> Cancelar </button>

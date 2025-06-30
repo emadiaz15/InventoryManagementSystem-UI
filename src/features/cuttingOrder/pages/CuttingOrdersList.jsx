@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Toolbar from "../../../components/common/Toolbar";
 import Pagination from "../../../components/ui/Pagination";
@@ -33,7 +33,7 @@ const CuttingOrdersList = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
 
-  const fetchOrders = async (baseUrl = "/cutting/cutting-orders/") => {
+  const fetchOrders = useCallback(async (baseUrl = "/cutting/cutting-orders/") => {
     setLoadingOrders(true);
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => v && params.append(k, v));
@@ -55,14 +55,14 @@ const CuttingOrdersList = () => {
       setLoadingOrders(false);
       setInitialLoaded(true);
     }
-  };
+  }, [filters, selectedDate]);
 
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) return navigate("/");
       fetchOrders();
     }
-  }, [isAuthenticated, loading, navigate, filters, selectedDate]);
+  }, [isAuthenticated, loading, navigate, filters, selectedDate, fetchOrders]);
 
   const handleNextPage = () => nextPage && fetchOrders(nextPage);
   const handlePreviousPage = () => previousPage && fetchOrders(previousPage);

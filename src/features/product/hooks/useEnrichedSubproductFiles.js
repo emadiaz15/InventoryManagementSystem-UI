@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDownloadSubproductFile } from "./useDownloadSubproductFile";
 import { getFileId } from "@/utils/fileUtils"; // sugerido para DRY
 
@@ -11,7 +11,7 @@ export const useEnrichedSubproductFiles = (productId, subproductId, rawFiles = [
   const [loadError, setLoadError] = useState(null);
   const { downloadFile } = useDownloadSubproductFile();
 
-  const enrichFiles = async () => {
+  const enrichFiles = useCallback(async () => {
     if (!productId || !subproductId || !Array.isArray(rawFiles)) return;
 
     setLoading(true);
@@ -38,11 +38,11 @@ export const useEnrichedSubproductFiles = (productId, subproductId, rawFiles = [
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, subproductId, rawFiles, downloadFile]);
 
   useEffect(() => {
     enrichFiles();
-  }, [productId, subproductId, rawFiles]); // eliminado stringify
+  }, [enrichFiles]);
 
   return {
     files,
