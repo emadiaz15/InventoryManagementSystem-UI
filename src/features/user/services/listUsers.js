@@ -1,23 +1,21 @@
-import { axiosInstance } from '../../../services/api'; // Usa la instancia de Axios configurada
+import { djangoApi } from "@/api/clients";
+import { getCachedUsers, setCachedUsers } from "./userCache";
 
-// Método para listar usuarios con soporte para paginación
-export const listUsers = async (url = '/users/list/') => {
+export const listUsers = async (url = "/users/list/") => {
+  const cached = getCachedUsers(url);
+  if (cached) return cached;
+
   try {
-    const response = await axiosInstance.get(url); // Aquí pasamos la URL dinámica para manejar la paginación
+    const response = await djangoApi.get(url);
 
-    // Asegúrate de tener resultados y luego ordena los usuarios por fecha de creación descendente
-    if (response.data && Array.isArray(response.data.results)) {
-      // Ordenar los usuarios de más nuevos a más antiguos
+    if (Array.isArray(response.data?.results)) {
       response.data.results.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
 
-    return response.data; // Devolvemos el objeto completo del backend con "results", "next", "previous"
+    setCachedUsers(url, response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error al listar usuarios:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.detail || 'Error al listar usuarios');
+    console.error("❌ Error al listar usuarios:", error);
+    throw new Error("Error al listar usuarios");
   }
-};
-
-export default {
-  listUsers,
 };

@@ -1,11 +1,10 @@
-import { axiosInstance } from "../../../services/api";
+import { djangoApi } from "@/api/clients";
 
 /**
- * Elimina (soft delete) un subproducto.
+ * 🗑️ Elimina (soft delete) un subproducto.
  * @param {number|string} product_pk - ID del producto padre.
  * @param {number|string} subp_pk - ID del subproducto a eliminar.
- * @returns {Promise<void>} - Promise resuelta al completar la eliminación.
- * @throws Error si la solicitud falla.
+ * @returns {Promise<void>} - Lanza error si la solicitud falla.
  */
 export const deleteSubproduct = async (product_pk, subp_pk) => {
   if (!product_pk || !subp_pk) {
@@ -13,14 +12,18 @@ export const deleteSubproduct = async (product_pk, subp_pk) => {
   }
 
   try {
-    await axiosInstance.delete(
-      `/inventory/products/${product_pk}/subproducts/${subp_pk}/`
-    );
+    await djangoApi.delete(`/inventory/products/${product_pk}/subproducts/${subp_pk}/`);
   } catch (error) {
-    console.error(
-      "Error al eliminar subproducto:",
-      error.response?.data || error.message
-    );
-    throw error;
+    const detail =
+      error.response?.data?.detail ||
+      JSON.stringify(error.response?.data) ||
+      "No se pudo eliminar el subproducto.";
+
+    console.error("❌ Error al eliminar subproducto:", detail);
+    throw new Error(detail);
   }
+};
+
+export default {
+  deleteSubproduct,
 };

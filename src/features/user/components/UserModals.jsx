@@ -4,13 +4,12 @@ import UserRegisterModal from "./UserRegisterModal";
 import UserEditModal from "./UserEditModal";
 import UserModalView from "./UserModalView";
 import DeleteMessage from "../../../components/common/DeleteMessage";
-// Opcional si usas el modal de reset pass
 import PasswordResetModal from './PasswordResetModal';
 
 const UserModals = ({
     modalState,
     closeModal,
-    onregisterUser,
+    onRegisterUser,
     onUpdateUser,
     onDeleteUser,
     onPasswordReset,
@@ -20,20 +19,13 @@ const UserModals = ({
 }) => {
     const [deleteConfirmState, setDeleteConfirmState] = useState(null);
 
-    if (!modalState || !modalState.type) return null;
-    const currentUserData = modalState.userData;
+    const currentUser = modalState?.userData;
 
     const handleOpenDeleteConfirmModal = ({ type, username, onConfirm }) => {
-        setDeleteConfirmState({
-            type,
-            username,
-            onConfirm,
-        });
+        setDeleteConfirmState({ type, username, onConfirm });
     };
 
-    const handleCloseDeleteConfirm = () => {
-        setDeleteConfirmState(null);
-    };
+    const handleCloseDeleteConfirm = () => setDeleteConfirmState(null);
 
     const handleConfirmDelete = async () => {
         if (deleteConfirmState?.onConfirm) {
@@ -42,22 +34,24 @@ const UserModals = ({
         handleCloseDeleteConfirm();
     };
 
+    if (!modalState?.type) return null;
+
     return (
         <>
             {modalState.type === "create" && (
                 <UserRegisterModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
-                    onCreate={onregisterUser}
-                    onCreateSuccess={(msg) => handleActionSuccess(msg)}
+                    onCreate={onRegisterUser}
+                    onCreateSuccess={handleActionSuccess}
                 />
             )}
 
-            {modalState.type === "edit" && currentUserData && (
+            {modalState.type === "edit" && currentUser && (
                 <UserEditModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
-                    user={currentUserData}
+                    user={currentUser}
                     onSave={onUpdateUser}
                     onSaveSuccess={handleActionSuccess}
                     onPasswordReset={onPasswordReset}
@@ -65,30 +59,30 @@ const UserModals = ({
                 />
             )}
 
-            {modalState.type === "view" && currentUserData && (
+            {modalState.type === "view" && currentUser && (
                 <UserModalView
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
-                    user={currentUserData}
+                    user={currentUser}
                 />
             )}
 
-            {(modalState.type === "deleteConfirm" && currentUserData) && (
+            {modalState.type === "deleteConfirm" && currentUser && (
                 <DeleteMessage
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
-                    onDelete={() => onDeleteUser(currentUserData)}
+                    onDelete={() => onDeleteUser(currentUser)}
                     isDeleting={isProcessing}
                     deleteError={actionError?.message}
                     clearDeleteError={closeModal}
                     itemName="al usuario"
-                    itemIdentifier={currentUserData.username || currentUserData.name}
+                    itemIdentifier={currentUser.username || currentUser.name}
                 />
             )}
 
-            {deleteConfirmState && (
+            {Boolean(deleteConfirmState) && (
                 <DeleteMessage
-                    isOpen={true}
+                    isOpen
                     onClose={handleCloseDeleteConfirm}
                     onDelete={handleConfirmDelete}
                     itemName="la imagen de perfil"

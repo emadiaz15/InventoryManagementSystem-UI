@@ -8,7 +8,7 @@ import Spinner from "../../../components/ui/Spinner";
 import { useAuth } from "../../../context/AuthProvider";
 
 import { listProductFiles } from "../services/listProductFiles";
-import { enrichProductFiles } from "../utils/productFileUtils";
+import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
 
 /**
  * Componente central de todos los modales asociados a producto.
@@ -37,7 +37,8 @@ const ProductModals = ({
         try {
             const rawFiles = await listProductFiles(productId);
             console.log("📦 Archivos obtenidos del backend:", rawFiles);
-            const enriched = await enrichProductFiles(productId, rawFiles, "fastapi");
+
+            const enriched = await enrichFilesWithBlobUrls({ productId, rawFiles });
             setFiles(enriched);
         } catch (err) {
             console.error("❌ No se pudieron cargar archivos del producto:", err);
@@ -83,7 +84,6 @@ const ProductModals = ({
                             productId={productId}
                             onClose={closeModal}
                             onDeleteSuccess={loadFiles}
-                            source="fastapi"
                             editable={true}
                             isEmbedded
                         />
@@ -111,7 +111,6 @@ const ProductModals = ({
                             productId={productId}
                             onClose={closeModal}
                             onDeleteSuccess={loadFiles}
-                            source="fastapi"
                             editable={false}
                             isEmbedded
                         />

@@ -14,7 +14,7 @@ import { createSubproduct } from "../services/createSubproduct";
 import { updateSubproduct } from "../services/updateSubproduct";
 import { deleteSubproduct } from "../services/deleteSubproduct";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 15;
 
 // Construye la query string a partir de un objeto de filtros
 const buildQueryString = (filtersObj) => {
@@ -155,7 +155,7 @@ const SubproductList = () => {
             </p>
           </div>
         ) : (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-2">
             {subproducts.map((sp) => (
               <SubproductCard
                 key={sp.id}

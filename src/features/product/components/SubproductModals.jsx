@@ -5,13 +5,12 @@ import { useAuth } from "../../../context/AuthProvider";
 import CreateSubproductModal from "./CreateSubproductModal";
 import EditSubproductModal from "./EditSubproductModal";
 import ViewSubproductModal from "./ViewSubproductModal";
-import CreateCuttingOrderModal from "../../cuttingOrder/components/CreateCuttingOrderModal"
 import CreateCuttingOrderWizard from "../../cuttingOrder/components/CreateCuttingOrderWizard";
 import DeleteMessage from "../../../components/common/DeleteMessage";
 import Spinner from "../../../components/ui/Spinner";
 import ProductCarouselOverlay from "./ProductCarouselOverlay";
-import { djangoApi } from "@/services/clients";
-import { fetchProtectedFile } from "@/services/mediaService";
+import { djangoApi } from "@/api/clients";
+import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
 
 const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose }) => {
     if (loading) {
@@ -78,7 +77,8 @@ const SubproductModals = ({
             );
             const fetched = await Promise.all(
                 (res.data.files || []).map(async (f) => {
-                    const url = await fetchProtectedFile(
+                    const url = await enrichFilesWithBlobUrls
+                    s(
                         parentProduct.id,
                         f.drive_file_id,
                         "django",

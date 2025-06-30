@@ -35,13 +35,8 @@ const UserEditModal = ({
   const [hasImage, setHasImage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-
   useEffect(() => {
     if (isOpen && user) {
-      console.log("🧠 [DEBUG] USER OBJ:", user);
-      console.log("🧠 [DEBUG] user.image ID:", user.image);
-      console.log("🧠 [DEBUG] user.image_url:", user.image_url);
-
       setFormData({
         username: user.username || '',
         name: user.name || '',
@@ -85,8 +80,6 @@ const UserEditModal = ({
             ...prev,
             image: null,
           }));
-
-          // 🔁 Actualiza campos locales para que icono delete desaparezca
           user.image = deletedUser.image || '';
           user.image_url = deletedUser.image_url || null;
 
@@ -95,7 +88,6 @@ const UserEditModal = ({
             setSuccessMessage('');
             onClose();
           }, 2000);
-
         } catch (err) {
           setInternalError('No se pudo eliminar la imagen.');
           console.error(err);
@@ -111,6 +103,7 @@ const UserEditModal = ({
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const errors = {};
+
     if (!formData.username.trim()) errors.username = 'El nombre de usuario es obligatorio.';
     if (!formData.name.trim()) errors.name = 'El nombre es obligatorio.';
     if (!formData.last_name.trim()) errors.last_name = 'El apellido es obligatorio.';
@@ -136,13 +129,15 @@ const UserEditModal = ({
     });
 
     setInternalLoading(true);
+
     try {
       const updatedUser = await onSave(user.id, dataToSend);
 
-      // ✅ Intentar reemplazar imagen si hay una nueva y el usuario ya tenía una
-      if (formData.image && user.image) {
+      if (formData.image) {
         try {
-          await updateProfileImage(formData.image, user.image, user.id);
+          const imageUpdateResult = await updateProfileImage(formData.image, user.image, user.id);
+          user.image = imageUpdateResult.image;
+          user.image_url = imageUpdateResult.image_url;
           setHasImage(true);
         } catch (imgErr) {
           console.warn('⚠️ Error al actualizar imagen:', imgErr);
@@ -157,14 +152,12 @@ const UserEditModal = ({
         onClose();
       }, 2000);
     } catch (err) {
-      const message = err?.message || 'Error al actualizar el usuario.';
-      const fieldErrors = err?.fieldErrors || {};
-      setInternalError(message);
-      setValidationErrors(fieldErrors);
+      setInternalError(err?.message || 'Error al actualizar el usuario.');
+      setValidationErrors(err?.fieldErrors || {});
     } finally {
       setInternalLoading(false);
     }
-  }, [formData, onSave, onSaveSuccess, user?.id]);
+  }, [formData, onSave, onSaveSuccess, user]);
 
   const handleRestorePassword = () => setShowPasswordModal(true);
   const handleClosePasswordModal = () => setShowPasswordModal(false);
@@ -186,144 +179,63 @@ const UserEditModal = ({
           <SuccessMessage message={successMessage} onClose={() => setSuccessMessage('')} />
         </div>
       )}
+
       <Modal isOpen={isOpen} onClose={onClose} title={`Editar Usuario: ${user?.username || ''}`} position="center">
         <form onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
           {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center mb-4">
-            <FormInput
-              label="Nombre de usuario"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              error={validationErrors.username}
-            />
+            <FormInput label="Nombre de usuario" name="username" value={formData.username} onChange={handleChange} required error={validationErrors.username} />
             <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
-              <input
-                id="is_staff"
-                type="checkbox"
-                name="is_staff"
-                checked={formData.is_staff}
-                onChange={handleChange}
-                className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2"
-              />
-              <label htmlFor="is_staff" className="ms-2 text-sm font-medium">
-                Administrador
-              </label>
+              <input id="is_staff" type="checkbox" name="is_staff" checked={formData.is_staff} onChange={handleChange} className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2" />
+              <label htmlFor="is_staff" className="ms-2 text-sm font-medium">Administrador</label>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormInput
-              label="Nombre"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              error={validationErrors.name}
-            />
-            <FormInput
-              label="Apellido"
-              name="last_name"
-              value={formData.last_name}
-              onChange={handleChange}
-              error={validationErrors.last_name}
-            />
+            <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required error={validationErrors.name} />
+            <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} error={validationErrors.last_name} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <FormInput
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              error={validationErrors.email}
-            />
-            <FormInput
-              label="DNI"
-              name="dni"
-              value={formData.dni}
-              onChange={handleChange}
-              required
-              error={validationErrors.dni}
-            />
+            <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required error={validationErrors.email} />
+            <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required error={validationErrors.dni} />
           </div>
 
           <div className="mb-4 mt-4">
-            <label htmlFor="image" className="block mb-2 text-sm font-medium text-text-secondary">
-              Imagen de perfil
-            </label>
+            <label htmlFor="image" className="block mb-2 text-sm font-medium text-text-secondary">Imagen de perfil</label>
             <div className="flex items-center space-x-4">
-              <label
-                htmlFor="image"
-                className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600"              >
-                Seleccionar archivo
-              </label>
-              {(formData.image || hasImage) && (
+              <label htmlFor="image" className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600">Seleccionar archivo</label>
+              {(formData.image || hasImage) ? (
                 <div className="flex items-center space-x-2 max-w-[220px] truncate">
-                  <span className="text-sm text-text-secondary truncate">
-                    {formData.image?.name || 'Imagen actual'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleDeleteImage}
-                    className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors"
-                    aria-label="Eliminar imagen"
-                    title="Eliminar Imagen de Perfil"
-                  >
+                  <span className="text-sm text-text-secondary truncate">{formData.image?.name || 'Imagen actual'}</span>
+                  <button type="button" onClick={handleDeleteImage} className="bg-red-500 p-2 rounded hover:bg-red-600 transition-colors" aria-label="Eliminar imagen" title="Eliminar Imagen de Perfil">
                     <TrashIcon className="w-5 h-5 text-white" />
                   </button>
                 </div>
-              )}
-              {!formData.image && !hasImage && (
+              ) : (
                 <span className="text-sm text-text-secondary">Sin archivo seleccionado</span>
               )}
             </div>
-            <input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/*"
-              onChange={handleChange}
-              className="hidden"
-            />
+            <input id="image" name="image" type="file" accept="image/*" onChange={handleChange} className="hidden" />
             {validationErrors.image && (
               <p className="text-error-500 text-xs italic mt-1">
-                {Array.isArray(validationErrors.image)
-                  ? validationErrors.image.join(', ')
-                  : validationErrors.image}
+                {Array.isArray(validationErrors.image) ? validationErrors.image.join(', ') : validationErrors.image}
               </p>
             )}
           </div>
 
           <div className="flex justify-start mt-4">
-            <button
-              type="button"
-              onClick={handleRestorePassword}
-              disabled={internalLoading}
-              className="bg-info-500 text-white py-2 px-4 rounded hover:bg-info-600 transition-colors disabled:opacity-50"
-            >
+            <button type="button" onClick={handleRestorePassword} disabled={internalLoading} className="bg-info-500 text-white py-2 px-4 rounded hover:bg-info-600 transition-colors disabled:opacity-50">
               Cambiar Contraseña
             </button>
           </div>
 
           <div className="flex justify-end space-x-2 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={internalLoading}
-              className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50"
-            >
+            <button type="button" onClick={onClose} disabled={internalLoading} className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50">
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={internalLoading}
-              className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors flex items-center justify-center gap-2 ${internalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
+            <button type="submit" disabled={internalLoading} className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors flex items-center justify-center gap-2 ${internalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
               {internalLoading && <Spinner size="4" />}
               {internalLoading ? 'Guardando...' : 'Guardar Cambios'}
             </button>
@@ -332,12 +244,7 @@ const UserEditModal = ({
       </Modal>
 
       {showPasswordModal && (
-        <PasswordResetModal
-          userId={user.id}
-          isOpen={showPasswordModal}
-          onClose={handleClosePasswordModal}
-          onSave={handleSaveNewPassword}
-        />
+        <PasswordResetModal userId={user.id} isOpen={showPasswordModal} onClose={handleClosePasswordModal} onSave={handleSaveNewPassword} />
       )}
     </>
   );

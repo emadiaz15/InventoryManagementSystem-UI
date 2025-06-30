@@ -2,13 +2,14 @@ import React from 'react';
 import { UserIcon } from '@heroicons/react/24/outline';
 
 const UserInfoCard = ({ label, value }) => {
-  // Lógica especial para el campo Rol
   const renderValue = () => {
-    if (label === 'Contraseña') return '*******';
+    if (label === 'Contraseña') return '••••••••';
     if (label === 'Rol') {
-      return value === 'Sí' ? 'Administrador' : 'Operario';
+      return value === true || value === 'Sí' || value === 'Administrador'
+        ? 'Administrador'
+        : 'Operario';
     }
-    return value;
+    return value ?? 'N/A';
   };
 
   return (

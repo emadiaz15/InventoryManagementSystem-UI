@@ -1,5 +1,4 @@
-// src/features/cuttingOrder/services/createCuttingOrder.js
-import axios from "axios";
+import { djangoApi } from "@/api/clients";
 
 /**
  * Crea una nueva Orden de Corte.
@@ -24,7 +23,7 @@ export async function createCuttingOrder({
 
   // POST al endpoint de creación definido en Django:
   //   path('cutting-orders/create/', cutting_order_create)
-  const { data } = await axios.post(
+  const { data } = await djangoApi.post(
     "/cutting/cutting-orders/create/",
     payload
   );

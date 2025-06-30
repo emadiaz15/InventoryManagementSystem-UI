@@ -1,4 +1,4 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
 
 /**
  * Recupera los detalles de una orden de corte específica
@@ -8,7 +8,7 @@ import { axiosInstance } from '../../../services/api';
  */
 export const getCuttingOrder = async (orderId) => {
   try {
-    const response = await axiosInstance.get(
+    const response = await djangoApi.get(
       `/cutting/cutting-orders/${orderId}/`
     );
     return response.data;

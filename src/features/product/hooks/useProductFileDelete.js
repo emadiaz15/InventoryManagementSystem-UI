@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { deleteProductFile } from "../services/deleteProductFiles";
+import { deleteProductFile } from "../services/deleteProductFile";
 
 /**
  * Hook para eliminar un archivo multimedia asociado a un producto.
@@ -9,6 +9,11 @@ export const useProductFileDelete = () => {
   const [deleteError, setDeleteError] = useState(null);
 
   const deleteFile = async (productId, fileId) => {
+    if (!productId || !fileId) {
+      setDeleteError("ID de producto y archivo requeridos.");
+      return false;
+    }
+
     setDeleting(true);
     setDeleteError(null);
 

@@ -1,26 +1,32 @@
-import { axiosInstance } from "../../../services/api";
+import { djangoApi } from "@/api/clients";
 
 /**
- * Lista subproductos con paginación.
- * @param {number} product_pk - ID del producto padre.
- * @param {string} [url] - URL a usar. Si se pasa, ignora product_pk.
+ * 📄 Lista subproductos con soporte para paginación.
+ *
+ * @param {number|string} product_pk - ID del producto padre
+ * @param {string} [url] - URL paginada (ignora product_pk si se pasa)
+ * @returns {Promise<Object>} - Objeto con results, next, previous, etc.
  */
-export const listSubproducts = async (product_pk, url) => {
+export const listSubproducts = async (product_pk, url = null) => {
+  if (!url && !product_pk) {
+    throw new Error("❌ Debes proporcionar product_pk o una URL de paginación.");
+  }
+
   const endpoint = url || `/inventory/products/${product_pk}/subproducts/`;
 
-  if (!product_pk && !url) {
-    console.error("Error: falta product_pk y url.");
-    return { results: [] };
-  }
-
   try {
-    const response = await axiosInstance.get(endpoint);
+    const response = await djangoApi.get(endpoint);
     return response.data;
   } catch (error) {
-    console.error("Error al listar subproductos:", error.response?.data || error.message);
-    return {
-      results: [],
-      error: error.response?.data?.detail || "Error al listar subproductos",
-    };
+    const detail =
+      error.response?.data?.detail ||
+      error.message ||
+      "Error al listar subproductos.";
+    console.error("❌ listSubproducts:", detail);
+    throw new Error(detail);
   }
+};
+
+export default {
+  listSubproducts,
 };

@@ -105,8 +105,7 @@ const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
             required
             error={validationErrors.username}
           />
-
-          <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
+          <div className="flex items-center ps-4 border rounded-sm h-[46px] bg-background-100">
             <input
               id="is_staff"
               type="checkbox"
@@ -115,70 +114,35 @@ const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
               onChange={handleChange}
               className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2"
             />
-            <label
-              htmlFor="is_staff"
-              className="ms-2 text-sm font-medium"
-            >
+            <label htmlFor="is_staff" className="ms-2 text-sm font-medium">
               Administrador
             </label>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormInput
-            label="Nombre"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            error={validationErrors.name}
-          />
-          <FormInput
-            label="Apellido"
-            name="last_name"
-            value={formData.last_name}
-            onChange={handleChange}
-            error={validationErrors.last_name}
-          />
+          <FormInput label="Nombre" name="name" value={formData.name} onChange={handleChange} required error={validationErrors.name} />
+          <FormInput label="Apellido" name="last_name" value={formData.last_name} onChange={handleChange} error={validationErrors.last_name} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <FormInput
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            error={validationErrors.email}
-          />
-          <FormInput
-            label="DNI"
-            name="dni"
-            value={formData.dni}
-            onChange={handleChange}
-            required
-            error={validationErrors.dni}
-          />
+          <FormInput label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required error={validationErrors.email} />
+          <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} required error={validationErrors.dni} />
         </div>
 
-        <div className="mb-4">
+        {/* Imagen de perfil */}
+        <div className="mb-4 mt-4">
           <label className="block mb-2 text-sm font-medium text-text-secondary" htmlFor="image">
             Imagen de perfil
           </label>
-
           <div className="flex items-center space-x-4">
-            <label
-              htmlFor="image"
-              className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600"            >
+            <label htmlFor="image" className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600">
               Seleccionar archivo
             </label>
-
             <span className="text-sm text-text-secondary">
               {formData.image ? formData.image.name : 'Sin archivo seleccionado'}
             </span>
           </div>
-
           <input
             id="image"
             name="image"
@@ -187,38 +151,19 @@ const UserRegisterModal = ({ isOpen, onClose, onCreate, onCreateSuccess }) => {
             onChange={handleChange}
             className="hidden"
           />
-
           {validationErrors.image && (
             <p className="text-error-500 text-xs italic mt-1">
-              {Array.isArray(validationErrors.image)
-                ? validationErrors.image.join(', ')
-                : validationErrors.image}
+              {Array.isArray(validationErrors.image) ? validationErrors.image.join(', ') : validationErrors.image}
             </p>
           )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <FormInput
-            label="Contraseña"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            error={validationErrors.password}
-          />
-          <FormInput
-            label="Confirmar Contraseña"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-            error={validationErrors.confirmPassword}
-          />
+          <FormInput label="Contraseña" name="password" type="password" value={formData.password} onChange={handleChange} required error={validationErrors.password} />
+          <FormInput label="Confirmar Contraseña" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required error={validationErrors.confirmPassword} />
         </div>
 
-        <div className="flex justify-end space-x-2 mt-4">
+        <div className="flex justify-end space-x-2 mt-6">
           <button
             type="button"
             onClick={onClose}

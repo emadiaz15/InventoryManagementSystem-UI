@@ -1,36 +1,37 @@
-import { useEffect } from 'react';
-import { getFastapiToken, clearTokens } from '../services/api';
-import { isJwtExpired } from '../utils/jwtUtils';
+import { useEffect } from "react";
+import { getAccessToken, clearTokens } from "../api/clients";
+import { isJwtExpired } from "../utils/jwtUtils";
 
 /**
- * Hook que chequea periódicamente si el fastapiToken expiró.
+ * Hook que chequea periódicamente si el accessToken (Django) expiró.
  * Si expiró, limpia tokens y dispara un evento de sesión expirada.
+ * @param {Object} options
+ * @param {number} options.intervalMs - Frecuencia de chequeo en milisegundos.
  */
 export function useSession({ intervalMs = 30000 } = {}) {
   useEffect(() => {
     const checkSession = () => {
-      const fastapiToken = getFastapiToken();
-      if (!fastapiToken) {
-        console.warn('🚫 No hay fastapiToken, cerrando sesión');
+      const accessToken = getAccessToken();
+
+      if (!accessToken) {
+        console.warn("🚫 [Session] No hay accessToken, cerrando sesión");
         clearTokens();
-        window.dispatchEvent(new Event('sessionExpired'));
+        window.dispatchEvent(new Event("sessionExpired"));
         return;
       }
 
-      if (isJwtExpired(fastapiToken)) {
-        console.warn('⌛ Token fastapi expirado, cerrando sesión');
+      const isExpired = isJwtExpired(accessToken);
+
+      if (isExpired) {
+        console.warn("⌛ [Session] accessToken expirado, cerrando sesión");
         clearTokens();
-        window.dispatchEvent(new Event('sessionExpired'));
+        window.dispatchEvent(new Event("sessionExpired"));
       }
     };
 
-    // Ejecutar chequeo inmediatamente
-    checkSession();
+    checkSession(); // Primer chequeo inmediato
 
-    // Setear intervalo de chequeo
-    const interval = setInterval(checkSession, intervalMs);
-
-    // Cleanup
-    return () => clearInterval(interval);
+    const intervalId = setInterval(checkSession, intervalMs);
+    return () => clearInterval(intervalId); // Limpieza
   }, [intervalMs]);
 }

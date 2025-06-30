@@ -1,9 +1,9 @@
 import React from "react";
 import { useAuth } from "../../../context/AuthProvider";
-import CreateCuttingOrderModal from "./CreateCuttingOrderModal";
 import EditCuttingOrderModal from "./EditCuttingOrderModal";
 import ViewCuttingOrderModal from "./ViewCuttingOrderModal";
 import DeleteMessage from "../../../components/common/DeleteMessage";
+import CreateCuttingOrderWizard from "./CreateCuttingOrderWizard";
 
 /**
  * Componente central de todos los modales asociados a órdenes de corte.
@@ -32,10 +32,11 @@ const CuttingOrderModals = ({
         <>
             {/* Crear nueva orden */}
             {type === "create" && isStaff && (
-                <CreateCuttingOrderModal
+                <CreateCuttingOrderWizard
                     isOpen={true}
                     onClose={closeModal}
                     onSave={onCreateOrder}
+                    productId={null}
                 />
             )}
 

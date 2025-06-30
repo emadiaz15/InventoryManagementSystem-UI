@@ -1,4 +1,4 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
 
 /**
  * Lista todas las órdenes de corte o usa una URL personalizada (paginación, filtros).
@@ -8,7 +8,7 @@ import { axiosInstance } from '../../../services/api';
  */
 export const listCuttingOrders = async (url = '/cutting/cutting-orders/') => {
   try {
-    const response = await axiosInstance.get(url);
+    const response = await djangoApi.get(url);
     return response.data;
   } catch (error) {
     console.error(

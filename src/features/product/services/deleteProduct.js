@@ -1,4 +1,4 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
 
 /**
  * Soft-delete de un producto.
@@ -7,7 +7,7 @@ import { axiosInstance } from '../../../services/api';
 export const deleteProduct = async (productId) => {
   try {
     // Coincide con tu updateProduct:
-    const response = await axiosInstance.delete(`/inventory/products/${productId}/`);
+    const response = await djangoApi.delete(`/inventory/products/${productId}/`);
     // axios lanza si no es 2xx, así que si llega aquí, fue 204 o 200
     return response;
   } catch (error) {

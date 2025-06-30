@@ -39,6 +39,7 @@ const UserList = () => {
     next: goToNextPage,
     previous: goToPreviousPage,
     currentUrl: currentUsersUrl,
+    invalidate,
   } = useUsers(filters);
 
   useEffect(() => {
@@ -73,10 +74,10 @@ const UserList = () => {
       setSuccessMessage(message);
       setShowSuccess(true);
       closeModal();
-      fetchUsers(currentUsersUrl);
+      invalidate();
       setTimeout(() => setShowSuccess(false), 3000);
     },
-    [closeModal, fetchUsers, currentUsersUrl]
+    [closeModal, invalidate]
   );
 
   const handleRegisterUser = useCallback(async (newUserData) => {
@@ -86,7 +87,10 @@ const UserList = () => {
       await registerUser(newUserData);
       handleActionSuccess("Usuario creado exitosamente.");
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || "Error al crear el usuario.";
+      const errorMsg =
+        err.response?.data?.detail ||
+        err.message ||
+        "Error al crear el usuario.";
       setActionError({ message: errorMsg });
       throw err;
     } finally {
@@ -99,10 +103,17 @@ const UserList = () => {
     setActionError(null);
     try {
       const updatedResponse = await updateUser(userId, updatedData);
-      const username = updatedResponse?.username || updatedResponse?.user?.username || "desconocido";
+      const username =
+        updatedResponse?.username ||
+        updatedResponse?.user?.username ||
+        "desconocido";
       handleActionSuccess(`Usuario "${username}" actualizado.`);
+      return updatedResponse;
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || "Error al actualizar el usuario.";
+      const errorMsg =
+        err.response?.data?.detail ||
+        err.message ||
+        "Error al actualizar el usuario.";
       setActionError({ message: errorMsg });
       throw err;
     } finally {
@@ -117,7 +128,10 @@ const UserList = () => {
       await resetUserPassword(userId, passwordData);
       handleActionSuccess(`Contraseña actualizada para el usuario ID ${userId}.`);
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || "Error al cambiar contraseña.";
+      const errorMsg =
+        err.response?.data?.detail ||
+        err.message ||
+        "Error al cambiar contraseña.";
       setActionError({ message: errorMsg });
       throw err;
     } finally {
@@ -133,7 +147,10 @@ const UserList = () => {
       await deleteUser(userToDelete.id);
       handleActionSuccess(`Usuario "${userToDelete.username}" eliminado (soft).`);
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || "Error al desactivar el usuario.";
+      const errorMsg =
+        err.response?.data?.detail ||
+        err.message ||
+        "Error al desactivar el usuario.";
       setActionError({ message: errorMsg });
     } finally {
       setIsProcessing(false);

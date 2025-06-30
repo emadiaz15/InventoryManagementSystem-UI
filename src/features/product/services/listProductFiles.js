@@ -1,16 +1,29 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
 
 /**
  * 📥 Lista los archivos multimedia de un producto.
- * @param {string} productId 
+ * @param {string|number} productId - ID del producto
+ * @returns {Promise<Array>} - Array de archivos asociados
  */
 export const listProductFiles = async (productId) => {
-    try {
-      const response = await axiosInstance.get(`/inventory/products/${productId}/files/`);
-      return response.data.files; // Array de archivos
-    } catch (error) {
-      console.error('❌ Error al listar archivos:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.detail || 'No se pudo listar los archivos.');
-    }
-  };
-  
+  if (!productId) {
+    throw new Error("Se requiere un productId para listar archivos.");
+  }
+
+  try {
+    const response = await djangoApi.get(`/inventory/products/${productId}/files/`);
+    return response.data.files;
+  } catch (error) {
+    console.error(
+      "❌ Error al listar archivos del producto:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data?.detail || "No se pudo listar los archivos del producto."
+    );
+  }
+};
+
+export default {
+  listProductFiles,
+};

@@ -1,4 +1,4 @@
-import { axiosInstance } from '../../../services/api';
+import { djangoApi } from "@/api/clients";
 
 /**
  * Elimina suavemente una orden de corte específica
@@ -9,7 +9,7 @@ import { axiosInstance } from '../../../services/api';
 export const deleteCuttingOrder = async (orderId) => {
   try {
     // Devuelve '204 No Content' en caso de éxito
-    const response = await axiosInstance.delete(
+    const response = await djangoApi.delete(
       `/cutting/cutting-orders/${orderId}/`
     );
     return response.data;

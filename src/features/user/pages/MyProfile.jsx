@@ -9,16 +9,20 @@ import Spinner from '../../../components/ui/Spinner';
 
 const MyProfile = () => {
   const { user, profileImage } = useAuth();
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
   useEffect(() => {
-    if (user) setInitialLoaded(true);
+    if (user) {
+      setInitialLoaded(true);
+    }
   }, [user]);
 
-  const handleUserUpdate = (updatedUser) => {
+  const handleUserUpdate = () => {
     setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000); // auto-dismiss
   };
 
   return (
@@ -36,7 +40,7 @@ const MyProfile = () => {
               </div>
               <div className="flex-1">
                 <h2 className="mb-4 text-3xl font-bold text-text-primary">
-                  {user.name} {user.last_name}
+                  {user?.name} {user?.last_name}
                 </h2>
                 <p className="mb-6 text-text-secondary text-base">
                   Tus datos personales
@@ -54,8 +58,12 @@ const MyProfile = () => {
           onClose={() => setShowSuccess(false)}
         />
       )}
+
       {showError && (
-        <ErrorMessage message="Error al actualizar el perfil." />
+        <ErrorMessage
+          message="Error al actualizar el perfil."
+          onClose={() => setShowError(false)}
+        />
       )}
     </>
   );

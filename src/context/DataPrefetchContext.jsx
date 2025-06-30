@@ -1,41 +1,31 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { listCategories } from "../features/category/services/listCategory";
 import { listTypes } from "../features/type/services/listType";
 
 const DataPrefetchContext = createContext();
 
 export const DataPrefetchProvider = ({ children }) => {
-  const [categories, setCategories] = useState([]);
-  const [types, setTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loaded, setLoaded] = useState(false);
+  const { data: catData, isLoading: loadingCats } = useQuery({
+    queryKey: ["prefetch", "categories"],
+    queryFn: () => listCategories("/inventory/categories/?limit=1000&status=true"),
+    staleTime: 5 * 60 * 1000, // ✅ 5 minutos
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [catResp, typeResp] = await Promise.all([
-        listCategories("/inventory/categories/?limit=1000&status=true"),
-        listTypes("/inventory/types/?limit=1000&status=true"),
-      ]);
+  const { data: typeData, isLoading: loadingTypes } = useQuery({
+    queryKey: ["prefetch", "types"],
+    queryFn: () => listTypes("/inventory/types/?limit=1000&status=true"),
+    staleTime: 5 * 60 * 1000, // ✅ 5 minutos
+  });
 
-      setCategories(catResp.results || []);
-      setTypes(
-        typeResp.results ??
-        typeResp.activeTypes ??
-        (Array.isArray(typeResp) ? typeResp : [])
-      );
+  const categories = catData?.results || [];
+  const types =
+    typeData?.results ??
+    typeData?.activeTypes ??
+    (Array.isArray(typeData) ? typeData : []);
 
-      setLoaded(true);
-    } catch (err) {
-      console.error("❌ Prefetch fallido:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const loading = loadingCats || loadingTypes;
+  const loaded = !!catData && !!typeData;
 
   return (
     <DataPrefetchContext.Provider value={{ categories, types, loading, loaded }}>
@@ -44,4 +34,10 @@ export const DataPrefetchProvider = ({ children }) => {
   );
 };
 
-export const usePrefetchedData = () => useContext(DataPrefetchContext);
+export const usePrefetchedData = () => {
+  const context = useContext(DataPrefetchContext);
+  if (!context) {
+    throw new Error("usePrefetchedData debe usarse dentro de un <DataPrefetchProvider>");
+  }
+  return context;
+};

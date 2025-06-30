@@ -38,33 +38,32 @@ const SubproductCard = ({
     };
 
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 md:max-w-2xl w-full">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 w-full max-w-xs text-sm">
             {/* Header */}
-            <div className="flex justify-between px-4 py-2 border-b">
-                <span className="text-1xl font-bold text-gray-800 truncate">
+            <div className="flex justify-between px-2 py-1 border-b">
+                <span className="text-sm font-semibold truncate">
                     {subproduct.parent_type_name} - {subproduct.parent_name}
                 </span>
-                <strong>{subproduct.initial_stock_quantity} Mts</strong>
+                <li className="flex items-center">
+                    <span
+                        className={`inline-block w-3 h-3 mr-2 rounded-full ${subproduct.status ? "bg-green-500" : "bg-red-500"
+                            }`}
+                    />
+                    {subproduct.status ? "Disponible" : "Terminada"}
+                </li>
             </div>
 
             {/* Content */}
-            <div className="flex flex-col md:flex-row p-4 space-y-4 md:space-y-0 md:space-x-6">
+            <div className="flex flex-col md:flex-row p-2 space-y-2 md:space-y-0 md:space-x-2">
                 <img
-                    className="object-cover w-full h-40 md:w-48 md:h-48 rounded"
+                    className="object-cover w-full h-24 md:w-24 md:h-24 rounded"
                     src={imageUrl}
                     alt={subproduct.name}
                 />
                 <ul className="flex-1 text-sm text-gray-700 space-y-1 overflow-hidden">
                     <li><strong>Marca:</strong> {subproduct.brand}</li>
-                    <li><strong>Tipo:</strong> {subproduct.form_type}</li>
                     <li><strong>N°:</strong> {subproduct.number_coil}</li>
-                    <li className="flex items-center">
-                        <span
-                            className={`inline-block w-3 h-3 mr-2 rounded-full ${subproduct.status ? "bg-green-500" : "bg-red-500"
-                                }`}
-                        />
-                        {subproduct.status ? "Disponible" : "Terminada"}
-                    </li>
+                    <li><strong className="pl-14 text-2xl text-black">{subproduct.initial_stock_quantity} Mts</strong></li>
                 </ul>
             </div>
 

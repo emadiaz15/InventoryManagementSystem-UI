@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // ─────────────────────────────────────────────────────────────
-// 🌐 Base URL de API (Django/FastAPI)
+// 🌐 Base URL de API (Django)
 // ─────────────────────────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -10,34 +10,21 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 // ─────────────────────────────────────────────────────────────
 const getAccessToken = () => sessionStorage.getItem("accessToken");
 const getRefreshToken = () => sessionStorage.getItem("refreshToken");
-const getFastapiToken = () => sessionStorage.getItem("fastapiToken");
 
 const clearTokens = () => {
   sessionStorage.removeItem("accessToken");
   sessionStorage.removeItem("refreshToken");
-  sessionStorage.removeItem("fastapiToken");
   window.dispatchEvent(new Event("sessionExpired"));
 };
 
 // ─────────────────────────────────────────────────────────────
-// 🧬 Config global para modo dinámico (opt-in desde app)
+// 🔧 Factory de clientes con configuración fija (Django)
 // ─────────────────────────────────────────────────────────────
-export const tokenConfig = {
-  useFastapi: false,
-};
-
-// Devuelve el token adecuado dinámicamente
-const getActiveToken = () =>
-  tokenConfig.useFastapi ? getFastapiToken() : getAccessToken();
-
-// ─────────────────────────────────────────────────────────────
-// 🔧 Factory de clientes con configuración dinámica
-// ─────────────────────────────────────────────────────────────
-const createApiClient = (getTokenFn) => {
+const createApiClient = () => {
   const instance = axios.create({ baseURL: API_BASE_URL });
 
   instance.interceptors.request.use((config) => {
-    const token = getTokenFn();
+    const token = getAccessToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   });
@@ -54,20 +41,16 @@ const createApiClient = (getTokenFn) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// 🎯 Clientes especializados
+// 🎯 Cliente principal para Django
 // ─────────────────────────────────────────────────────────────
-export const djangoApi = createApiClient(getAccessToken);
-export const fastapiApi = createApiClient(getFastapiToken);
-
-// Default: cliente genérico con comportamiento dinámico
-export const axiosInstance = createApiClient(getActiveToken);
+export const djangoApi = createApiClient();
 
 // ─────────────────────────────────────────────────────────────
 // 📤 Exportación utilitaria
 // ─────────────────────────────────────────────────────────────
 export {
+  djangoApi as axiosInstance,
   getAccessToken,
-  getFastapiToken,
   getRefreshToken,
   clearTokens,
 };
