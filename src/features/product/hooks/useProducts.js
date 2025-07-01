@@ -10,7 +10,7 @@ import logger from "@/utils/logger";
  * @param {Object} filters - Filtros aplicados a la consulta.
  * @param {string} initialUrl - Endpoint inicial de la API.
  */
-const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
+export const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [error, setError] = useState(null);
