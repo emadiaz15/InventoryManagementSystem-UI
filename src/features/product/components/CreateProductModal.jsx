@@ -80,7 +80,8 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     };
 
     fetchData();
-  }, [isOpen, clearUploadError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   useEffect(() => {
     if (!formData.category) {
