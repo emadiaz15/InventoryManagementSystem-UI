@@ -23,3 +23,15 @@ export const listTypes = async (url = "/inventory/types/") => {
     throw new Error("Error al obtener la lista de tipos.");
   }
 };
+
+/**
+ * Obtiene los tipos pertenecientes a una categoría.
+ *
+ * @param {number|string} categoryId - ID de la categoría
+ * @returns {Object} - { results, next, previous, count }
+ */
+export const listTypesByCategory = async (categoryId) => {
+  const url = `/inventory/types/?limit=1000&status=true&category=${categoryId}`;
+  return listTypes(url);
+};
+

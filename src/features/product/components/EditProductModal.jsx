@@ -12,6 +12,7 @@ import DeleteMessage from "../../../components/common/DeleteMessage";
 import { updateProduct } from "../services/updateProduct";
 import { listProducts } from "../services/listProducts";
 import { usePrefetchedData } from "../../../context/DataPrefetchContext";
+import { listTypesByCategory } from "../../type/services/listType";
 
 import { useProductFileUpload } from "../hooks/useProductFileUpload";
 import { useProductFileDelete } from "../hooks/useProductFileDelete";
@@ -85,13 +86,29 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
         }
 
         const catId = parseInt(formData.category, 10);
-        setFilteredTypes(
-            types.filter((t) => {
-                if (t.category && typeof t.category === "object") return t.category.id === catId;
-                if (typeof t.category_id !== "undefined") return t.category_id === catId;
-                return t.category === catId;
-            })
-        );
+
+        const loadTypes = async () => {
+            try {
+                const res = await listTypesByCategory(catId);
+                const fetched = res.results ?? [];
+                if (fetched.length) {
+                    setFilteredTypes(fetched);
+                    return;
+                }
+            } catch (err) {
+                console.error("Error al obtener tipos filtrados:", err);
+            }
+
+            setFilteredTypes(
+                types.filter((t) => {
+                    if (t.category && typeof t.category === "object") return t.category.id === catId;
+                    if (typeof t.category_id !== "undefined") return t.category_id === catId;
+                    return t.category === catId;
+                })
+            );
+        };
+
+        loadTypes();
     }, [formData.category, types]);
 
     const handleChange = (e) => {
@@ -162,7 +179,7 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
         data.append("location", formData.location.trim());
         data.append("position", formData.position.trim());
         data.append("category", formData.category);
-        data.append("type", formData.type);
+        data.append("type", formData.type ? formData.type : "");
         data.append("has_subproducts", formData.has_subproducts ? "true" : "false");
 
         const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
@@ -235,7 +252,10 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                             name="type"
                             value={formData.type}
                             onChange={handleChange}
-                            options={filteredTypes.map((t) => ({ value: String(t.id), label: t.name }))}
+                            options={[
+                                { value: "", label: "N/A" },
+                                ...filteredTypes.map((t) => ({ value: String(t.id), label: t.name })),
+                            ]}
                             disabled={!formData.category}
                         />
 
