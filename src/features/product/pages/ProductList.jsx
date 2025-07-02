@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../../pages/Layout";
 import Toolbar from "../../../components/common/Toolbar";
@@ -54,9 +55,14 @@ const ProductsList = () => {
   const handleCloseModal = () =>
     setModalState({ type: null, productData: null });
 
+  const queryClient = useQueryClient();
+
   const handleSaveProduct = () => {
     invalidate();
-    setPageUrl(null); // Vuelve a la primera página
+    queryClient.refetchQueries({ queryKey: ["products"] });
+    if (filters.code) {
+      setFilters((prev) => ({ ...prev, code: "" }));
+    }
     setSuccessMessage("¡Producto actualizado con éxito!");
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
