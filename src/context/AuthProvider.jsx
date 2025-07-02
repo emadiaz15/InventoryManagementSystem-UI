@@ -84,8 +84,8 @@ export const AuthProvider = ({ children }) => {
                 user: userData,
             } = res.data;
 
-            localStorage.setItem("accessToken", access_token);
-            localStorage.setItem("refreshToken", refresh_token);
+            sessionStorage.setItem("accessToken", access_token);
+            sessionStorage.setItem("refreshToken", refresh_token);
 
             setUser(userData);
             setIsAuthenticated(true);
