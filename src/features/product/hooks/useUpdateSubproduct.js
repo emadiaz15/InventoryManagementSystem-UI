@@ -8,7 +8,10 @@ export const useUpdateSubproduct = (productId) => {
     mutationFn: ({ subproductId, formData }) =>
       updateSubproduct(productId, subproductId, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries(["subproducts", productId]);
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "subproducts" && query.queryKey[1] === productId,
+      });
     },
   });
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../../pages/Layout";
 import Toolbar from "../../../components/common/Toolbar";
@@ -17,12 +17,13 @@ import { deleteProduct } from "../services/deleteProduct";
 
 const ProductsList = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
 
   const [modalState, setModalState] = useState({ type: null, productData: null });
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [filters, setFilters] = useState({ code: "" });
+  const [pageUrl, setPageUrl] = useState(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
@@ -32,18 +33,8 @@ const ProductsList = () => {
     error: fetchError,
     nextPageUrl,
     previousPageUrl,
-    fetchProducts,
-    next,
-    previous,
-    currentUrl,
-  } = useProducts(filters);
-
-  const [initialLoaded, setInitialLoaded] = useState(false);
-  useEffect(() => {
-    if (!loadingProducts && products !== null) {
-      setInitialLoaded(true);
-    }
-  }, [loadingProducts, products]);
+    invalidate,
+  } = useProducts(filters, pageUrl);
 
   const handleViewProduct = (product) =>
     setModalState({ type: "view", productData: product, showCarousel: true });
@@ -64,7 +55,8 @@ const ProductsList = () => {
     setModalState({ type: null, productData: null });
 
   const handleSaveProduct = () => {
-    fetchProducts(currentUrl);
+    invalidate();
+    setPageUrl(null); // Vuelve a la primera página
     setSuccessMessage("¡Producto actualizado con éxito!");
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
@@ -75,7 +67,8 @@ const ProductsList = () => {
     setDeleteError(null);
     try {
       await deleteProduct(product.id);
-      await fetchProducts(currentUrl);
+      invalidate();
+      setPageUrl(null);
       setSuccessMessage("¡Producto eliminado con éxito!");
       setShowSuccess(true);
       setModalState({ type: null, productData: null });
@@ -88,6 +81,7 @@ const ProductsList = () => {
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+    setPageUrl(null); // Resetea paginación al cambiar filtros
   }, []);
 
   const filterColumns = useMemo(
@@ -97,7 +91,7 @@ const ProductsList = () => {
 
   return (
     <>
-      <Layout isLoading={!initialLoaded}>
+      <Layout isLoading={loadingProducts}>
         {showSuccess && (
           <div className="fixed top-20 right-5 z-[10000]">
             <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
@@ -115,11 +109,11 @@ const ProductsList = () => {
 
           {fetchError && (
             <div className="my-4">
-              <ErrorMessage message={fetchError} />
+              <ErrorMessage message={fetchError.message} />
             </div>
           )}
 
-          {!initialLoaded ? (
+          {loadingProducts ? (
             <div className="my-12 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
@@ -142,8 +136,8 @@ const ProductsList = () => {
           )}
 
           <Pagination
-            onNext={nextPageUrl ? next : undefined}
-            onPrevious={previousPageUrl ? previous : undefined}
+            onNext={nextPageUrl ? () => setPageUrl(nextPageUrl) : undefined}
+            onPrevious={previousPageUrl ? () => setPageUrl(previousPageUrl) : undefined}
             hasNext={Boolean(nextPageUrl)}
             hasPrevious={Boolean(previousPageUrl)}
           />
