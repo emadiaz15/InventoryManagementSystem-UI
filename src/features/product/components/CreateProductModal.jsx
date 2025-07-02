@@ -10,7 +10,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 
 import { createProduct } from "../services/createProduct";
 import { listCategories } from "../../category/services/listCategory";
-import { listTypes } from "../../type/services/listType";
+import { listTypes, listTypesByCategory } from "../../type/services/listType";
 import { listProducts } from "../services/listProducts";
 
 import { useProductFileUpload } from "../hooks/useProductFileUpload";
@@ -88,14 +88,32 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
       setFilteredTypes([]);
       return;
     }
+
     const catId = parseInt(formData.category, 10);
-    setFilteredTypes(
-      types.filter((t) => {
-        if (t.category?.id != null) return t.category.id === catId;
-        if (t.category_id != null) return t.category_id === catId;
-        return t.category === catId;
-      })
-    );
+
+    const loadTypes = async () => {
+      try {
+        const data = await listTypesByCategory(catId);
+        const fetched = data.results ?? [];
+        if (fetched.length) {
+          setFilteredTypes(fetched);
+          return;
+        }
+      } catch (err) {
+        console.error("Error al filtrar tipos:", err);
+      }
+
+      // Fallback a filtrado local
+      setFilteredTypes(
+        types.filter((t) => {
+          if (t.category?.id != null) return t.category.id === catId;
+          if (t.category_id != null) return t.category_id === catId;
+          return t.category === catId;
+        })
+      );
+    };
+
+    loadTypes();
   }, [formData.category, types]);
 
   const handleChange = (e) => {

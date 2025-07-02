@@ -11,7 +11,7 @@ import ProductModals from "../components/ProductModals";
 import ProductTable from "../components/ProductTable";
 import Filter from "../../../components/ui/Filter";
 
-import { useProducts } from "../hooks/useProducts";
+import useProducts from "../hooks/useProducts";
 import { useAuth } from "../../../context/AuthProvider";
 import { deleteProduct } from "../services/deleteProduct";
 

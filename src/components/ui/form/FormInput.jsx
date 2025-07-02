@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
-const FormInput = ({
+const FormInput = forwardRef(({ 
   label,
   name,
   type = "text",
@@ -9,7 +9,7 @@ const FormInput = ({
   required = false,
   placeholder = "",
   error = "", // Puede ser string o array
-}) => {
+}, ref) => {
   // Normaliza el error a string
   const renderError = () => {
     if (Array.isArray(error)) return error.join(', ');
@@ -32,6 +32,7 @@ const FormInput = ({
 
       {/* Input */}
       <input
+        ref={ref}
         id={name}
         type={type}
         name={name}
@@ -51,6 +52,8 @@ const FormInput = ({
       )}
     </div>
   );
-};
+});
+
+FormInput.displayName = 'FormInput';
 
 export default FormInput;

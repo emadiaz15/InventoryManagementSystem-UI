@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { useAuth } from "../../../context/AuthProvider";
 import { listUsers } from "../../user/services/listUsers";
 import { useSubproducts } from "../../product/hooks/useSubproducts";
+import useProducts from "../../product/hooks/useProducts";
 import createCuttingOrder from "../services/createCuttingOrder";
 import { buildCuttingOrderPayload } from "../utils/buildCuttingOrderPayload";
 
@@ -23,10 +24,16 @@ export default function CreateCuttingOrderWizard({ isOpen, onClose, onSave, prod
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [usersError, setUsersError] = useState("");
 
-    const { subproducts, loading: loadingSubs, error: subsError } = useSubproducts(productId, {
+    const [selectedProductId, setSelectedProductId] = useState(productId || "");
+    const { data: productsData, isLoading: loadingProducts, error: productsError } = useProducts({ status: true, page_size: 100 });
+    const products = productsData?.results || [];
+
+    const activeProductId = productId || selectedProductId;
+    const { data: subData, isLoading: loadingSubs, error: subsError } = useSubproducts(activeProductId, {
         status: true,
         page_size: 100
     });
+    const subproducts = subData?.results || [];
 
     const [selectedItems, setSelectedItems] = useState({});
     const [error, setError] = useState("");
@@ -42,10 +49,11 @@ export default function CreateCuttingOrderWizard({ isOpen, onClose, onSave, prod
             setUsers([]);
             setUsersError("");
             setSelectedItems({});
+            setSelectedProductId(productId || "");
             setError("");
             setSuccess(false);
         }
-    }, [isOpen]);
+    }, [isOpen, productId]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -63,6 +71,10 @@ export default function CreateCuttingOrderWizard({ isOpen, onClose, onSave, prod
         }
         if (!customer.trim()) {
             setError("El campo Cliente es obligatorio.");
+            return false;
+        }
+        if (!productId && !selectedProductId) {
+            setError("Debes seleccionar un producto.");
             return false;
         }
         return true;
@@ -114,11 +126,16 @@ export default function CreateCuttingOrderWizard({ isOpen, onClose, onSave, prod
         setError("");
         if (!validateStep2()) return;
 
+        const items = Object.entries(selectedItems).map(([subproduct, qty]) => ({
+            subproduct,
+            cutting_quantity: qty,
+        }));
+
         const payload = buildCuttingOrderPayload({
             order_number,
             customer,
-            items: selectedItems,
-            assigned_to: assignedTo || null
+            items,
+            assigned_to: assignedTo || null,
         });
 
         setLoading(true);
@@ -137,9 +154,9 @@ export default function CreateCuttingOrderWizard({ isOpen, onClose, onSave, prod
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Crear Orden de Corte">
             <form onSubmit={step === 2 ? handleSubmit : e => e.preventDefault()} className="space-y-4">
-                {(error || usersError || subsError) && (
+                {(error || usersError || subsError || productsError) && (
                     <ErrorMessage
-                        message={error || usersError || subsError}
+                        message={error || usersError || subsError || productsError}
                         onClose={() => setError("")}
                     />
                 )}
@@ -162,6 +179,20 @@ export default function CreateCuttingOrderWizard({ isOpen, onClose, onSave, prod
                                 onChange={e => setCustomer(e.target.value)}
                                 required
                             />
+                            {!productId && (
+                                <FormSelect
+                                    label="Producto"
+                                    name="product"
+                                    value={selectedProductId}
+                                    onChange={e => setSelectedProductId(e.target.value)}
+                                    loading={loadingProducts}
+                                    options={[
+                                        { value: "", label: "Seleccione un producto" },
+                                        ...products.map(p => ({ value: String(p.id), label: p.name }))
+                                    ]}
+                                    required
+                                />
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-text-secondary">Creado por</label>
                                 <p className="mt-1 p-2 bg-gray-50 rounded">
@@ -282,5 +313,5 @@ CreateCuttingOrderWizard.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     onSave: PropTypes.func,
-    productId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    productId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };

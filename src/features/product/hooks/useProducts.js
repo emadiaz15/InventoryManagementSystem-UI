@@ -1,30 +1,47 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listProducts } from "../services/listProducts";
-import { useAuth } from "../../../context/AuthProvider";
 import { buildQueryString } from "@/utils/queryUtils";
+import logger from "@/utils/logger";
 
 /**
- * Hook optimizado con React Query para obtener productos con filtros y cache TTL.
- * @param {object} filters - Objeto de filtros (ej: { status: 'true', page_size: 20 })
- * @param {string} baseUrl - Endpoint base, por defecto /inventory/products/
+ * 📦 Hook para gestionar la lista de productos con filtros y paginación usando React Query.
+ *
+ * @param {Object} filters - Filtros aplicados a la consulta.
+ * @param {string} initialUrl - Endpoint inicial de la API.
  */
-export const useProducts = (filters = {}, baseUrl = "/inventory/products/") => {
-  const { isAuthenticated } = useAuth();
-  const queryString = buildQueryString(filters);
-  const fullUrl = `${baseUrl}${queryString}`;
+const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
+  const queryClient = useQueryClient();
 
-  return useQuery({
-    queryKey: ["products", filters],
-    queryFn: () => {
-      if (!isAuthenticated) {
-        return Promise.reject(new Error("No estás autenticado"));
+  const queryString = buildQueryString(filters);
+  const url = `${initialUrl.split("?")[0]}${queryString}`;
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["products", url],
+    queryFn: async () => {
+      logger.log(`📡 Consultando productos desde: ${url}`);
+      const data = await listProducts(url);
+      if (!data || !Array.isArray(data.results)) {
+        throw new Error("Respuesta inesperada de la API.");
       }
-      return listProducts(fullUrl);
+      return data;
     },
-    enabled: !!isAuthenticated,
-    staleTime: 1000 * 60 * 5, // 5 minutos (TTL)
-    cacheTime: 1000 * 60 * 10, // permanece en caché por 10 minutos si no se usa
-    keepPreviousData: true,    // mantiene la data previa durante el refetch
-    refetchOnWindowFocus: false, // evita refetch innecesario al volver al tab
+    keepPreviousData: true,
+    staleTime: 5 * 60 * 1000, // 5 minutos de TTL como definimos en la estrategia
   });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries(["products"]);
+  };
+
+  return {
+    products: data?.results || [],
+    loadingProducts: isLoading,
+    error,
+    nextPageUrl: data?.next || null,
+    previousPageUrl: data?.previous || null,
+    currentUrl: url,
+    invalidate,
+  };
 };
+
+export default useProducts;

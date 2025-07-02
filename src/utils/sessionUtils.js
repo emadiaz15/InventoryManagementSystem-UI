@@ -4,16 +4,16 @@
 
 // ─── Getters ─────────────────────────────────────────────────
 export const getAccessToken = () =>
-  localStorage.getItem("accessToken") || null;
+  sessionStorage.getItem("accessToken") || null;
 export const getRefreshToken = () =>
-  localStorage.getItem("refreshToken") || null;
+  sessionStorage.getItem("refreshToken") || null;
 
 // ─── Limpiar sesión ─────────────────────────────────────────
 /**
- * Elimina todos los tokens de localStorage y emite un evento global.
- */
+ * Elimina todos los tokens de sessionStorage y emite un evento global.
+*/
 export const clearTokens = () => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
+  sessionStorage.removeItem("accessToken");
+  sessionStorage.removeItem("refreshToken");
   window.dispatchEvent(new Event("sessionExpired"));
 };
