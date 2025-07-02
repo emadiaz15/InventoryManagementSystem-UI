@@ -13,12 +13,12 @@ export const updateProduct = async (productId, productData) => {
   }
 
   try {
-    // Excluir archivo si viene del formulario
-    const { file, ...cleanData } = productData;
+    const isForm = productData instanceof FormData;
 
     const response = await djangoApi.put(
       `/inventory/products/${productId}/`,
-      cleanData
+      productData,
+      isForm ? { headers: { "Content-Type": "multipart/form-data" } } : {}
     );
 
     return response.data;
