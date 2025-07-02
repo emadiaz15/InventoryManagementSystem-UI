@@ -38,7 +38,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     type: "",
     initial_stock_quantity: "",
     images: [],
-    has_subproduct: false,
+    has_subproducts: false,
   });
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
       type: "",
       initial_stock_quantity: "",
       images: [],
-      has_subproduct: false,
+      has_subproducts: false,
     });
 
     const fetchData = async () => {
@@ -194,7 +194,10 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     if (stockVal && parseFloat(stockVal) > 0) {
       payload.append("initial_stock_quantity", stockVal);
     }
-    payload.append("has_subproduct", formData.has_subproduct ? "true" : "false");
+    payload.append(
+      "has_subproducts",
+      formData.has_subproducts ? "true" : "false"
+    );
 
     try {
       setLoading(true);
@@ -308,14 +311,14 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
         <div className="flex items-center ps-4 border rounded-sm bg-background-100 h-[46px]">
           <input
-            id="has_subproduct"
+            id="has_subproducts"
             type="checkbox"
-            name="has_subproduct"
-            checked={formData.has_subproduct}
+            name="has_subproducts"
+            checked={formData.has_subproducts}
             onChange={handleChange}
             className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
           />
-          <label htmlFor="has_subproduct" className="ms-2 text-sm">
+          <label htmlFor="has_subproducts" className="ms-2 text-sm">
             Este producto tiene subproductos
           </label>
         </div>
