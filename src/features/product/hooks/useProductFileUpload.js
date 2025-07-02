@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { uploadFileProduct } from "../services/uploadFileProduct"; // o usa nombre singular
+import { useState, useCallback } from "react";
+import { uploadFileProduct } from "../services/uploadFileProduct"; 
 
 /**
  * 🧠 Hook para subir múltiples archivos multimedia (imágenes/videos) a un producto.
@@ -50,9 +50,9 @@ export const useProductFileUpload = () => {
     }
   };
 
-  const clearUploadError = () => {
+  const clearUploadError = useCallback(() => {
     setUploadError(null);
-  };
+  }, []);
 
   return {
     uploading,

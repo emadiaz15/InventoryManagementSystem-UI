@@ -1,79 +1,45 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listProducts } from "../services/listProducts";
-import { invalidateCachedProductsByUrl } from "../services/productCache";
 import { buildQueryString } from "@/utils/queryUtils";
 import logger from "@/utils/logger";
 
 /**
- * 📦 Hook para gestionar la lista de productos con filtros y paginación.
+ * 📦 Hook para gestionar la lista de productos con filtros y paginación usando React Query.
  *
  * @param {Object} filters - Filtros aplicados a la consulta.
  * @param {string} initialUrl - Endpoint inicial de la API.
  */
-export const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
-  const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const [error, setError] = useState(null);
-  const [nextPageUrl, setNextPageUrl] = useState(null);
-  const [previousPageUrl, setPreviousPageUrl] = useState(null);
-  const [currentUrl, setCurrentUrl] = useState(initialUrl);
+const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
+  const queryClient = useQueryClient();
 
-  const fetchProducts = useCallback(async (url) => {
-    setLoadingProducts(true);
-    setError(null);
-    logger.log(`📡 Consultando productos desde: ${url}`);
+  const queryString = buildQueryString(filters);
+  const url = `${initialUrl.split("?")[0]}${queryString}`;
 
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["products", url],
+    queryFn: async () => {
+      logger.log(`📡 Consultando productos desde: ${url}`);
       const data = await listProducts(url);
-      if (data && Array.isArray(data.results)) {
-        setProducts(data.results);
-        setNextPageUrl(data.next);
-        setPreviousPageUrl(data.previous);
-        setCurrentUrl(url);
-      } else {
+      if (!data || !Array.isArray(data.results)) {
         throw new Error("Respuesta inesperada de la API.");
       }
-    } catch (err) {
-      logger.error("❌ Error al obtener productos:", err);
-      setError(err);
-      setProducts([]);
-    } finally {
-      setLoadingProducts(false);
-    }
-  }, []);
+      return data;
+    },
+    keepPreviousData: true,
+    staleTime: 5 * 60 * 1000, // 5 minutos de TTL como definimos en la estrategia
+  });
 
-  useEffect(() => {
-    const query = buildQueryString(filters);
-    const baseUrl = initialUrl.split("?")[0];
-    const newUrl = `${baseUrl}${query}`;
-    fetchProducts(newUrl);
-  }, [filters, initialUrl, fetchProducts]);
-
-  const next = useCallback(() => {
-    if (nextPageUrl) fetchProducts(nextPageUrl);
-  }, [nextPageUrl, fetchProducts]);
-
-  const previous = useCallback(() => {
-    if (previousPageUrl) fetchProducts(previousPageUrl);
-  }, [previousPageUrl, fetchProducts]);
-
-  const invalidate = useCallback(() => {
-    if (currentUrl) {
-      invalidateCachedProductsByUrl(currentUrl);
-      fetchProducts(currentUrl);
-    }
-  }, [currentUrl, fetchProducts]);
+  const invalidate = () => {
+    queryClient.invalidateQueries(["products"]);
+  };
 
   return {
-    products,
-    loadingProducts,
+    products: data?.results || [],
+    loadingProducts: isLoading,
     error,
-    nextPageUrl,
-    previousPageUrl,
-    fetchProducts,
-    next,
-    previous,
-    currentUrl,
+    nextPageUrl: data?.next || null,
+    previousPageUrl: data?.previous || null,
+    currentUrl: url,
     invalidate,
   };
 };

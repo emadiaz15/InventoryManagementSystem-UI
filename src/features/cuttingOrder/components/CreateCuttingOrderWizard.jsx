@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { useAuth } from "../../../context/AuthProvider";
 import { listUsers } from "../../user/services/listUsers";
 import { useSubproducts } from "../../product/hooks/useSubproducts";
-import { useProducts } from "../../product/hooks/useProducts";
+import useProducts from "../../product/hooks/useProducts";
 import createCuttingOrder from "../services/createCuttingOrder";
 import { buildCuttingOrderPayload } from "../utils/buildCuttingOrderPayload";
 
