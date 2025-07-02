@@ -7,7 +7,10 @@ export const useCreateSubproduct = (productId) => {
   return useMutation({
     mutationFn: (formData) => createSubproduct(productId, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries(["subproducts", productId]);
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "subproducts" && query.queryKey[1] === productId,
+      });
     },
   });
 };

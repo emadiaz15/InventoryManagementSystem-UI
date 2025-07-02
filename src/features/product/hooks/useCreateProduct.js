@@ -7,7 +7,9 @@ export const useCreateProduct = () => {
   return useMutation({
     mutationFn: createProduct,
     onSuccess: () => {
-      queryClient.invalidateQueries(["products"]);
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "products",
+      });
     },
   });
 };

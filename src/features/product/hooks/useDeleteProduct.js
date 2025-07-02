@@ -7,7 +7,9 @@ export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
-      queryClient.invalidateQueries(["products"]);
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "products",
+      });
     },
   });
 };

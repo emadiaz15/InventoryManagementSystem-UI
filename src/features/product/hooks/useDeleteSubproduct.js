@@ -7,7 +7,10 @@ export const useDeleteSubproduct = (productId) => {
   return useMutation({
     mutationFn: (subpId) => deleteSubproduct(productId, subpId),
     onSuccess: () => {
-      queryClient.invalidateQueries(["subproducts", productId]);
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "subproducts" && query.queryKey[1] === productId,
+      });
     },
   });
 };

@@ -4,19 +4,21 @@ import { buildQueryString } from "@/utils/queryUtils";
 import logger from "@/utils/logger";
 
 /**
- * 📦 Hook para gestionar la lista de productos con filtros y paginación usando React Query.
+ * 📦 Hook para gestionar productos con filtros, paginación y cache optimizado.
+ * TTL de 5 min, invalidación manual habilitada.
  *
- * @param {Object} filters - Filtros aplicados a la consulta.
- * @param {string} initialUrl - Endpoint inicial de la API.
+ * @param {Object} filters - Filtros opcionales para la consulta.
+ * @param {string} pageUrl - URL de paginación, si aplica.
  */
-const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
+const useProducts = (filters = {}, pageUrl = null) => {
   const queryClient = useQueryClient();
 
   const queryString = buildQueryString(filters);
-  const url = `${initialUrl.split("?")[0]}${queryString}`;
+  const baseUrl = "/inventory/products/";
+  const url = pageUrl || `${baseUrl}${queryString}`;
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["products", url],
+    queryKey: ["products", filters, pageUrl],
     queryFn: async () => {
       logger.log(`📡 Consultando productos desde: ${url}`);
       const data = await listProducts(url);
@@ -26,11 +28,11 @@ const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
       return data;
     },
     keepPreviousData: true,
-    staleTime: 5 * 60 * 1000, // 5 minutos de TTL como definimos en la estrategia
+    staleTime: 5 * 60 * 1000, // 5 min TTL
   });
 
   const invalidate = () => {
-    queryClient.invalidateQueries(["products"]);
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   };
 
   return {
@@ -39,7 +41,6 @@ const useProducts = (filters = {}, initialUrl = "/inventory/products/") => {
     error,
     nextPageUrl: data?.next || null,
     previousPageUrl: data?.previous || null,
-    currentUrl: url,
     invalidate,
   };
 };
