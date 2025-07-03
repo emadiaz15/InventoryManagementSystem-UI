@@ -125,6 +125,7 @@ const ProductCarouselOverlay = ({
         );
     }
 
+
     const safeIndex = Math.min(current, localImages.length - 1);
     const currentItem = localImages[safeIndex];
     const mediaType = getMediaType(

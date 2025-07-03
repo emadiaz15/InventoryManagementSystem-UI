@@ -10,10 +10,10 @@ export const getRefreshToken = () =>
 
 // ─── Limpiar sesión ─────────────────────────────────────────
 /**
- * Elimina todos los tokens de sessionStorage y emite un evento global.
-*/
+ * Elimina todos los tokens de sessionStorage.
+ * La emisión del evento de sesión expirada queda a cargo del llamador.
+ */
 export const clearTokens = () => {
   sessionStorage.removeItem("accessToken");
   sessionStorage.removeItem("refreshToken");
-  window.dispatchEvent(new Event("sessionExpired"));
 };

@@ -55,7 +55,6 @@ const CreateSubproductModal = ({ product, isOpen, onClose, onSave }) => {
         submitAbortRef.current = null;
 
         return () => {
-            // aborta si el modal se desmonta durante el envío
             if (submitAbortRef.current) {
                 submitAbortRef.current.abort();
             }

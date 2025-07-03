@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getAccessToken, clearTokens } from "../api/clients";
+import { getAccessToken, clearTokens } from "../utils/sessionUtils";
 import { isJwtExpired } from "../utils/jwtUtils";
 
 /**
@@ -14,9 +14,7 @@ export function useSession({ intervalMs = 30000 } = {}) {
       const accessToken = getAccessToken();
 
       if (!accessToken) {
-        console.warn("🚫 [Session] No hay accessToken, cerrando sesión");
-        clearTokens();
-        window.dispatchEvent(new Event("sessionExpired"));
+        console.warn("🚫 [Session] No hay accessToken, omitiendo chequeo");
         return;
       }
 
