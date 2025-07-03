@@ -54,6 +54,7 @@ const ProductCarouselOverlay = ({
         }
 
         setLoading(true);
+        setImgLoaded(false);
         const preload = async () => {
             try {
                 const formatted = images.map((img) => {
@@ -77,7 +78,6 @@ const ProductCarouselOverlay = ({
                 setLocalImages([]);
             } finally {
                 setLoading(false);
-                setImgLoaded(false);
             }
         };
 
