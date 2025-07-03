@@ -11,7 +11,6 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
     const [types, setTypes] = useState([]);
     const [rawFiles, setRawFiles] = useState([]);
 
-    // Traer categorías, tipos y archivos al abrir el modal
     useEffect(() => {
         if (!isOpen || !product?.id) return;
 
@@ -76,10 +75,8 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
-                    {loading ? (
-                        <p>Cargando archivos...</p>
-                    ) : (
+                <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">{
+                    (
                         <ProductCarouselOverlay
                             images={files}
                             productId={product.id}

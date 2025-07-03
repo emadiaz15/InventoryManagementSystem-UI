@@ -19,7 +19,6 @@ const ProductCarouselOverlay = ({
     const [loading, setLoading] = useState(true);
     const [imgLoaded, setImgLoaded] = useState(false);
 
-    // Media type detection
     const isPDF = (type = "") => type === "application/pdf";
     const isVideo = (type = "") => type.startsWith("video/");
     const isImage = (type = "") => type.startsWith("image/");
@@ -46,7 +45,6 @@ const ProductCarouselOverlay = ({
     }, [localImages.length]);
 
     useEffect(() => {
-        setCurrent(0);
         if (!images?.length) {
             setLocalImages([]);
             setLoading(false);
@@ -55,33 +53,26 @@ const ProductCarouselOverlay = ({
 
         setLoading(true);
         setImgLoaded(false);
-        const preload = async () => {
-            try {
-                const formatted = images.map((img) => {
-                    const contentType =
-                        img.contentType ||
-                        img.content_type ||
-                        img.mimeType ||
-                        "application/octet-stream";
 
-                    return {
-                        ...img,
-                        id: img.drive_file_id || img.id,
-                        filename: img.filename || img.name || img.id,
-                        contentType,
-                        url: img.url,
-                    };
-                });
-                setLocalImages(formatted.filter((img) => !!img.url));
-            } catch (error) {
-                console.error("❌ Error cargando archivos:", error);
-                setLocalImages([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const formatted = images.map((img) => {
+            const contentType =
+                img.contentType ||
+                img.content_type ||
+                img.mimeType ||
+                "application/octet-stream";
 
-        preload();
+            return {
+                ...img,
+                id: img.drive_file_id || img.id,
+                filename: img.filename || img.name || img.id,
+                contentType,
+                url: img.url,
+            };
+        });
+
+        setLocalImages(formatted.filter((img) => !!img.url));
+        setCurrent(0);
+        setLoading(false);
     }, [images]);
 
     useEffect(() => {
@@ -92,13 +83,27 @@ const ProductCarouselOverlay = ({
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
-    }, [current, localImages, isEmbedded, onClose, nextSlide, prevSlide]);
+    }, [localImages.length, isEmbedded, onClose, nextSlide, prevSlide]);
 
     useEffect(() => {
         if (current >= localImages.length && localImages.length > 0) {
             setCurrent(localImages.length - 1);
         }
     }, [current, localImages.length]);
+
+    useEffect(() => {
+        const safeIndex = Math.min(current, localImages.length - 1);
+        const currentItem = localImages[safeIndex];
+        const mediaType = getMediaType(currentItem?.contentType, currentItem?.filename);
+
+        if (mediaType === "image" && currentItem?.url) {
+            const img = new Image();
+            img.src = currentItem.url;
+            if (img.complete) {
+                setImgLoaded(true);
+            }
+        }
+    }, [current, localImages]);
 
     const openInNewTab = (url) => window.open(url, "_blank");
 
@@ -125,13 +130,9 @@ const ProductCarouselOverlay = ({
         );
     }
 
-
     const safeIndex = Math.min(current, localImages.length - 1);
     const currentItem = localImages[safeIndex];
-    const mediaType = getMediaType(
-        currentItem?.contentType,
-        currentItem?.filename
-    );
+    const mediaType = getMediaType(currentItem?.contentType, currentItem?.filename);
 
     return (
         <div className="w-full">
@@ -140,7 +141,6 @@ const ProductCarouselOverlay = ({
                     {!imgLoaded && mediaType === "image" && (
                         <div className="absolute flex flex-col items-center justify-center z-20">
                             <Spinner size="6" color="text-white" />
-                            <p className="text-sm text-white mt-2">Cargando imagen...</p>
                         </div>
                     )}
 
