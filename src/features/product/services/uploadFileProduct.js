@@ -17,7 +17,7 @@ export const uploadFileProduct = async (productId, file) => {
 
   try {
     const response = await djangoApi.post(
-      `/inventory/products/${productId}/files/`,
+      `/inventory/products/${productId}/files/upload/`,
       formData,
       {
         headers: {
