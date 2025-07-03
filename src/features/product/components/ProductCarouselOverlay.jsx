@@ -94,6 +94,12 @@ const ProductCarouselOverlay = ({
         return () => window.removeEventListener("keydown", handleKey);
     }, [current, localImages, isEmbedded, onClose, nextSlide, prevSlide]);
 
+    useEffect(() => {
+        if (current >= localImages.length && localImages.length > 0) {
+            setCurrent(localImages.length - 1);
+        }
+    }, [current, localImages.length]);
+
     const openInNewTab = (url) => window.open(url, "_blank");
 
     const handleDelete = () => {
@@ -119,8 +125,12 @@ const ProductCarouselOverlay = ({
         );
     }
 
-    const currentItem = localImages[current];
-    const mediaType = getMediaType(currentItem.contentType, currentItem.filename);
+    const safeIndex = Math.min(current, localImages.length - 1);
+    const currentItem = localImages[safeIndex];
+    const mediaType = getMediaType(
+        currentItem?.contentType,
+        currentItem?.filename
+    );
 
     return (
         <div className="w-full">
