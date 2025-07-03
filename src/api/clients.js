@@ -21,7 +21,10 @@ const createApiClient = () => {
   instance.interceptors.response.use(
     (res) => res,
     (err) => {
-      if (err.response?.status === 401) clearTokens();
+      if (err.response?.status === 401) {
+        clearTokens();
+        window.dispatchEvent(new Event("sessionExpired"));
+      }
       return Promise.reject(err);
     }
   );

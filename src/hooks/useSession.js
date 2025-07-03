@@ -14,9 +14,7 @@ export function useSession({ intervalMs = 30000 } = {}) {
       const accessToken = getAccessToken();
 
       if (!accessToken) {
-        console.warn("🚫 [Session] No hay accessToken, cerrando sesión");
-        clearTokens();
-        window.dispatchEvent(new Event("sessionExpired"));
+        console.warn("🚫 [Session] No hay accessToken, omitiendo chequeo");
         return;
       }
 
