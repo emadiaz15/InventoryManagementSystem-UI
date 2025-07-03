@@ -26,7 +26,7 @@ const ProductCarouselOverlay = ({
 
     const getMediaType = (type = "", filename = "") => {
         const lowered = type.toLowerCase();
-        const ext = filename.toLowerCase().split('.').pop();
+        const ext = filename.toLowerCase().split(".").pop();
 
         if (lowered === "application/pdf" || ext === "pdf") return "pdf";
         if (lowered.startsWith("video/") || ["mp4", "webm", "mov"].includes(ext)) return "video";
@@ -35,6 +35,15 @@ const ProductCarouselOverlay = ({
         return "unknown";
     };
 
+    const nextSlide = useCallback(() => {
+        setImgLoaded(false);
+        setCurrent((i) => (i + 1) % localImages.length);
+    }, [localImages.length]);
+
+    const prevSlide = useCallback(() => {
+        setImgLoaded(false);
+        setCurrent((i) => (i - 1 + localImages.length) % localImages.length);
+    }, [localImages.length]);
 
     useEffect(() => {
         setCurrent(0);
@@ -84,16 +93,6 @@ const ProductCarouselOverlay = ({
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
     }, [current, localImages, isEmbedded, onClose, nextSlide, prevSlide]);
-
-    const nextSlide = useCallback(() => {
-        setImgLoaded(false);
-        setCurrent((i) => (i + 1) % localImages.length);
-    }, [localImages.length]);
-
-    const prevSlide = useCallback(() => {
-        setImgLoaded(false);
-        setCurrent((i) => (i - 1 + localImages.length) % localImages.length);
-    }, [localImages.length]);
 
     const openInNewTab = (url) => window.open(url, "_blank");
 
@@ -208,7 +207,6 @@ const ProductCarouselOverlay = ({
             </div>
         </div>
     );
-
 };
 
 ProductCarouselOverlay.propTypes = {

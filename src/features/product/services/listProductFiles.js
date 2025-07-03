@@ -12,7 +12,14 @@ export const listProductFiles = async (productId) => {
 
   try {
     const response = await djangoApi.get(`/inventory/products/${productId}/files/`);
-    return response.data.files;
+    
+    const files = response.data?.files;
+    
+    if (!Array.isArray(files)) {
+      throw new Error("La API no devolvió un listado de archivos válido.");
+    }
+
+    return files;
   } catch (error) {
     console.error(
       "❌ Error al listar archivos del producto:",
