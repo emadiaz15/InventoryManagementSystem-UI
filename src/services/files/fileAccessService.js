@@ -1,5 +1,5 @@
 import { djangoApi } from "@/api/clients";
-import { getAccessToken, clearTokens } from "@/api/clients";
+import { getAccessToken, clearTokens } from "@/utils/sessionUtils";
 import { parseJwt } from "@/utils/jwtUtils";
 
 // ─────────────────────────────────────────────────────────────
