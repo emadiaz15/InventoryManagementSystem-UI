@@ -94,25 +94,11 @@ const ProductCarouselOverlay = ({
         return () => window.removeEventListener("keydown", handleKey);
     }, [current, localImages, isEmbedded, onClose, nextSlide, prevSlide]);
 
-    const currentItem = localImages[current];
-    const mediaType = getMediaType(currentItem.contentType, currentItem.filename);
-
     useEffect(() => {
-        if (mediaType === "image" && currentItem?.url) {
-            const img = new Image();
-            img.src = currentItem.url;
-
-            const handleLoad = () => setImgLoaded(true);
-
-            if (img.complete) {
-                setImgLoaded(true);
-            } else {
-                img.addEventListener("load", handleLoad);
-            }
-
-            return () => img.removeEventListener("load", handleLoad);
+        if (current >= localImages.length && localImages.length > 0) {
+            setCurrent(localImages.length - 1);
         }
-    }, [currentItem?.url, mediaType]);
+    }, [current, localImages.length]);
 
     const openInNewTab = (url) => window.open(url, "_blank");
 
@@ -138,6 +124,14 @@ const ProductCarouselOverlay = ({
             </div>
         );
     }
+
+
+    const safeIndex = Math.min(current, localImages.length - 1);
+    const currentItem = localImages[safeIndex];
+    const mediaType = getMediaType(
+        currentItem?.contentType,
+        currentItem?.filename
+    );
 
     return (
         <div className="w-full">
