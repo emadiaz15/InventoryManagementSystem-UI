@@ -1,14 +1,11 @@
-import { useState } from "react";
-import { uploadSubproductFile } from "../services/uploadSubproductFile"; // Asegúrate de crearlo si no existe
+import { useState, useCallback } from "react";
+import { uploadSubproductFile } from "../services/uploadSubproductFile";
 
-/**
- * Hook para subir múltiples archivos a un subproducto.
- */
 export const useSubproductFileUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
-  const clearUploadError = () => setUploadError("");
+  const clearUploadError = useCallback(() => setUploadError(""), []);
 
   const uploadFiles = async (productId, subproductId, files) => {
     if (!productId || !subproductId || !Array.isArray(files) || files.length === 0) {
