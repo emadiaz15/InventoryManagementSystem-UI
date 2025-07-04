@@ -13,12 +13,14 @@ import ProductTable from "../components/ProductTable";
 import Filter from "../../../components/ui/Filter";
 
 import useProducts from "../hooks/useProducts";
+import { productKeys } from "../utils/queryKeys";
 import { useAuth } from "../../../context/AuthProvider";
 import { deleteProduct } from "../services/deleteProduct";
 
 const ProductsList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [modalState, setModalState] = useState({ type: null, productData: null });
   const [successMessage, setSuccessMessage] = useState("");
@@ -34,8 +36,13 @@ const ProductsList = () => {
     error: fetchError,
     nextPageUrl,
     previousPageUrl,
-    invalidate,
   } = useProducts(filters, pageUrl);
+
+  const invalidateProducts = () => {
+    queryClient.invalidateQueries({
+      predicate: (query) => productKeys.prefixMatch(query.queryKey),
+    });
+  };
 
   const handleViewProduct = (product) =>
     setModalState({ type: "view", productData: product, showCarousel: true });
@@ -55,11 +62,9 @@ const ProductsList = () => {
   const handleCloseModal = () =>
     setModalState({ type: null, productData: null });
 
-  const queryClient = useQueryClient();
-
   const handleSaveProduct = () => {
-    invalidate();
-    queryClient.refetchQueries({ queryKey: ["products"] });
+    invalidateProducts();
+    setPageUrl(null);
     if (filters.code) {
       setFilters((prev) => ({ ...prev, code: "" }));
     }
@@ -73,7 +78,7 @@ const ProductsList = () => {
     setDeleteError(null);
     try {
       await deleteProduct(product.id);
-      invalidate();
+      invalidateProducts();
       setPageUrl(null);
       setSuccessMessage("¡Producto eliminado con éxito!");
       setShowSuccess(true);
@@ -87,7 +92,7 @@ const ProductsList = () => {
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
-    setPageUrl(null); // Resetea paginación al cambiar filtros
+    setPageUrl(null);
   }, []);
 
   const filterColumns = useMemo(

@@ -1,15 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listProducts } from "../services/listProducts";
 import { buildQueryString } from "@/utils/queryUtils";
+import { productKeys } from "../utils/queryKeys";
 import logger from "@/utils/logger";
 
-/**
- * 📦 Hook para gestionar productos con filtros, paginación y cache optimizado.
- * TTL de 5 min, invalidación manual habilitada.
- *
- * @param {Object} filters - Filtros opcionales para la consulta.
- * @param {string} pageUrl - URL de paginación, si aplica.
- */
 const useProducts = (filters = {}, pageUrl = null) => {
   const queryClient = useQueryClient();
 
@@ -18,7 +12,7 @@ const useProducts = (filters = {}, pageUrl = null) => {
   const url = pageUrl || `${baseUrl}${queryString}`;
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["products", filters, pageUrl],
+    queryKey: productKeys.list(filters, pageUrl),
     queryFn: async () => {
       logger.log(`📡 Consultando productos desde: ${url}`);
       const data = await listProducts(url);
@@ -28,11 +22,13 @@ const useProducts = (filters = {}, pageUrl = null) => {
       return data;
     },
     keepPreviousData: true,
-    staleTime: 5 * 60 * 1000, // 5 min TTL
+    staleTime: 5 * 60 * 1000,
   });
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["products"] });
+    queryClient.invalidateQueries({
+      predicate: (query) => productKeys.prefixMatch(query.queryKey),
+    });
   };
 
   return {

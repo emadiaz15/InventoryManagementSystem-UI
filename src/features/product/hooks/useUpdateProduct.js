@@ -1,16 +1,16 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateProduct } from "../services/updateProduct";
+import { productKeys } from "../utils/queryKeys";
 
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ productId, productData }) => updateProduct(productId, productData),
-    onSuccess: (_, { productId }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
-        predicate: (query) => query.queryKey[0] === "products",
+        predicate: (query) => productKeys.prefixMatch(query.queryKey),
       });
-      queryClient.invalidateQueries({ queryKey: ["product", productId] });
     },
   });
 };
