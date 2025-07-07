@@ -7,10 +7,13 @@ export const useUpdateProduct = () => {
 
   return useMutation({
     mutationFn: ({ productId, productData }) => updateProduct(productId, productData),
-    onSuccess: () => {
+    onSuccess: (_, { productId }) => {
       queryClient.invalidateQueries({
         predicate: (query) => productKeys.prefixMatch(query.queryKey),
       });
+      if (productId) {
+        queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
+      }
     },
   });
 };
