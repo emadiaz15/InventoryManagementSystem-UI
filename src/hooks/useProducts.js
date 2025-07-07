@@ -1,17 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { listProducts } from "../services/listProducts";
+import { listProducts } from "@/services/products";
 import { buildQueryString } from "@/utils/queryUtils";
-import { productKeys } from "../utils/queryKeys";
+import { productKeys } from "@/features/product/utils/queryKeys";
 import logger from "@/utils/logger";
 
-const useProducts = (filters = {}, pageUrl = null) => {
+export const useProducts = (filters = {}, pageUrl = null) => {
   const queryClient = useQueryClient();
-
   const queryString = buildQueryString(filters);
   const baseUrl = "/inventory/products/";
   const url = pageUrl || `${baseUrl}${queryString}`;
 
-  const { data, isLoading, error } = useQuery({
+  const query = useQuery({
     queryKey: productKeys.list(filters, pageUrl),
     queryFn: async () => {
       logger.log(`📡 Consultando productos desde: ${url}`);
@@ -23,6 +22,7 @@ const useProducts = (filters = {}, pageUrl = null) => {
     },
     keepPreviousData: true,
     staleTime: 5 * 60 * 1000,
+    cacheTime: 15 * 60 * 1000,
   });
 
   const invalidate = () => {
@@ -32,11 +32,11 @@ const useProducts = (filters = {}, pageUrl = null) => {
   };
 
   return {
-    products: data?.results || [],
-    loadingProducts: isLoading,
-    error,
-    nextPageUrl: data?.next || null,
-    previousPageUrl: data?.previous || null,
+    products: query.data?.results || [],
+    loadingProducts: query.isLoading,
+    error: query.error,
+    nextPageUrl: query.data?.next || null,
+    previousPageUrl: query.data?.previous || null,
     invalidate,
   };
 };

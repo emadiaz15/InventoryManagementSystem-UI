@@ -9,8 +9,8 @@ import ErrorMessage from "../../../components/common/ErrorMessage";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import DeleteMessage from "../../../components/common/DeleteMessage";
 
-import { updateProduct } from "../services/updateProduct";
-import { listProducts } from "../services/listProducts";
+import useUpdateProduct from "@/hooks/useUpdateProduct";
+import { listProducts } from "@/services/products";
 import { usePrefetchedData } from "../../../context/DataPrefetchContext";
 import { listTypesByCategory } from "../../type/services/listType";
 
@@ -43,6 +43,7 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
     const { categories, types } = usePrefetchedData();
     const { uploadFiles, uploadError, clearUploadError } = useProductFileUpload();
     const { deleteFile, deleting, deleteError } = useProductFileDelete();
+    const { mutateAsync: updateProductMutate } = useUpdateProduct();
 
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [fileToDelete, setFileToDelete] = useState(null);
@@ -189,7 +190,7 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
 
         try {
             setLoading(true);
-            await updateProduct(product.id, data);
+            await updateProductMutate({ productId: product.id, productData: data });
 
             if (formData.images.length) {
                 const ok = await uploadFiles(product.id, formData.images);

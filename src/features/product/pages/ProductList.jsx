@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../../pages/Layout";
 import Toolbar from "../../../components/common/Toolbar";
@@ -12,15 +11,13 @@ import ProductModals from "../components/ProductModals";
 import ProductTable from "../components/ProductTable";
 import Filter from "../../../components/ui/Filter";
 
-import useProducts from "../hooks/useProducts";
-import { productKeys } from "../utils/queryKeys";
+import useProducts from "@/hooks/useProducts";
 import { useAuth } from "../../../context/AuthProvider";
-import { deleteProduct } from "../services/deleteProduct";
+import useDeleteProduct from "@/hooks/useDeleteProduct";
 
 const ProductsList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const [modalState, setModalState] = useState({ type: null, productData: null });
   const [successMessage, setSuccessMessage] = useState("");
@@ -37,12 +34,8 @@ const ProductsList = () => {
     nextPageUrl,
     previousPageUrl,
   } = useProducts(filters, pageUrl);
+  const { mutateAsync: deleteProductMutation } = useDeleteProduct();
 
-  const invalidateProducts = () => {
-    queryClient.invalidateQueries({
-      predicate: (query) => productKeys.prefixMatch(query.queryKey),
-    });
-  };
 
   const handleViewProduct = (product) =>
     setModalState({ type: "view", productData: product, showCarousel: true });
@@ -63,7 +56,6 @@ const ProductsList = () => {
     setModalState({ type: null, productData: null });
 
   const handleSaveProduct = () => {
-    invalidateProducts();
     setPageUrl(null);
     if (filters.code) {
       setFilters((prev) => ({ ...prev, code: "" }));
@@ -77,8 +69,7 @@ const ProductsList = () => {
     setIsDeletingProduct(true);
     setDeleteError(null);
     try {
-      await deleteProduct(product.id);
-      invalidateProducts();
+      await deleteProductMutation(product.id);
       setPageUrl(null);
       setSuccessMessage("¡Producto eliminado con éxito!");
       setShowSuccess(true);
