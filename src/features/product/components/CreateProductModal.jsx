@@ -8,10 +8,10 @@ import FormStockInput from "../components/FormStockInput";
 import ErrorMessage from "../../../components/common/ErrorMessage";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 
-import { createProduct } from "../services/createProduct";
+import useCreateProduct from "@/hooks/useCreateProduct";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes, listTypesByCategory } from "../../type/services/listType";
-import { listProducts } from "../services/listProducts";
+import { listProducts } from "@/services/products";
 
 import { useProductFileUpload } from "../hooks/useProductFileUpload";
 
@@ -26,6 +26,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   const [previewFiles, setPreviewFiles] = useState([]);
 
   const { uploadFiles, uploading, uploadError, clearUploadError } = useProductFileUpload();
+  const { mutateAsync: createProductMutate } = useCreateProduct();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -201,7 +202,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
     try {
       setLoading(true);
-      const newProd = await createProduct(payload);
+      const newProd = await createProductMutate(payload);
 
       if (formData.images.length) {
         const ok = await uploadFiles(newProd.id, formData.images);
