@@ -12,7 +12,7 @@ import Pagination from '../../../components/ui/Pagination';
 import DateFilter from '../../../components/common/DateFilter';
 import Layout from '../../../pages/Layout';
 import Spinner from '../../../components/ui/Spinner';
-import { listStockSubproductEvents } from '../services/listStockSubproductEvents';
+import { listStockSubproductEvents } from '../services/subproducts/listStockSubproductEvents';
 
 const mockSubproductEvents = [
     {

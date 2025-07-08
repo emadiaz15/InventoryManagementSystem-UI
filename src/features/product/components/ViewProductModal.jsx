@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import Modal from "../../../components/ui/Modal";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes } from "../../type/services/listType";
-import { listProductFiles } from "../services/listProductFiles";
-import { useEnrichedProductFiles } from "../hooks/useEnrichedProductFiles";
+import { listProductFiles } from "@/features/product/services/products/files";
+import { useEnrichedProductFiles } from "@/features/product/hooks/useProductFileHooks";
 import ProductCarouselOverlay from "../components/ProductCarouselOverlay";
 
 const ViewProductModal = ({ product, isOpen, onClose }) => {
@@ -75,8 +75,13 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">{
-                    (
+                <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
+                    {loading ? (
+                        <div className="flex items-center justify-center h-full">
+                            {/* si tienes un Spinner importado podrías usarlo aquí */}
+                            Cargando archivos...
+                        </div>
+                    ) : (
                         <ProductCarouselOverlay
                             images={files}
                             productId={product.id}

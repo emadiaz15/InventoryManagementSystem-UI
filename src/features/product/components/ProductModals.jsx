@@ -7,7 +7,7 @@ import DeleteMessage from "../../../components/common/DeleteMessage";
 import Spinner from "../../../components/ui/Spinner";
 import { useAuth } from "../../../context/AuthProvider";
 
-import { listProductFiles } from "../services/listProductFiles";
+import { listProductFiles } from "@/features/product/services/products/files";
 import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
 
 /**
@@ -36,7 +36,6 @@ const ProductModals = ({
         setLoadingFiles(true);
         try {
             const rawFiles = await listProductFiles(productId);
-
             const enriched = await enrichFilesWithBlobUrls({ productId, rawFiles });
             setFiles(enriched);
         } catch (err) {
@@ -45,7 +44,7 @@ const ProductModals = ({
         } finally {
             setLoadingFiles(false);
         }
-    }, [type, productId]);
+    }, [productId, type]);
 
     useEffect(() => {
         loadFiles();
@@ -88,18 +87,14 @@ const ProductModals = ({
                         />
                     ) : (
                         <div className="p-6 text-center text-sm text-gray-600">
-                            No hay archivos de multimedia.
+                            No hay archivos multimedia.
                         </div>
                     )}
                 </EditProductModal>
             )}
 
             {type === "view" && productData && (
-                <ViewProductModal
-                    isOpen={true}
-                    onClose={closeModal}
-                    product={productData}
-                >
+                <ViewProductModal isOpen={true} onClose={closeModal} product={productData}>
                     {loadingFiles ? (
                         <div className="flex items-center justify-center h-full">
                             <Spinner size="8" color="text-primary-500" />
@@ -115,7 +110,7 @@ const ProductModals = ({
                         />
                     ) : (
                         <div className="p-6 text-center text-sm text-gray-600">
-                            No hay archivos de multimedia.
+                            No hay archivos multimedia.
                         </div>
                     )}
                 </ViewProductModal>
