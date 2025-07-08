@@ -10,7 +10,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import DeleteMessage from "../../../components/common/DeleteMessage";
 
 import useUpdateProduct from "@/hooks/useUpdateProduct";
-import { listProducts } from "@/services/products";
+import { listProducts } from "@feature/product/services/products";
 import { usePrefetchedData } from "../../../context/DataPrefetchContext";
 import { listTypesByCategory } from "../../type/services/listType";
 

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { listProducts } from "@/services/products";
+import { listProducts } from "@feature/product/services/products";
 import { buildQueryString } from "@/utils/queryUtils";
 import { productKeys } from "@/features/product/utils/queryKeys";
 import logger from "@/utils/logger";

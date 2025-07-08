@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateProduct } from "@/services/products";
+import { updateProduct } from "@feature/product/services/products";
 import { productKeys } from "@/features/product/utils/queryKeys";
 
 export const useUpdateProduct = () => {

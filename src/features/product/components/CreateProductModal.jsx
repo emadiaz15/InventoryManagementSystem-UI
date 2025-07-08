@@ -11,7 +11,7 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import useCreateProduct from "@/hooks/useCreateProduct";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes, listTypesByCategory } from "../../type/services/listType";
-import { listProducts } from "@/services/products";
+import { listProducts } from "@feature/product/services/products";
 
 import { useProductFileUpload } from "../hooks/useProductFileUpload";
 
