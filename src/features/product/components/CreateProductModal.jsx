@@ -8,25 +8,27 @@ import FormStockInput from "../components/FormStockInput";
 import ErrorMessage from "../../../components/common/ErrorMessage";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 
-import useCreateProduct from "@/hooks/useCreateProduct";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes, listTypesByCategory } from "../../type/services/listType";
-import { listProducts } from "@feature/product/services/products";
 
-import { useProductFileUpload } from "../hooks/useProductFileUpload";
+import {
+  useCreateProduct,
+  useListProducts,
+} from "@/features/product/hooks/useProductHooks";
+import { useProductFileUpload } from "@/features/product/hooks/useProductFileHooks";
 
 const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   const [categories, setCategories] = useState([]);
   const [types, setTypes] = useState([]);
-  const [products, setProducts] = useState([]);
   const [filteredTypes, setFilteredTypes] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [previewFiles, setPreviewFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const { uploadFiles, uploading, uploadError, clearUploadError } = useProductFileUpload();
   const { mutateAsync: createProductMutate } = useCreateProduct();
+  const { products = [] } = useListProducts({}, null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -65,15 +67,13 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
     const fetchData = async () => {
       try {
-        const [catResp, typeResp, prodResp] = await Promise.all([
+        const [catResp, typeResp] = await Promise.all([
           listCategories("/inventory/categories/?limit=1000&status=true"),
           listTypes("/inventory/types/?limit=1000&status=true"),
-          listProducts("/inventory/products/"),
         ]);
         setCategories(catResp.results || []);
         const allTypes = typeResp.results ?? typeResp.activeTypes ?? [];
         setTypes(allTypes);
-        setProducts(prodResp.results || []);
       } catch (err) {
         console.error("Error al cargar datos iniciales:", err);
         setError("No se pudo conectar con el servidor.");
@@ -81,8 +81,8 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     };
 
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, clearUploadError]);
+
 
   useEffect(() => {
     if (!formData.category) {
@@ -104,7 +104,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         console.error("Error al filtrar tipos:", err);
       }
 
-      // Fallback a filtrado local
       setFilteredTypes(
         types.filter((t) => {
           if (t.category?.id != null) return t.category.id === catId;
@@ -187,18 +186,13 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     payload.append("location", formData.location.trim());
     payload.append("position", formData.position.trim());
     payload.append("category", formData.category);
-
-    // Si el usuario no seleccionó un tipo, se envía string vacío
-    payload.append("type", formData.type ? formData.type : "");
+    payload.append("type", formData.type || "");
 
     const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
     if (stockVal && parseFloat(stockVal) > 0) {
       payload.append("initial_stock_quantity", stockVal);
     }
-    payload.append(
-      "has_subproducts",
-      formData.has_subproducts ? "true" : "false"
-    );
+    payload.append("has_subproducts", formData.has_subproducts ? "true" : "false");
 
     try {
       setLoading(true);
@@ -257,28 +251,11 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           ]}
         />
 
-        <FormInput
-          label="Nombre / Medida"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
+        <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormInput
-            label="Código"
-            name="code"
-            value={formData.code}
-            onChange={handleChange}
-            required
-          />
-          <FormInput
-            label="Marca"
-            name="brand"
-            value={formData.brand}
-            onChange={handleChange}
-          />
+          <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
+          <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -289,26 +266,11 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             onChange={handleStockChange}
             placeholder="Ej: 100"
           />
-          <FormInput
-            label="Ubicación"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-          />
-          <FormInput
-            label="Posición"
-            name="position"
-            value={formData.position}
-            onChange={handleChange}
-          />
+          <FormInput label="Ubicación" name="location" value={formData.location} onChange={handleChange} />
+          <FormInput label="Posición" name="position" value={formData.position} onChange={handleChange} />
         </div>
 
-        <FormInput
-          label="Descripción"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-        />
+        <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
 
         <div className="flex items-center ps-4 border rounded-sm bg-background-100 h-[46px]">
           <input

@@ -8,16 +8,29 @@ import ErrorMessage from "../../../components/common/ErrorMessage";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 
 import { updateCuttingOrder } from "../services/updateCuttingOrder";
-import { useSubproducts } from "../../product/hooks/useSubproducts";
+// importamos directamente tu servicio de subproductos
+import { listSubproducts } from "@/features/product/services/subproducts/subproducts";
 
-const EditCuttingOrderModal = ({ isOpen, onClose, onSave, order }) => {
-    const { subproducts, loading: loadingSubs, error: subsError } = useSubproducts();
-    const [formData, setFormData] = useState({ customer: "", items: [] });
+const EditCuttingOrderModal = ({
+    isOpen,
+    onClose,
+    onSave,
+    order,
+    parentProductId
+}) => {
+    const [subproducts, setSubproducts] = useState([]);
+    const [loadingSubs, setLoadingSubs] = useState(false);
+    const [subsError, setSubsError] = useState("");
+
+    const [formData, setFormData] = useState({
+        customer: "",
+        items: [],
+    });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
-    // Cuando abrimos el modal o cambia la orden, precargamos el formulario
+    // Precargamos datos de la orden en el formulario
     useEffect(() => {
         if (isOpen && order) {
             setFormData({
@@ -31,6 +44,18 @@ const EditCuttingOrderModal = ({ isOpen, onClose, onSave, order }) => {
             setSuccess(false);
         }
     }, [isOpen, order]);
+
+    // Cargamos la lista de subproductos del producto padre
+    useEffect(() => {
+        if (isOpen && parentProductId) {
+            setLoadingSubs(true);
+            setSubsError("");
+            listSubproducts(parentProductId)
+                .then((data) => setSubproducts(data.results || []))
+                .catch(() => setSubsError("No se pudieron cargar subproductos."))
+                .finally(() => setLoadingSubs(false));
+        }
+    }, [isOpen, parentProductId]);
 
     const handleCustomerChange = (e) =>
         setFormData((prev) => ({ ...prev, customer: e.target.value }));
@@ -64,7 +89,7 @@ const EditCuttingOrderModal = ({ isOpen, onClose, onSave, order }) => {
         }
         for (const it of formData.items) {
             if (!it.subproduct || !it.cutting_quantity) {
-                setError("Cada item debe tener subproducto y cantidad.");
+                setError("Cada ítem debe tener subproducto y cantidad.");
                 return false;
             }
             if (parseFloat(it.cutting_quantity) <= 0) {
@@ -110,7 +135,7 @@ const EditCuttingOrderModal = ({ isOpen, onClose, onSave, order }) => {
             <form onSubmit={handleSubmit} className="space-y-4">
                 {(error || subsError) && (
                     <ErrorMessage
-                        message={error || "Error al cargar subproductos."}
+                        message={error || subsError}
                         onClose={() => setError("")}
                     />
                 )}
@@ -135,7 +160,7 @@ const EditCuttingOrderModal = ({ isOpen, onClose, onSave, order }) => {
                             onChange={(e) => handleItemChange(idx, e)}
                             options={subproducts.map((s) => ({
                                 value: String(s.id),
-                                label: s.name,
+                                label: s.parent_name + " — Bobina " + s.number_coil,
                             }))}
                             disabled={loadingSubs}
                             required
@@ -164,7 +189,7 @@ const EditCuttingOrderModal = ({ isOpen, onClose, onSave, order }) => {
                     onClick={addItem}
                     className="text-primary-500 hover:underline"
                 >
-                    + Agregar Item
+                    + Agregar ítem
                 </button>
 
                 <div className="flex justify-end space-x-2">
@@ -216,6 +241,8 @@ EditCuttingOrderModal.propTypes = {
             })
         ),
     }).isRequired,
+    parentProductId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+        .isRequired,
 };
 
 export default EditCuttingOrderModal;

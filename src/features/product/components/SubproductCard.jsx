@@ -6,8 +6,9 @@ import {
     ClockIcon,
     ScissorsIcon,
 } from "@heroicons/react/24/outline";
-import { useAuth } from "../../../context/AuthProvider";
+import { useAuth } from "@/context/AuthProvider";
 import { useNavigate } from "react-router-dom";
+import ProductCarouselOverlay from "@/features/product/components/ProductCarouselOverlay";
 
 const getDefaultImage = (subType) => {
     const typeNormalized = (subType || "").toLowerCase();
@@ -61,9 +62,15 @@ const SubproductCard = ({
                     alt={subproduct.name}
                 />
                 <ul className="flex-1 text-sm text-gray-700 space-y-1 overflow-hidden">
-                    <li><strong>Marca:</strong> {subproduct.brand}</li>
-                    <li><strong>N°:</strong> {subproduct.number_coil}</li>
-                    <li><strong className="pl-14 text-2xl text-black">{subproduct.initial_stock_quantity} Mts</strong></li>
+                    <li>
+                        <strong>Marca:</strong> {subproduct.brand}
+                    </li>
+                    <li>
+                        <strong>N°:</strong> {subproduct.number_coil}
+                    </li>
+                    <li className="pl-14 text-2xl text-black">
+                        {subproduct.initial_stock_quantity} Mts
+                    </li>
                 </ul>
             </div>
 
@@ -91,7 +98,9 @@ const SubproductCard = ({
                     <>
                         {/* 🛒 Agregar Orden */}
                         <button
-                            onClick={() => onAddToOrder({ type: "createOrder", subproductData: subproduct })}
+                            onClick={() =>
+                                onAddToOrder({ type: "createOrder", subproductData: subproduct })
+                            }
                             title="Agregar Orden de Corte"
                             className="bg-indigo-500 hover:bg-indigo-600 transition-colors rounded p-2"
                         >

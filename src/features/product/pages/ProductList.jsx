@@ -1,19 +1,22 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Layout from "../../../pages/Layout";
-import Toolbar from "../../../components/common/Toolbar";
-import Pagination from "../../../components/ui/Pagination";
-import SuccessMessage from "../../../components/common/SuccessMessage";
-import ErrorMessage from "../../../components/common/ErrorMessage";
-import Spinner from "../../../components/ui/Spinner";
 
-import ProductModals from "../components/ProductModals";
-import ProductTable from "../components/ProductTable";
-import Filter from "../../../components/ui/Filter";
+import Layout from "@/pages/Layout";
+import Toolbar from "@/components/common/Toolbar";
+import Pagination from "@/components/ui/Pagination";
+import SuccessMessage from "@/components/common/SuccessMessage";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import Spinner from "@/components/ui/Spinner";
+import Filter from "@/components/ui/Filter";
 
-import useProducts from "@/hooks/useProducts";
-import { useAuth } from "../../../context/AuthProvider";
-import useDeleteProduct from "@/hooks/useDeleteProduct";
+import ProductModals from "@/features/product/components/ProductModals";
+import ProductTable from "@/features/product/components/ProductTable";
+
+import {
+  useListProducts,
+  useDeleteProduct,
+} from "@/features/product/hooks/useProductHooks";
+import { useAuth } from "@/context/AuthProvider";
 
 const ProductsList = () => {
   const navigate = useNavigate();
@@ -22,62 +25,47 @@ const ProductsList = () => {
   const [modalState, setModalState] = useState({ type: null, productData: null });
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+
   const [filters, setFilters] = useState({ code: "" });
   const [pageUrl, setPageUrl] = useState(null);
-  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
+  // Hook corregido
   const {
     products,
     loadingProducts,
-    error: fetchError,
+    fetchError,
     nextPageUrl,
     previousPageUrl,
-  } = useProducts(filters, pageUrl);
-  const { mutateAsync: deleteProductMutation } = useDeleteProduct();
+  } = useListProducts(filters, pageUrl);
 
+  const { mutateAsync: deleteProduct } = useDeleteProduct();
 
-  const handleViewProduct = (product) =>
-    setModalState({ type: "view", productData: product, showCarousel: true });
-
-  const handleViewSubproducts = (product) =>
-    navigate(`/products/${product.id}/subproducts`);
-
-  const handleEditProduct = (product) =>
-    setModalState({ type: "edit", productData: product });
-
-  const handleDeleteClick = (modalConfig) =>
-    setModalState(modalConfig);
-
-  const handleViewHistory = (product) =>
-    navigate(`/products/${product.id}/history`);
-
-  const handleCloseModal = () =>
+  const openModal = (type, data = null) =>
+    setModalState({ type, productData: data });
+  const closeModal = () =>
     setModalState({ type: null, productData: null });
 
-  const handleSaveProduct = () => {
+  const handleSave = (msg) => {
+    // al guardar o eliminar, vuelve a la primera página
     setPageUrl(null);
-    if (filters.code) {
-      setFilters((prev) => ({ ...prev, code: "" }));
-    }
-    setSuccessMessage("¡Producto actualizado con éxito!");
+    setSuccessMessage(msg);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const handleConfirmDelete = async (product) => {
-    setIsDeletingProduct(true);
+  const handleDelete = async (prd) => {
+    setIsDeleting(true);
     setDeleteError(null);
     try {
-      await deleteProductMutation(product.id);
-      setPageUrl(null);
-      setSuccessMessage("¡Producto eliminado con éxito!");
-      setShowSuccess(true);
-      setModalState({ type: null, productData: null });
+      await deleteProduct(prd.id);
+      handleSave("¡Producto eliminado con éxito!");
+      closeModal();
     } catch (err) {
       setDeleteError(err.message);
     } finally {
-      setIsDeletingProduct(false);
+      setIsDeleting(false);
     }
   };
 
@@ -95,51 +83,52 @@ const ProductsList = () => {
     <>
       <Layout isLoading={loadingProducts}>
         {showSuccess && (
-          <div className="fixed top-20 right-5 z-[10000]">
-            <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
-          </div>
+          <SuccessMessage
+            message={successMessage}
+            onClose={() => setShowSuccess(false)}
+          />
         )}
 
-        <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
+        <div className="px-4 pb-4 pt-12">
           <Toolbar
             title="Lista de Productos"
             buttonText="Crear Producto"
-            onButtonClick={() => setModalState({ type: "create", productData: null })}
+            onButtonClick={() => openModal("create")}
           />
 
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
 
-          {fetchError && (
-            <div className="my-4">
-              <ErrorMessage message={fetchError.message} />
-            </div>
-          )}
+          {fetchError && <ErrorMessage message={fetchError.message} />}
 
           {loadingProducts ? (
-            <div className="my-12 flex justify-center items-center min-h-[30vh]">
-              <Spinner size="6" color="text-primary-500" />
+            <div className="my-12 flex justify-center">
+              <Spinner size="6" />
             </div>
-          ) : products?.length > 0 ? (
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
-              <ProductTable
-                products={products}
-                onView={handleViewProduct}
-                onShowSubproducts={handleViewSubproducts}
-                onEdit={handleEditProduct}
-                onDelete={handleDeleteClick}
-                onViewHistory={handleViewHistory}
-                user={user}
-              />
-            </div>
+          ) : products.length > 0 ? (
+            <ProductTable
+              products={products}
+              onView={(p) => openModal("view", p)}
+              onEdit={(p) => openModal("edit", p)}
+              onDelete={(p) => openModal("deleteConfirm", p)}
+              onShowSubproducts={(p) =>
+                navigate(`/products/${p.id}/subproducts`)
+              }
+              onViewHistory={(p) =>
+                navigate(`/products/${p.id}/history`)
+              }
+              user={user}
+            />
           ) : (
-            <div className="text-center py-10 px-4 mt-4 bg-white rounded-lg shadow">
-              <p className="text-gray-500">No se encontraron productos.</p>
-            </div>
+            <p className="text-center py-10">
+              No se encontraron productos.
+            </p>
           )}
 
           <Pagination
             onNext={nextPageUrl ? () => setPageUrl(nextPageUrl) : undefined}
-            onPrevious={previousPageUrl ? () => setPageUrl(previousPageUrl) : undefined}
+            onPrevious={
+              previousPageUrl ? () => setPageUrl(previousPageUrl) : undefined
+            }
             hasNext={Boolean(nextPageUrl)}
             hasPrevious={Boolean(previousPageUrl)}
           />
@@ -148,11 +137,15 @@ const ProductsList = () => {
 
       <ProductModals
         modalState={modalState}
-        closeModal={handleCloseModal}
-        onCreateProduct={handleSaveProduct}
-        onUpdateProduct={handleSaveProduct}
-        onDeleteProduct={handleConfirmDelete}
-        isDeleting={isDeletingProduct}
+        closeModal={closeModal}
+        onCreateProduct={() =>
+          handleSave("¡Producto creado con éxito!")
+        }
+        onUpdateProduct={() =>
+          handleSave("¡Producto actualizado con éxito!")
+        }
+        onDeleteProduct={handleDelete}
+        isDeleting={isDeleting}
         deleteError={deleteError}
         clearDeleteError={() => setDeleteError(null)}
       />

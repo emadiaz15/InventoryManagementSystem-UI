@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import Modal from "../../../components/ui/Modal";
+import Modal from "@/components/ui/Modal";
 
 const ViewSubproductModal = ({ subproduct, isOpen, onClose, mediaPanel }) => {
     if (!subproduct) return null;
@@ -25,17 +25,50 @@ const ViewSubproductModal = ({ subproduct, isOpen, onClose, mediaPanel }) => {
                             Stock: {subproduct.current_stock ?? 0} Mts
                         </span>
                     </p>
-                    <p><span className="font-semibold">Código:</span> {subproduct.parent_code || "N/A"}</p>
-                    <p><span className="font-semibold">Marca:</span> {subproduct.brand || "N/A"}</p>
-                    <p><span className="font-semibold">Bobina N°:</span> {subproduct.number_coil || "N/A"}</p>
-                    <p><span className="font-semibold">Enumeración Inicial:</span> {subproduct.initial_enumeration ?? "N/A"}</p>
-                    <p><span className="font-semibold">Enumeración Final:</span> {subproduct.final_enumeration ?? "N/A"}</p>
-                    <p><span className="font-semibold">Peso Bruto (kg):</span> {subproduct.gross_weight ?? "N/A"}</p>
-                    <p><span className="font-semibold">Peso Neto (kg):</span> {subproduct.net_weight ?? "N/A"}</p>
-                    <p><span className="font-semibold">Stock Inicial:</span> {subproduct.initial_stock_quantity ?? "N/A"}</p>
-                    <p><span className="font-semibold">Ubicación:</span> {subproduct.location || "N/A"}</p>
-                    <p><span className="font-semibold">Tipo de Forma:</span> {subproduct.form_type || "N/A"}</p>
-                    <p><span className="font-semibold">Observaciones:</span> {subproduct.observations || "N/A"}</p>
+                    <p>
+                        <span className="font-semibold">Código:</span>{" "}
+                        {subproduct.parent_code || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Marca:</span>{" "}
+                        {subproduct.brand || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Bobina N°:</span>{" "}
+                        {subproduct.number_coil || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Enumeración Inicial:</span>{" "}
+                        {subproduct.initial_enumeration ?? "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Enumeración Final:</span>{" "}
+                        {subproduct.final_enumeration ?? "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Peso Bruto (kg):</span>{" "}
+                        {subproduct.gross_weight ?? "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Peso Neto (kg):</span>{" "}
+                        {subproduct.net_weight ?? "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Stock Inicial:</span>{" "}
+                        {subproduct.initial_stock_quantity ?? "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Ubicación:</span>{" "}
+                        {subproduct.location || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Tipo de Forma:</span>{" "}
+                        {subproduct.form_type || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Observaciones:</span>{" "}
+                        {subproduct.observations || "N/A"}
+                    </p>
                     <p className="flex items-center">
                         <span className="font-semibold mr-2">Estado:</span>
                         <span
@@ -44,14 +77,27 @@ const ViewSubproductModal = ({ subproduct, isOpen, onClose, mediaPanel }) => {
                         />
                         {subproduct.status ? "Disponible" : "Terminada"}
                     </p>
-                    <p><span className="font-semibold">Fecha de Ingreso:</span> {subproduct.created_at || "N/A"}</p>
-                    <p><span className="font-semibold">Modificado en:</span> {subproduct.modified_at || "N/A"}</p>
-                    <p><span className="font-semibold">Ingresado por:</span> {subproduct.created_by || "N/A"}</p>
-                    <p><span className="font-semibold">Modificado por:</span> {subproduct.modified_by || "N/A"}</p>
-                    <p><span className="font-semibold">ID:</span> {subproduct.id}</p>
+                    <p>
+                        <span className="font-semibold">Fecha de Ingreso:</span>{" "}
+                        {subproduct.created_at || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Modificado en:</span>{" "}
+                        {subproduct.modified_at || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Ingresado por:</span>{" "}
+                        {subproduct.created_by || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">Modificado por:</span>{" "}
+                        {subproduct.modified_by || "N/A"}
+                    </p>
+                    <p>
+                        <span className="font-semibold">ID:</span> {subproduct.id}
+                    </p>
                 </div>
 
-                {/* PANEL DE MEDIOS */}
                 <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
                     {mediaPanel}
                 </div>

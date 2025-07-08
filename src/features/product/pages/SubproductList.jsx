@@ -6,21 +6,25 @@ import SuccessMessage from "../../../components/common/SuccessMessage";
 import ErrorMessage from "../../../components/common/ErrorMessage";
 import Spinner from "../../../components/ui/Spinner";
 import Pagination from "../../../components/ui/Pagination";
+
 import SubproductModals from "../components/SubproductModals";
 import SubproductCard from "../components/SubproductCard";
 import SubproductFilters from "../components/SubproductFilter";
-import { listSubproducts } from "../services/listSubproducts";
-import { createSubproduct } from "../services/createSubproduct";
-import { updateSubproduct } from "../services/updateSubproduct";
-import { deleteSubproduct } from "../services/deleteSubproduct";
+
+// all CRUD in one file
+import {
+  listSubproducts,
+  createSubproduct,
+  updateSubproduct,
+  deleteSubproduct,
+} from "../services/subproducts/subproducts";
 
 const PAGE_SIZE = 15;
 
-// Construye la query string a partir de un objeto de filtros
+// build a query string from filters
 const buildQueryString = (filtersObj) => {
   const params = new URLSearchParams();
   Object.entries(filtersObj).forEach(([key, value]) => {
-    // sólo añadimos los filtros que no estén vacíos
     if (value !== "") {
       params.append(key, value);
     }
@@ -40,42 +44,43 @@ const SubproductList = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const [modalState, setModalState] = useState({ type: null, subproductData: null });
+  const [modalState, setModalState] = useState({
+    type: null,
+    subproductData: null,
+  });
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
-  // Aquí mantenemos el filtro de status (por defecto "true" = Disponible)
+  // default status filter = "true"
   const [filters, setFilters] = useState({ status: "true" });
 
-  const fetchSubproducts = useCallback(async (url = null) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Construimos la query con status + page_size
-      const query = buildQueryString({ ...filters, page_size: PAGE_SIZE });
-      const baseUrl = `/inventory/products/${productId}/subproducts/`;
-      // si ya nos pasan url de paginación, la usamos; si no, montamos la nueva
-      const fullUrl = url || `${baseUrl}${query}`;
-      const data = await listSubproducts(productId, fullUrl);
-      setSubproducts(data.results || []);
-      setNextPage(data.next);
-      setPreviousPage(data.previous);
-    } catch {
-      setError("Error al obtener los subproductos.");
-    } finally {
-      setLoading(false);
-    }
-  }, [productId, filters]);
+  const fetchSubproducts = useCallback(
+    async (url = null) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const query = buildQueryString({ ...filters, page_size: PAGE_SIZE });
+        const baseUrl = `/inventory/products/${productId}/subproducts/`;
+        const fullUrl = url || `${baseUrl}${query}`;
+        const data = await listSubproducts(productId, fullUrl);
+        setSubproducts(data.results || []);
+        setNextPage(data.next);
+        setPreviousPage(data.previous);
+      } catch {
+        setError("Error al obtener los subproductos.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [productId, filters]
+  );
 
-  // Cuando cambie el producto o los filtros, recargamos
   useEffect(() => {
-    if (productId) {
-      fetchSubproducts();
-    }
+    if (productId) fetchSubproducts();
   }, [productId, fetchSubproducts]);
 
-  const handleShowSuccess = (message) => {
-    setSuccessMessage(message);
+  const handleShowSuccess = (msg) => {
+    setSuccessMessage(msg);
     setShowSuccess(true);
     fetchSubproducts();
     setTimeout(() => setShowSuccess(false), 3000);
@@ -97,9 +102,9 @@ const SubproductList = () => {
     }
   };
 
-  const handleUpdate = async (subproduct) => {
+  const handleUpdate = async ({ id, ...rest }) => {
     try {
-      await updateSubproduct(productId, subproduct.id, subproduct);
+      await updateSubproduct(productId, id, rest);
       handleShowSuccess("Actualizado correctamente");
       handleCloseModal();
     } catch (err) {
@@ -107,10 +112,10 @@ const SubproductList = () => {
     }
   };
 
-  const handleDelete = async (subData) => {
+  const handleDelete = async ({ id }) => {
     setIsDeleting(true);
     try {
-      await deleteSubproduct(productId, subData.id);
+      await deleteSubproduct(productId, id);
       handleShowSuccess("Eliminado correctamente");
       handleCloseModal();
     } catch (err) {
@@ -119,6 +124,7 @@ const SubproductList = () => {
       setIsDeleting(false);
     }
   };
+
   const handleCreateOrder = () => {
     handleShowSuccess("Orden de corte creada correctamente");
     handleCloseModal();
@@ -128,7 +134,10 @@ const SubproductList = () => {
     <Layout>
       {showSuccess && (
         <div className="fixed top-20 right-5 z-[10000]">
-          <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+          <SuccessMessage
+            message={successMessage}
+            onClose={() => setShowSuccess(false)}
+          />
         </div>
       )}
 
@@ -136,13 +145,16 @@ const SubproductList = () => {
         <Toolbar
           title="Lista de Subproductos"
           buttonText="Crear Subproducto"
-          onButtonClick={() => setModalState({ type: "create", subproductData: null })}
+          onButtonClick={() =>
+            setModalState({ type: "create", subproductData: null })
+          }
         />
 
-        {/* Aquí inyectamos el filtro */}
         <SubproductFilters filters={filters} onChange={setFilters} />
 
-        {error && !loading && <ErrorMessage message={error} onClose={() => setError(null)} />}
+        {error && !loading && (
+          <ErrorMessage message={error} onClose={() => setError(null)} />
+        )}
 
         {loading ? (
           <div className="my-8 flex justify-center items-center min-h-[30vh]">
@@ -160,11 +172,21 @@ const SubproductList = () => {
               <SubproductCard
                 key={sp.id}
                 subproduct={sp}
-                onAddToOrder={() => setModalState({ type: "createOrder", subproductData: sp })}
-                onViewDetails={() => setModalState({ type: "view", subproductData: sp })}
-                onViewStock={() => setModalState({ type: "viewHistory", subproductData: sp })}
-                onEdit={() => setModalState({ type: "edit", subproductData: sp })}
-                onDelete={() => setModalState({ type: "deleteConfirm", subproductData: sp })}
+                onAddToOrder={() =>
+                  setModalState({ type: "createOrder", subproductData: sp })
+                }
+                onViewDetails={() =>
+                  setModalState({ type: "view", subproductData: sp })
+                }
+                onViewStock={() =>
+                  setModalState({ type: "viewHistory", subproductData: sp })
+                }
+                onEdit={() =>
+                  setModalState({ type: "edit", subproductData: sp })
+                }
+                onDelete={() =>
+                  setModalState({ type: "deleteConfirm", subproductData: sp })
+                }
               />
             ))}
           </div>

@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import { useAuth } from "../../../context/AuthProvider";
+import { useAuth } from "@/context/AuthProvider";
 
 import CreateSubproductModal from "./CreateSubproductModal";
 import EditSubproductModal from "./EditSubproductModal";
 import ViewSubproductModal from "./ViewSubproductModal";
-import CreateCuttingOrderWizard from "../../cuttingOrder/components/CreateCuttingOrderWizard";
-import DeleteMessage from "../../../components/common/DeleteMessage";
-import Spinner from "../../../components/ui/Spinner";
+import CreateCuttingOrderWizard from "@/features/cuttingOrder/components/CreateCuttingOrderWizard";
+import DeleteMessage from "@/components/common/DeleteMessage";
+import Spinner from "@/components/ui/Spinner";
 import ProductCarouselOverlay from "./ProductCarouselOverlay";
-import { djangoApi } from "@/api/clients";
+
+import { listSubproductFiles } from "../services/subproducts/subproductsFiles";
 import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
 
 const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose }) => {
@@ -39,20 +40,25 @@ const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose })
     );
 };
 
-/**
- * Centraliza la lógica de modales para Subproductos.
- */
+MultimediaWrapper.propTypes = {
+    files: PropTypes.array.isRequired,
+    loading: PropTypes.bool.isRequired,
+    productId: PropTypes.number.isRequired,
+    subproductId: PropTypes.number.isRequired,
+    onClose: PropTypes.func.isRequired,
+};
+
 const SubproductModals = ({
     modalState,
     closeModal,
     onCreateSubproduct,
     onUpdateSubproduct,
     onDeleteSubproduct,
-    onCreateOrder,          // ← Nueva prop
+    onCreateOrder,
     isDeleting = false,
     deleteError = null,
     clearDeleteError,
-    parentProduct = null,
+    parentProduct,
 }) => {
     const { user } = useAuth();
     const isStaff = user?.is_staff;
@@ -62,55 +68,38 @@ const SubproductModals = ({
     const [loadingFiles, setLoadingFiles] = useState(false);
 
     const handleCreateSuccess = () => {
-        closeModal(); // desmonta el modal antes de refrescar
+        closeModal();
         onCreateSubproduct();
     };
 
     const loadFiles = useCallback(async () => {
-        if (!subproductData || !parentProduct?.id) return;
+        if (!parentProduct?.id || !subproductData?.id) return;
         setLoadingFiles(true);
         try {
-            const res = await djangoApi.get(
-                `/inventory/products/${parentProduct.id}/subproducts/${subproductData.id}/files/`
-            );
-            const fetched = await Promise.all(
-                (res.data.files || []).map(async (f) => {
-                    const url = await enrichFilesWithBlobUrls
-                    s(
-                        parentProduct.id,
-                        f.drive_file_id,
-                        "django",
-                        subproductData.id
-                    );
-                    const contentType =
-                        f.contentType || f.content_type || f.mimeType || "application/octet-stream";
-                    return {
-                        id: f.drive_file_id,
-                        filename: f.filename || f.drive_file_id,
-                        contentType,
-                        url,
-                    };
-                })
-            );
-            setFiles(fetched);
-        } catch (e) {
-            console.error("❌ No se pudieron cargar los archivos:", e);
+            const rawFiles = await listSubproductFiles(parentProduct.id, subproductData.id);
+            const enriched = await enrichFilesWithBlobUrls({
+                productId: parentProduct.id,
+                subproductId: subproductData.id,
+                rawFiles,
+            });
+            setFiles(enriched);
+        } catch (err) {
+            console.error("❌ No se pudieron cargar los archivos:", err);
             setFiles([]);
         } finally {
             setLoadingFiles(false);
         }
-    }, [subproductData, parentProduct]);
+    }, [parentProduct, subproductData]);
 
     useEffect(() => {
         loadFiles();
     }, [loadFiles]);
 
-    if (!modalState?.type) return null;
+    if (!type) return null;
 
     return (
         <>
-            {/* Crear Subproducto */}
-            {type === "create" && parentProduct && (
+            {type === "create" && parentProduct && isStaff && (
                 <CreateSubproductModal
                     isOpen
                     onClose={closeModal}
@@ -119,8 +108,7 @@ const SubproductModals = ({
                 />
             )}
 
-            {/* Editar Subproducto */}
-            {type === "edit" && subproductData && (
+            {type === "edit" && subproductData && isStaff && (
                 <EditSubproductModal
                     isOpen
                     onClose={closeModal}
@@ -128,30 +116,16 @@ const SubproductModals = ({
                     onSave={onUpdateSubproduct}
                     onDeleteSuccess={loadFiles}
                 >
-                    {loadingFiles ? (
-                        <div className="flex items-center justify-center h-full">
-                            <Spinner size="8" color="text-primary-500" />
-                        </div>
-                    ) : files.length > 0 ? (
-                        <ProductCarouselOverlay
-                            images={files}
-                            productId={parentProduct.id}
-                            subproductId={subproductData.id}
-                            onClose={closeModal}
-                            onDeleteSuccess={loadFiles}
-                            editable
-                            isEmbedded
-                            source="django"
-                        />
-                    ) : (
-                        <div className="p-6 text-center text-sm text-gray-600">
-                            No hay archivos de multimedia.
-                        </div>
-                    )}
+                    <MultimediaWrapper
+                        files={files}
+                        loading={loadingFiles}
+                        productId={parentProduct.id}
+                        subproductId={subproductData.id}
+                        onClose={closeModal}
+                    />
                 </EditSubproductModal>
             )}
 
-            {/* Ver Subproducto */}
             {type === "view" && subproductData && (
                 <ViewSubproductModal
                     isOpen
@@ -169,17 +143,17 @@ const SubproductModals = ({
                 />
             )}
 
-            {/* Crear Orden de Corte (botón tijera) */}
             {type === "createOrder" && isStaff && subproductData && (
                 <CreateCuttingOrderWizard
                     isOpen
-                    productId={modalState.productId}
+                    productId={parentProduct.id}
+                    subproductId={subproductData.id}
                     onClose={closeModal}
+                    onCreateOrder={() => onCreateOrder(subproductData)}
                 />
             )}
 
-            {/* Confirmación de eliminación */}
-            {type === "deleteConfirm" && subproductData && (
+            {type === "deleteConfirm" && subproductData && isStaff && (
                 <DeleteMessage
                     isOpen
                     onClose={closeModal}
@@ -197,20 +171,14 @@ const SubproductModals = ({
 
 SubproductModals.propTypes = {
     modalState: PropTypes.shape({
-        type: PropTypes.oneOf([
-            "create",
-            "edit",
-            "view",
-            "createOrder",    // ← Añadido
-            "deleteConfirm"
-        ]),
+        type: PropTypes.oneOf(["create", "edit", "view", "createOrder", "deleteConfirm"]),
         subproductData: PropTypes.object,
     }),
     closeModal: PropTypes.func.isRequired,
     onCreateSubproduct: PropTypes.func.isRequired,
     onUpdateSubproduct: PropTypes.func.isRequired,
     onDeleteSubproduct: PropTypes.func.isRequired,
-    onCreateOrder: PropTypes.func.isRequired,    // ← Nueva
+    onCreateOrder: PropTypes.func.isRequired,
     isDeleting: PropTypes.bool,
     deleteError: PropTypes.string,
     clearDeleteError: PropTypes.func.isRequired,

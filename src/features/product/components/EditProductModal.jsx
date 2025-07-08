@@ -9,16 +9,21 @@ import ErrorMessage from "../../../components/common/ErrorMessage";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import DeleteMessage from "../../../components/common/DeleteMessage";
 
-import useUpdateProduct from "@/hooks/useUpdateProduct";
-import { listProducts } from "@feature/product/services/products";
+import { useUpdateProduct, useListProducts } from "@/features/product/hooks/useProductHooks";
 import { usePrefetchedData } from "../../../context/DataPrefetchContext";
 import { listTypesByCategory } from "../../type/services/listType";
 
-import { useProductFileUpload } from "../hooks/useProductFileUpload";
-import { useProductFileDelete } from "../hooks/useProductFileDelete";
+import { useProductFileUpload, useProductFileDelete } from "@/features/product/hooks/useProductFileHooks";
 import ProductCarouselOverlay from "../components/ProductCarouselOverlay";
 
-const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, children }) => {
+const EditProductModal = ({
+    product,
+    isOpen,
+    onClose,
+    onSave,
+    onDeleteSuccess,
+    children,
+}) => {
     const [formData, setFormData] = useState({
         name: "",
         code: "",
@@ -33,21 +38,24 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
         has_subproducts: false,
     });
 
-    const [products, setProducts] = useState([]);
     const [filteredTypes, setFilteredTypes] = useState([]);
     const [previewFiles, setPreviewFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
 
-    const { categories, types } = usePrefetchedData();
-    const { uploadFiles, uploadError, clearUploadError } = useProductFileUpload();
-    const { deleteFile, deleting, deleteError } = useProductFileDelete();
-    const { mutateAsync: updateProductMutate } = useUpdateProduct();
-
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [fileToDelete, setFileToDelete] = useState(null);
 
+    const { categories, types } = usePrefetchedData();
+    const { products = [] } = useListProducts({}, undefined);
+
+    const { uploadFiles, uploadError, clearUploadError } = useProductFileUpload();
+    const { deleteFile, deleting, deleteError } = useProductFileDelete();
+
+    const { mutateAsync: updateProductMutate } = useUpdateProduct();
+
+    // Reset form when modal opens
     useEffect(() => {
         if (!isOpen) return;
 
@@ -69,17 +77,9 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
             images: [],
             has_subproducts: !!product.has_subproducts,
         });
-
-        (async () => {
-            try {
-                const res = await listProducts("/inventory/products/?limit=1000");
-                setProducts(res.results || []);
-            } catch (err) {
-                setError("No se pudieron cargar los productos.");
-            }
-        })();
     }, [isOpen, product, clearUploadError]);
 
+    // Load filtered types whenever category changes
     useEffect(() => {
         if (!formData.category) {
             setFilteredTypes(types);
@@ -87,7 +87,6 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
         }
 
         const catId = parseInt(formData.category, 10);
-
         const loadTypes = async () => {
             try {
                 const res = await listTypesByCategory(catId);
@@ -99,7 +98,6 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
             } catch (err) {
                 console.error("Error al obtener tipos filtrados:", err);
             }
-
             setFilteredTypes(
                 types.filter((t) => {
                     if (t.category && typeof t.category === "object") return t.category.id === catId;
@@ -108,7 +106,6 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                 })
             );
         };
-
         loadTypes();
     }, [formData.category, types]);
 
@@ -173,14 +170,13 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
             setError("El código debe ser un número válido.");
             return;
         }
-
         data.append("code", parsedCode);
         data.append("description", formData.description.trim());
         data.append("brand", formData.brand.trim());
         data.append("location", formData.location.trim());
         data.append("position", formData.position.trim());
         data.append("category", formData.category);
-        data.append("type", formData.type ? formData.type : "");
+        data.append("type", formData.type || "");
         data.append("has_subproducts", formData.has_subproducts ? "true" : "false");
 
         const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
@@ -260,11 +256,29 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                             disabled={!formData.category}
                         />
 
-                        <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
+                        <FormInput
+                            label="Nombre / Medida"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                        />
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
-                            <FormStockInput label="Stock Inicial" name="initial_stock_quantity" value={formData.initial_stock_quantity} onChange={handleStockChange} placeholder="Ej: 100" />
+                            <FormInput
+                                label="Código"
+                                name="code"
+                                value={formData.code}
+                                onChange={handleChange}
+                                required
+                            />
+                            <FormStockInput
+                                label="Stock Inicial"
+                                name="initial_stock_quantity"
+                                value={formData.initial_stock_quantity}
+                                onChange={handleStockChange}
+                                placeholder="Ej: 100"
+                            />
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -273,11 +287,21 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                             <FormInput label="Posición" name="position" value={formData.position} onChange={handleChange} />
                         </div>
 
-                        <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
+                        <FormInput
+                            label="Descripción"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                        />
 
                         <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
-                            <input id="has_subproducts" type="checkbox" name="has_subproducts" checked={formData.has_subproducts}
-                                onChange={handleChange} className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2"
+                            <input
+                                id="has_subproducts"
+                                type="checkbox"
+                                name="has_subproducts"
+                                checked={formData.has_subproducts}
+                                onChange={handleChange}
+                                className="w-4 h-4 text-primary-500 bg-gray-100 border-gray-300 rounded-sm focus:ring-primary-500 focus:ring-2"
                             />
                             <label htmlFor="has_subproducts" className="ms-2 text-sm font-medium">
                                 Este producto tiene subproductos (Cables)
@@ -287,14 +311,16 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                         <div>
                             <label className="block mb-2 text-sm font-medium">Archivos (máx. 5)</label>
                             <div className="flex items-center space-x-4">
-                                <label htmlFor="images" className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600">
+                                <label
+                                    htmlFor="images"
+                                    className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600"
+                                >
                                     Seleccionar archivos
                                 </label>
                                 <span className="text-sm text-text-secondary">
                                     {previewFiles.length ? `${previewFiles.length} archivo(s)` : "Sin archivos"}
                                 </span>
                             </div>
-
                             <input
                                 id="images"
                                 type="file"
@@ -303,7 +329,6 @@ const EditProductModal = ({ product, isOpen, onClose, onSave, onDeleteSuccess, c
                                 onChange={handleFileChange}
                                 className="hidden"
                             />
-
                             {previewFiles.length > 0 && (
                                 <ul className="mt-2 text-sm text-gray-600 space-y-1">
                                     {previewFiles.map((nm, i) => (
