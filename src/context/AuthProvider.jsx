@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }) => {
             console.warn('⚠️ No se pudo cargar la imagen de perfil:', err);
             setProfileImage(null);
         }
+
     };
 
     const logout = useCallback(async () => {
