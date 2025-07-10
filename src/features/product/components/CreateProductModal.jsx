@@ -186,7 +186,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     payload.append("location", formData.location.trim());
     payload.append("position", formData.position.trim());
     payload.append("category", formData.category);
-    payload.append("type", formData.type || "");
+    if (formData.type) { payload.append("type", formData.type); }
 
     const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
     if (stockVal && parseFloat(stockVal) > 0) {
