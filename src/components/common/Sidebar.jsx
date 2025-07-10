@@ -21,12 +21,9 @@ const Sidebar = ({ onToggle }) => {
 
   const sidebarItems = [
     { label: 'Inicio', icon: HomeIcon, onClick: () => navigate('/dashboard') },
-    { label: 'Mi Perfil', icon: UserIcon, onClick: () => navigate('/my-profile') },
     { label: 'Productos', icon: CubeIcon, onClick: () => navigate('/product-list') },
     { label: 'Órdenes de Corte', icon: ClipboardDocumentListIcon, onClick: () => navigate('/cutting-orders') },
     { label: 'Usuarios', icon: UsersIcon, onClick: () => navigate('/users-list'), adminOnly: true },
-    { label: 'Tipos', icon: TagIcon, onClick: () => navigate('/types'), adminOnly: true },
-    { label: 'Categorías', icon: Squares2X2Icon, onClick: () => navigate('/categories'), adminOnly: true },
     { label: 'Cerrar Sesión', icon: ArrowRightOnRectangleIcon, onClick: logout, isLogout: true }
   ];
 
