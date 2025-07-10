@@ -17,6 +17,6 @@ export const logoutHelper = async () => {
   } catch (error) {
     console.warn("⚠️ Error al cerrar sesión:", error?.response?.data || error.message);
   } finally {
-    clearTokens();
+  clearTokens(); // now clears from localStorage
   }
 };

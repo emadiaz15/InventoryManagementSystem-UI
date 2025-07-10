@@ -78,14 +78,11 @@ export const AuthProvider = ({ children }) => {
                 password,
             });
 
-            const {
-                access_token,
-                refresh_token,
-                user: userData,
-            } = res.data;
+            // Ajuste para leer los campos tal como vienen en la API
+            const { access_token, refresh_token, user: userData } = res.data;
 
-            sessionStorage.setItem("accessToken", access_token);
-            sessionStorage.setItem("refreshToken", refresh_token);
+            localStorage.setItem("accessToken", access_token);
+            localStorage.setItem("refreshToken", refresh_token);
 
             setUser(userData);
             setIsAuthenticated(true);
