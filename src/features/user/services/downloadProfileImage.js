@@ -10,8 +10,15 @@ export const downloadProfileImage = async (imageUrl) => {
     return null;
   }
 
-  // En este caso no se necesita petición, la URL ya viene lista desde el backend
-  return imageUrl;
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error("❌ Error al descargar imagen de perfil:", err);
+    return imageUrl;
+  }
 };
 
 export default downloadProfileImage;

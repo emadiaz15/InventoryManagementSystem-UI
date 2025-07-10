@@ -20,13 +20,14 @@ const UserViewModal = ({ user, isOpen, onClose }) => {
         let isMounted = true;
 
         const loadImage = async () => {
-            if (!user.image_url) {
+            const rawUrl = user.image_signed_url || user.image_url;
+            if (!rawUrl) {
                 setImageStatus('error');
                 return;
             }
 
             try {
-                const url = await downloadProfileImage(user.image_url);
+                const url = await downloadProfileImage(rawUrl);
                 if (isMounted && url) {
                     setImageUrl(url);
                     setImageStatus('loaded');

@@ -46,7 +46,7 @@ const UserEditModal = ({
         image: null,
         is_staff: user.is_staff || false,
       });
-      setHasImage(!!user?.image_url);
+      setHasImage(!!(user?.image_signed_url || user?.image_url));
       setInternalError('');
       setValidationErrors({});
     }
@@ -82,6 +82,7 @@ const UserEditModal = ({
           }));
           user.image = deletedUser.image || '';
           user.image_url = deletedUser.image_url || null;
+          user.image_signed_url = deletedUser.image_signed_url || null;
 
           setSuccessMessage('Imagen de perfil eliminada correctamente.');
           setTimeout(() => {
@@ -138,6 +139,7 @@ const UserEditModal = ({
           const imageUpdateResult = await updateProfileImage(formData.image, user.image, user.id);
           user.image = imageUpdateResult.image;
           user.image_url = imageUpdateResult.image_url;
+          user.image_signed_url = imageUpdateResult.image_signed_url;
           setHasImage(true);
         } catch (imgErr) {
           console.warn('⚠️ Error al actualizar imagen:', imgErr);
