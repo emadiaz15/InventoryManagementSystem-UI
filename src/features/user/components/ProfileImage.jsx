@@ -54,6 +54,7 @@ const ProfileImage = ({ image }) => {
           src={imgSrc}
           alt="Imagen de perfil del usuario"
           className="w-full h-full object-cover rounded-full"
+          crossOrigin="anonymous"
           loading="lazy"
           onError={() => setErrored(true)}
         />

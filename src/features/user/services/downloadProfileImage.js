@@ -4,6 +4,8 @@
  * @param {string} imageUrl - URL presignada generada desde el backend (MinIO).
  * @returns {Promise<string|null>} - La misma URL si es válida, o null.
  */
+import axios from "axios";
+
 export const downloadProfileImage = async (imageUrl) => {
   if (!imageUrl || typeof imageUrl !== "string") {
     console.warn("❌ URL de imagen no válida:", imageUrl);
@@ -11,13 +13,11 @@ export const downloadProfileImage = async (imageUrl) => {
   }
 
   try {
-    const response = await fetch(imageUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
-  } catch (err) {
-    console.error("❌ Error al descargar imagen de perfil:", err);
-    return imageUrl;
+    const response = await axios.get(imageUrl, { responseType: "blob" });
+    return URL.createObjectURL(response.data);
+  } catch (error) {
+    console.warn("❌ Error descargando imagen:", error);
+    return null;
   }
 };
 
