@@ -94,6 +94,11 @@ const ProductsList = () => {
             title="Lista de Productos"
             buttonText="Crear Producto"
             onButtonClick={() => openModal("create")}
+            configItems={[
+              { label: 'Categorías', onClick: () => navigate('/categories'), adminOnly: true },
+              { label: 'Tipos', onClick: () => navigate('/types'), adminOnly: true },
+              // agrega las opciones que necesites...
+            ]}
           />
 
           <Filter columns={filterColumns} onFilterChange={handleFilterChange} />

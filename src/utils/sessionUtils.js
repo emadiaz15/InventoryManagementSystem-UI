@@ -11,9 +11,8 @@ export const getRefreshToken = () =>
 // ─── Limpiar sesión ─────────────────────────────────────────
 /**
  * Elimina todos los tokens de localStorage.
- * La emisión del evento de sesión expirada queda a cargo del llamador.
  */
 export const clearTokens = () => {
-  localStorage.getItem("accessToken");
-  localStorage.getItem("refreshToken");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
 };

@@ -56,7 +56,6 @@ const Navbar = () => {
               <MenuButton className="ml-2">
                 {profileImage && typeof profileImage === "string" ? (
                   <img
-                    key={profileImage}
                     src={profileImage}
                     alt="User Profile"
                     className="h-8 w-8 rounded-full object-cover border border-white"
