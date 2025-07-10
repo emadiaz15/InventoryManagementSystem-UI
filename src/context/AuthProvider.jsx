@@ -73,20 +73,20 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
 
         try {
-            const res = await djangoApi.post("/users/login/", {
-                username,
-                password,
-            });
-
-            // Ajuste para leer los campos tal como vienen en la API
-            const { access_token, refresh_token, user: userData } = res.data;
+            // 1) haces login y guardas tokens
+            const res = await djangoApi.post("/users/login/", { username, password });
+            const { access_token, refresh_token } = res.data;
 
             localStorage.setItem("accessToken", access_token);
             localStorage.setItem("refreshToken", refresh_token);
 
-            setUser(userData);
+            // 2) solicitas el perfil "oficial" (con image_url pública)
+            const profileRes = await djangoApi.get("/users/profile/");
+            const profile = profileRes.data;
+
+            setUser(profile);
             setIsAuthenticated(true);
-            await loadProfileImage(userData);
+            await loadProfileImage(profile);
 
             window.location.href = "/dashboard";
         } catch (err) {
