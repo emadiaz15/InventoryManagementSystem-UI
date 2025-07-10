@@ -21,9 +21,9 @@ const UserTable = ({
         users.map((user) => ({
             "Usuario": (
                 <div className="flex items-center space-x-3">
-                    {user.image_url ? (
+                    {user.image_signed_url || user.image_url ? (
                         <img
-                            src={user.image_url}
+                            src={user.image_signed_url || user.image_url}
                             alt={`Avatar de ${user.username}`}
                             className="w-8 h-8 rounded-full object-cover"
                         />
