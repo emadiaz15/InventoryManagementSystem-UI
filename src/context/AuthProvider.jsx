@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { djangoApi } from "@/api/clients";
 import { logoutHelper } from "./authHelpers";
 import { getAccessToken, clearTokens } from "@/utils/sessionUtils";
+import { downloadProfileImage } from "@/features/user/services/downloadProfileImage";
 
 const AuthContext = createContext(null);
 
@@ -24,8 +25,19 @@ export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
 
     const loadProfileImage = async (userData) => {
-        const url = userData?.image_signed_url || userData?.image_url;
-        setProfileImage(url || null);
+        const rawUrl = userData?.image_signed_url || userData?.image_url;
+        if (!rawUrl) {
+            setProfileImage(null);
+            return;
+        }
+        try {
+            const imgUrl = await downloadProfileImage(rawUrl);
+            setProfileImage(imgUrl || null);
+        } catch (err) {
+            console.warn('⚠️ No se pudo cargar la imagen de perfil:', err);
+            setProfileImage(null);
+        }
+
     };
 
     const logout = useCallback(async () => {
