@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
 
     const loadProfileImage = async (userData) => {
-        const url = userData?.image_url;
+        const url = userData?.image_signed_url || userData?.image_url;
         setProfileImage(url || null);
     };
 
