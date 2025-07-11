@@ -10,7 +10,12 @@ import { invalidateCachedUsersByUrl } from "./userCache";
  * @param {string} [listUrl="/users/list/"] - URL a invalidar en la caché.
  * @returns {Promise<Object>} - Usuario actualizado con nueva imagen.
  */
-export const updateProfileImage = async (file, fileId, userId = null, listUrl = "/users/list/") => {
+export const updateProfileImage = async (
+  file,
+  fileId,
+  userId = null,
+  listUrl = "/users/list/"
+) => {
   if (!fileId) throw new Error("Falta el ID del archivo a reemplazar.");
   if (!file || !(file instanceof File)) {
     throw new Error("Debes seleccionar una imagen válida para subir.");
@@ -37,7 +42,10 @@ export const updateProfileImage = async (file, fileId, userId = null, listUrl = 
 
     return response.data;
   } catch (error) {
-    console.error("❌ Error al actualizar imagen de perfil:", error.response?.data || error.message);
+    console.error(
+      "❌ Error al actualizar imagen de perfil:",
+      error.response?.data || error.message
+    );
     throw new Error("No se pudo actualizar la imagen. Intenta nuevamente.");
   }
 };
