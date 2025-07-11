@@ -10,7 +10,11 @@ import { invalidateCachedUsersByUrl } from "./userCache";
  * @returns {Promise<Object>} - Datos del usuario actualizado con nueva imagen.
  * @throws {Error} - Si ocurre un error durante la carga.
  */
-export const uploadProfileImage = async (file, userId = null, listUrl = "/users/list/") => {
+export const uploadProfileImage = async (
+  file,
+  userId = null,
+  listUrl = "/users/list/"
+) => {
   if (!file || !(file instanceof File)) {
     throw new Error("Debes seleccionar una imagen válida para subir.");
   }
@@ -36,7 +40,10 @@ export const uploadProfileImage = async (file, userId = null, listUrl = "/users/
 
     return response.data;
   } catch (error) {
-    console.error("❌ Error al subir imagen de perfil:", error.response?.data || error.message);
+    console.error(
+      "❌ Error al subir imagen de perfil:",
+      error.response?.data || error.message
+    );
     throw new Error("No se pudo subir la imagen. Intenta nuevamente.");
   }
 };

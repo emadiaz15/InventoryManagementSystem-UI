@@ -35,3 +35,10 @@ export const invalidateCachedUsersByUrl = (url) => {
 export const clearUsersCache = () => {
   usersCache.clear();
 };
+
+export default {
+  getCachedUsers,
+  setCachedUsers,
+  invalidateCachedUsersByUrl,
+  clearUsersCache,
+};
