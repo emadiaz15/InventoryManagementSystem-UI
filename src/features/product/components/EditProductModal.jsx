@@ -20,7 +20,7 @@ const EditProductModal = ({
     product,
     isOpen,
     onClose,
-    onSave,
+    onSave,            // ← callback para refrescar al padre
     onDeleteSuccess,
     children,
 }) => {
@@ -53,17 +53,15 @@ const EditProductModal = ({
     const { uploadFiles, uploadError, clearUploadError } = useProductFileUpload();
     const { deleteFile, deleting, deleteError } = useProductFileDelete();
 
-    const { mutateAsync: updateProductMutate } = useUpdateProduct();
+    // ← pasamos onSave al hook para que se invoque tras éxito
+    const { mutateAsync: updateProductMutate } = useUpdateProduct(onSave);
 
-    // Reset form when modal opens
     useEffect(() => {
         if (!isOpen) return;
-
         clearUploadError();
         setError("");
         setShowSuccess(false);
         setPreviewFiles([]);
-
         setFormData({
             name: product.name ?? "",
             code: product.code != null ? String(product.code) : "",
@@ -79,13 +77,11 @@ const EditProductModal = ({
         });
     }, [isOpen, product, clearUploadError]);
 
-    // Load filtered types whenever category changes
     useEffect(() => {
         if (!formData.category) {
             setFilteredTypes(types);
             return;
         }
-
         const catId = parseInt(formData.category, 10);
         const loadTypes = async () => {
             try {
@@ -95,13 +91,13 @@ const EditProductModal = ({
                     setFilteredTypes(fetched);
                     return;
                 }
-            } catch (err) {
-                console.error("Error al obtener tipos filtrados:", err);
+            } catch {
+                // fall back
             }
             setFilteredTypes(
                 types.filter((t) => {
-                    if (t.category && typeof t.category === "object") return t.category.id === catId;
-                    if (typeof t.category_id !== "undefined") return t.category_id === catId;
+                    if (t.category?.id != null) return t.category.id === catId;
+                    if (t.category_id != null) return t.category_id === catId;
                     return t.category === catId;
                 })
             );
@@ -118,10 +114,7 @@ const EditProductModal = ({
     };
 
     const handleStockChange = (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            initial_stock_quantity: e.target.value,
-        }));
+        setFormData((prev) => ({ ...prev, initial_stock_quantity: e.target.value }));
     };
 
     const handleFileChange = (e) => {
@@ -159,12 +152,10 @@ const EditProductModal = ({
         e.preventDefault();
         setError("");
         setShowSuccess(false);
-
         if (!validateCodeUnique()) return;
 
         const data = new FormData();
         data.append("name", formData.name.trim());
-
         const parsedCode = parseInt(formData.code.trim(), 10);
         if (isNaN(parsedCode)) {
             setError("El código debe ser un número válido.");
@@ -178,7 +169,6 @@ const EditProductModal = ({
         data.append("category", formData.category);
         data.append("type", formData.type || "");
         data.append("has_subproducts", formData.has_subproducts ? "true" : "false");
-
         const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
         if (parseFloat(stockVal) > 0) {
             data.append("initial_stock_quantity", stockVal);
@@ -187,7 +177,7 @@ const EditProductModal = ({
         try {
             setLoading(true);
             await updateProductMutate({ productId: product.id, productData: data });
-
+            // onSave se dispara desde el hook
             if (formData.images.length) {
                 const ok = await uploadFiles(product.id, formData.images);
                 if (!ok && uploadError) {
@@ -195,10 +185,7 @@ const EditProductModal = ({
                     return;
                 }
             }
-
-            setShowSuccess(true);
             onClose();
-            onSave?.();
         } catch (err) {
             setError(err.message || "Error al actualizar el producto.");
         } finally {
@@ -216,8 +203,8 @@ const EditProductModal = ({
         const success = await deleteFile(product.id, fileToDelete.id);
         if (success) {
             setIsDeleteOpen(false);
-            onDeleteSuccess?.();
-            onSave?.();
+            onDeleteSuccess?.(); // refresca archivos
+            onSave?.();          // refresca lista productos
         }
     };
 
@@ -294,7 +281,7 @@ const EditProductModal = ({
                             onChange={handleChange}
                         />
 
-                        <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 text-text-primary h-[46px]">
+                        <div className="flex items-center ps-4 border border-background-200 rounded-sm bg-background-100 h-[46px]">
                             <input
                                 id="has_subproducts"
                                 type="checkbox"

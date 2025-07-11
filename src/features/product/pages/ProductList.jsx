@@ -31,7 +31,6 @@ const ProductsList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
-  // Hook corregido
   const {
     products,
     loadingProducts,
@@ -48,7 +47,7 @@ const ProductsList = () => {
     setModalState({ type: null, productData: null });
 
   const handleSave = (msg) => {
-    // al guardar o eliminar, vuelve a la primera página
+    // volvemos a primera página y mostramos mensaje
     setPageUrl(null);
     setSuccessMessage(msg);
     setShowSuccess(true);
@@ -97,7 +96,6 @@ const ProductsList = () => {
             configItems={[
               { label: 'Categorías', onClick: () => navigate('/categories'), adminOnly: true },
               { label: 'Tipos', onClick: () => navigate('/types'), adminOnly: true },
-              // agrega las opciones que necesites...
             ]}
           />
 
