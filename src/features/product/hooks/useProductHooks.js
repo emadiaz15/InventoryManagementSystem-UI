@@ -38,29 +38,36 @@ export const useListProducts = (filters = {}, pageUrl = null) => {
 
 /**
  * ➕ Crear producto
+ *
+ * onSuccessCallback (optional): función a ejecutar tras crearse el producto
  */
-export const useCreateProduct = () => {
+export const useCreateProduct = (onSuccessCallback) => {
   const qc = useQueryClient();
   return useMutation(createProduct, {
-    onSuccess: () => {
-      qc.invalidateQueries({ predicate: productKeys.prefixMatch });
+    onSuccess: (newProduct) => {
+      // Invalida la lista de productos
+      qc.invalidateQueries(productKeys.list());
+      // Llamada al callback del consumidor (cerrar modal, mostrar mensaje, etc)
+      onSuccessCallback?.(newProduct);
     },
   });
 };
 
 /**
  * 📝 Actualizar producto
+ *
+ * onSuccessCallback (optional): función a ejecutar tras actualizarse el producto
  */
-export const useUpdateProduct = () => {
+export const useUpdateProduct = (onSuccessCallback) => {
   const qc = useQueryClient();
   return useMutation(
     ({ productId, productData }) => updateProduct(productId, productData),
     {
-      onSuccess: (_, { productId }) => {
-        qc.invalidateQueries({ predicate: productKeys.prefixMatch });
-        if (productId) {
-          qc.invalidateQueries({ queryKey: productKeys.detail(productId) });
-        }
+      onSuccess: (updatedProduct, { productId }) => {
+        // Invalida la lista y el detalle de este producto
+        qc.invalidateQueries(productKeys.list());
+        qc.invalidateQueries(productKeys.detail(productId));
+        onSuccessCallback?.(updatedProduct);
       },
     }
   );
@@ -68,12 +75,15 @@ export const useUpdateProduct = () => {
 
 /**
  * 🗑️ Eliminar producto
+ *
+ * onSuccessCallback (optional): función a ejecutar tras eliminarse el producto
  */
-export const useDeleteProduct = () => {
+export const useDeleteProduct = (onSuccessCallback) => {
   const qc = useQueryClient();
   return useMutation(deleteProduct, {
     onSuccess: () => {
-      qc.invalidateQueries({ predicate: productKeys.prefixMatch });
+      qc.invalidateQueries(productKeys.list());
+      onSuccessCallback?.();
     },
   });
 };

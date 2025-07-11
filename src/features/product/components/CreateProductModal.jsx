@@ -27,7 +27,8 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
 
   const { uploadFiles, uploading, uploadError, clearUploadError } = useProductFileUpload();
-  const { mutateAsync: createProductMutate } = useCreateProduct();
+  // Pasamos onSave al hook para que dispare la acción tras crear
+  const { mutateAsync: createProductMutate } = useCreateProduct(onSave);
   const { products = [] } = useListProducts({}, null);
 
   const [formData, setFormData] = useState({
@@ -82,7 +83,6 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
     fetchData();
   }, [isOpen, clearUploadError]);
-
 
   useEffect(() => {
     if (!formData.category) {
@@ -186,7 +186,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     payload.append("location", formData.location.trim());
     payload.append("position", formData.position.trim());
     payload.append("category", formData.category);
-    if (formData.type) { payload.append("type", formData.type); }
+    if (formData.type) {
+      payload.append("type", formData.type);
+    }
 
     const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
     if (stockVal && parseFloat(stockVal) > 0) {
@@ -208,7 +210,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
       setShowSuccess(true);
       onClose();
-      onSave?.();
+      // onSave ya se llamó desde el hook useCreateProduct(onSave)
     } catch (err) {
       const data = err.response?.data;
       const msg =
@@ -251,7 +253,13 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           ]}
         />
 
-        <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
+        <FormInput
+          label="Nombre / Medida"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
