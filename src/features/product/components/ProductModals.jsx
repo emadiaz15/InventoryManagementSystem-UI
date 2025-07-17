@@ -32,26 +32,19 @@ const ProductModals = ({
     const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
         productId && ["view", "edit"].includes(type) ? productId : null
     );
+
     // Rastreamos la lista previa de IDs para evitar recargar archivos si no hubo cambios
     const prevFileIdsRef = useRef("init");
 
     useEffect(() => {
         if (!productId || !["view", "edit"].includes(type)) return;
-        const ids = Array.isArray(rawFiles)
-            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
-            : "";
-        if (prevRawIds.current === ids) return;
-        prevRawIds.current = ids;
 
-        const ids = Array.isArray(rawFiles)
-            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
-            : "";
-        if (prevRawIds.current === ids) return;
-        prevRawIds.current = ids;
-
+        // Calculamos una firma única de IDs de archivos
         const fileIdSignature = Array.isArray(rawFiles)
-            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            ? rawFiles.map(f => f.id || f.drive_file_id || f.key).join(",")
             : "";
+
+        // Si no cambió, salimos sin recargar
         if (prevFileIdsRef.current === fileIdSignature) return;
         prevFileIdsRef.current = fileIdSignature;
 
@@ -60,10 +53,10 @@ const ProductModals = ({
         setLoadingFiles(true);
 
         enrichFilesWithBlobUrls({ productId, rawFiles, signal: controller.signal })
-            .then((enriched) => {
+            .then(enriched => {
                 if (!ignore) setFiles(enriched);
             })
-            .catch((err) => {
+            .catch(err => {
                 console.error("❌ No se pudieron cargar archivos del producto:", err);
                 if (!ignore) setFiles([]);
             })
@@ -78,7 +71,6 @@ const ProductModals = ({
     }, [productId, type, rawFiles]);
 
     const isLoadingFiles = loadingRaw || loadingFiles;
-
     if (!type) return null;
 
     const hasFiles = Array.isArray(files) && files.length > 0;
