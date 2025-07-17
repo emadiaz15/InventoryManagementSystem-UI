@@ -30,7 +30,6 @@ const EditSubproductModal = ({
     isOpen,
     onClose,
     onSave,
-    onDeleteSuccess,
     subproduct,
     children,
 }) => {
@@ -181,7 +180,6 @@ const EditSubproductModal = ({
         );
         if (success) {
             setIsDeleteOpen(false);
-            onDeleteSuccess?.();
             onSave?.(subproduct);
         }
     };
@@ -388,7 +386,6 @@ EditSubproductModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     onSave: PropTypes.func.isRequired,
-    onDeleteSuccess: PropTypes.func,
     subproduct: PropTypes.shape({
         id: PropTypes.number.isRequired,
         parent: PropTypes.number.isRequired,
