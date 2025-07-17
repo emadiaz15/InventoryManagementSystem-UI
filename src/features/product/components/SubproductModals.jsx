@@ -79,6 +79,7 @@ const SubproductModals = ({
     // Guarda el listado previo de IDs para evitar recargas innecesarias
     const prevFileIdsRef = useRef("init");
 
+
     useEffect(() => {
         if (!parentProduct?.id || !subproductData?.id) return;
 
@@ -87,6 +88,7 @@ const SubproductModals = ({
             : "";
         if (prevFileIdsRef.current === fileIdSignature) return;
         prevFileIdsRef.current = fileIdSignature;
+
 
         let ignore = false;
         const controller = new AbortController();
