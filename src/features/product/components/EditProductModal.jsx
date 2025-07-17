@@ -21,7 +21,6 @@ const EditProductModal = ({
     isOpen,
     onClose,
     onSave,            // ← callback para refrescar al padre
-    onDeleteSuccess,
     children,
 }) => {
     const [formData, setFormData] = useState({
@@ -203,8 +202,7 @@ const EditProductModal = ({
         const success = await deleteFile(product.id, fileToDelete.id);
         if (success) {
             setIsDeleteOpen(false);
-            onDeleteSuccess?.(); // refresca archivos
-            onSave?.();          // refresca lista productos
+            onSave?.(); // refresca lista productos
         }
     };
 
@@ -386,7 +384,6 @@ EditProductModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     onSave: PropTypes.func,
-    onDeleteSuccess: PropTypes.func,
     children: PropTypes.node,
 };
 

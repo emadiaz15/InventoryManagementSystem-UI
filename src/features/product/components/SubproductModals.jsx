@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useAuth } from "@/context/AuthProvider";
 
@@ -10,7 +10,7 @@ import DeleteMessage from "@/components/common/DeleteMessage";
 import Spinner from "@/components/ui/Spinner";
 import ProductCarouselOverlay from "./ProductCarouselOverlay";
 
-import { listSubproductFiles } from "../services/subproducts/subproductsFiles";
+import { useSubproductFileList } from "@/features/product/hooks/useSubproductFileHooks";
 import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
 
 const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose }) => {
@@ -72,28 +72,42 @@ const SubproductModals = ({
         onCreateSubproduct();
     };
 
-    const loadFiles = useCallback(async () => {
-        if (!parentProduct?.id || !subproductData?.id) return;
-        setLoadingFiles(true);
-        try {
-            const rawFiles = await listSubproductFiles(parentProduct.id, subproductData.id);
-            const enriched = await enrichFilesWithBlobUrls({
-                productId: parentProduct.id,
-                subproductId: subproductData.id,
-                rawFiles,
-            });
-            setFiles(enriched);
-        } catch (err) {
-            console.error("❌ No se pudieron cargar los archivos:", err);
-            setFiles([]);
-        } finally {
-            setLoadingFiles(false);
-        }
-    }, [parentProduct, subproductData]);
+    const { data: rawFiles = [], isLoading: loadingRaw } = useSubproductFileList(
+        parentProduct?.id,
+        subproductData?.id
+    );
 
     useEffect(() => {
-        loadFiles();
-    }, [loadFiles]);
+        if (!parentProduct?.id || !subproductData?.id) return;
+
+        let ignore = false;
+        const controller = new AbortController();
+        setLoadingFiles(true);
+
+        enrichFilesWithBlobUrls({
+            productId: parentProduct.id,
+            subproductId: subproductData.id,
+            rawFiles,
+            signal: controller.signal,
+        })
+            .then((enriched) => {
+                if (!ignore) setFiles(enriched);
+            })
+            .catch((err) => {
+                console.error("❌ No se pudieron cargar los archivos:", err);
+                if (!ignore) setFiles([]);
+            })
+            .finally(() => {
+                if (!ignore) setLoadingFiles(false);
+            });
+
+        return () => {
+            ignore = true;
+            controller.abort();
+        };
+    }, [parentProduct, subproductData, rawFiles]);
+
+    const isLoadingFiles = loadingRaw || loadingFiles;
 
     if (!type) return null;
 
@@ -114,11 +128,10 @@ const SubproductModals = ({
                     onClose={closeModal}
                     subproduct={subproductData}
                     onSave={onUpdateSubproduct}
-                    onDeleteSuccess={loadFiles}
                 >
                     <MultimediaWrapper
                         files={files}
-                        loading={loadingFiles}
+                        loading={isLoadingFiles}
                         productId={parentProduct.id}
                         subproductId={subproductData.id}
                         onClose={closeModal}
@@ -134,7 +147,7 @@ const SubproductModals = ({
                     mediaPanel={
                         <MultimediaWrapper
                             files={files}
-                            loading={loadingFiles}
+                            loading={isLoadingFiles}
                             productId={parentProduct.id}
                             subproductId={subproductData.id}
                             onClose={closeModal}
