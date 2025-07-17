@@ -76,17 +76,18 @@ const SubproductModals = ({
         parentProduct?.id,
         subproductData?.id
     );
+    // Guarda el listado previo de IDs para evitar recargas innecesarias
+    const prevFileIdsRef = useRef("init");
 
-    const prevIdList = useRef("init");
 
     useEffect(() => {
         if (!parentProduct?.id || !subproductData?.id) return;
 
-        const currentIdList = Array.isArray(rawFiles)
+        const fileIdSignature = Array.isArray(rawFiles)
             ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
             : "";
-        if (prevIdList.current === currentIdList) return;
-        prevIdList.current = currentIdList;
+        if (prevFileIdsRef.current === fileIdSignature) return;
+        prevFileIdsRef.current = fileIdSignature;
 
 
         let ignore = false;

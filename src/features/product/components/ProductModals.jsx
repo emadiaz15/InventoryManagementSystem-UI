@@ -32,9 +32,8 @@ const ProductModals = ({
     const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
         productId && ["view", "edit"].includes(type) ? productId : null
     );
-
-    const prevIdList = useRef("init");
-
+    // Rastreamos la lista previa de IDs para evitar recargar archivos si no hubo cambios
+    const prevFileIdsRef = useRef("init");
 
     useEffect(() => {
         if (!productId || !["view", "edit"].includes(type)) return;
@@ -50,17 +49,11 @@ const ProductModals = ({
         if (prevRawIds.current === ids) return;
         prevRawIds.current = ids;
 
-        const idStr = Array.isArray(rawFiles)
+        const fileIdSignature = Array.isArray(rawFiles)
             ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
             : "";
-        if (prevRawIds.current === idStr) return;
-        prevRawIds.current = idStr;
-
-        const currentIdList = Array.isArray(rawFiles)
-            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
-            : "";
-        if (prevIdList.current === currentIdList) return;
-        prevIdList.current = currentIdList;
+        if (prevFileIdsRef.current === fileIdSignature) return;
+        prevFileIdsRef.current = fileIdSignature;
 
         let ignore = false;
         const controller = new AbortController();
