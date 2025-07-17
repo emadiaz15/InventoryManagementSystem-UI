@@ -2,28 +2,27 @@ import React, { useState, useEffect } from "react";
 import Modal from "../../../components/ui/Modal";
 import { listCategories } from "../../category/services/listCategory";
 import { listTypes } from "../../type/services/listType";
-import { listProductFiles } from "@/features/product/services/products/files";
-import { useEnrichedProductFiles } from "@/features/product/hooks/useProductFileHooks";
+import { useProductFileList, useEnrichedProductFiles } from "@/features/product/hooks/useProductFileHooks";
 import ProductCarouselOverlay from "../components/ProductCarouselOverlay";
 
 const ViewProductModal = ({ product, isOpen, onClose }) => {
     const [categories, setCategories] = useState([]);
     const [types, setTypes] = useState([]);
-    const [rawFiles, setRawFiles] = useState([]);
+    const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
+        isOpen ? product?.id : null
+    );
 
     useEffect(() => {
         if (!isOpen || !product?.id) return;
 
         const fetchData = async () => {
             try {
-                const [catResp, typeResp, fileResp] = await Promise.all([
+                const [catResp, typeResp] = await Promise.all([
                     listCategories("/inventory/categories/?limit=1000&status=true"),
                     listTypes("/inventory/types/?limit=1000&status=true"),
-                    listProductFiles(product.id),
                 ]);
                 setCategories(catResp.results || []);
                 setTypes(typeResp.results || []);
-                setRawFiles(fileResp || []);
             } catch (err) {
                 console.error("Error cargando datos del producto:", err);
             }
@@ -33,6 +32,7 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
     }, [isOpen, product?.id]);
 
     const { files, loading } = useEnrichedProductFiles(product?.id, rawFiles);
+    const isLoading = loading || loadingRaw;
 
     if (!product) return null;
 
@@ -76,7 +76,7 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                 </div>
 
                 <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
-                    {loading ? (
+                    {isLoading ? (
                         <div className="flex items-center justify-center h-full">
                             {/* si tienes un Spinner importado podrías usarlo aquí */}
                             Cargando archivos...
