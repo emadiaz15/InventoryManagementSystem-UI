@@ -52,7 +52,7 @@ export const uploadFileProduct = async (productId, files) => {
         headers: { "Content-Type": "multipart/form-data" },
       }
     );
-    return response.data;
+    return { data: response.data, status: response.status };
   } catch (error) {
     const detail =
       error.response?.data?.detail || error.message || "No se pudo subir el archivo.";

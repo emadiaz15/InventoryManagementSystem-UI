@@ -28,6 +28,42 @@ export const listSubproductFiles = async (productId, subproductId) => {
 };
 
 /**
+ * 📤 Sube uno o varios archivos a un subproducto.
+ * @param {string|number} productId - ID del producto padre
+ * @param {string|number} subproductId - ID del subproducto
+ * @param {FileList|Array<File>} files - Archivos a subir
+ * @returns {Promise<{data: any, status: number}>} - Respuesta de la API
+ */
+export const uploadSubproductFiles = async (productId, subproductId, files) => {
+  if (!productId || !subproductId || !files || files.length === 0) {
+    throw new Error(
+      "Faltan productId, subproductId o archivos para subir al subproducto."
+    );
+  }
+
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("file", file);
+  }
+
+  try {
+    const response = await djangoApi.post(
+      `/inventory/products/${productId}/subproducts/${subproductId}/files/upload/`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return { data: response.data, status: response.status };
+  } catch (error) {
+    const detail =
+      error.response?.data?.detail ||
+      error.message ||
+      "No se pudo subir archivos del subproducto.";
+    console.error("❌ Error al subir archivos del subproducto:", detail);
+    throw new Error(detail);
+  }
+};
+
+/**
  * 📤 Sube o reemplaza un archivo de un subproducto.
  * @param {string|number} productId
  * @param {string|number} subproductId

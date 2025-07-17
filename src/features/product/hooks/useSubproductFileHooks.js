@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   listSubproductFiles,
-  uploadSubproductFile,
+  uploadSubproductFiles,
   deleteSubproductFile,
 } from "../../product/services/subproducts/subproductsFiles";
 import { fetchProtectedFile } from "@/services/files/fileAccessService";
@@ -58,10 +58,18 @@ export const useSubproductFileUpload = () => {
     setUploadError("");
 
     try {
-      for (const file of files) {
-        await uploadSubproductFile(productId, subproductId, file.key || file.id || file.name, file);
+      const { data, status } = await uploadSubproductFiles(productId, subproductId, files);
+
+      if (status === 207 && data?.failed_files?.length) {
+        setUploadError(
+          `Falló la subida de: ${data.failed_files
+            .map((f) => f.name || f)
+            .join(", ")}`
+        );
+        return false;
       }
-      return true;
+
+      return status === 201 || status === 200;
     } catch (err) {
       console.error("❌ Error subiendo archivo de subproducto:", err);
       setUploadError(err.message || "Error al subir archivo.");

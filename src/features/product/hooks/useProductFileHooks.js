@@ -66,26 +66,27 @@ export const useProductFileUpload = () => {
     setUploadError(null);
     setFailedFiles([]);
 
-    const failed = [];
+    try {
+      const { data, status } = await uploadFileProduct(productId, filesArray);
 
-    for (const file of filesArray) {
-      try {
-        await uploadFileProduct(productId, [file]);
-      } catch (err) {
-        console.error("❌ Error al subir archivo:", file.name, err);
-        failed.push(file);
+      if (status === 207 && data?.failed_files?.length) {
+        setUploadError(
+          `Falló la subida de: ${data.failed_files
+            .map((f) => f.name || f)
+            .join(", ")}`
+        );
+        setFailedFiles(data.failed_files);
+        return false;
       }
-    }
 
-    if (failed.length > 0) {
-      setUploadError(`Falló la subida de: ${failed.map(f => f.name).join(", ")}`);
-      setFailedFiles(failed);
-      setUploading(false);
+      return status === 201 || status === 200;
+    } catch (err) {
+      console.error("❌ Error al subir archivos:", err);
+      setUploadError(err.message || "Error al subir archivos.");
       return false;
+    } finally {
+      setUploading(false);
     }
-
-    setUploading(false);
-    return true;
   };
 
   const clearUploadError = useCallback(() => {
