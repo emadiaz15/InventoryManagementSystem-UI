@@ -80,12 +80,12 @@ const SubproductModals = ({
 
     useEffect(() => {
         if (!parentProduct?.id || !subproductData?.id) return;
-
         const idStr = Array.isArray(rawFiles)
             ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
             : "";
         if (prevRawIds.current === idStr) return;
         prevRawIds.current = idStr;
+
 
         let ignore = false;
         const controller = new AbortController();
