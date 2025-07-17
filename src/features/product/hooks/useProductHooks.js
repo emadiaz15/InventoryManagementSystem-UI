@@ -44,9 +44,12 @@ export const useListProducts = (filters = {}, pageUrl = null) => {
 export const useCreateProduct = (onSuccessCallback) => {
   const qc = useQueryClient();
   return useMutation(createProduct, {
-    onSuccess: (newProduct) => {
-      // Invalida cualquier consulta de productos para refrescar listas y detalles
-      qc.invalidateQueries({
+    onSuccess: async (newProduct) => {
+      // Invalida cualquier consulta de productos y espera la recarga
+      await qc.invalidateQueries({
+        predicate: (query) => productKeys.prefixMatch(query.queryKey),
+      });
+      await qc.refetchQueries({
         predicate: (query) => productKeys.prefixMatch(query.queryKey),
       });
       // Llamada al callback del consumidor (cerrar modal, mostrar mensaje, etc)
@@ -65,12 +68,16 @@ export const useUpdateProduct = (onSuccessCallback) => {
   return useMutation(
     ({ productId, productData }) => updateProduct(productId, productData),
     {
-      onSuccess: (updatedProduct, { productId }) => {
-        // Invalida la lista y el detalle de este producto
-        qc.invalidateQueries({
+      onSuccess: async (updatedProduct, { productId }) => {
+        // Invalida la lista y el detalle de este producto y espera la recarga
+        await qc.invalidateQueries({
           predicate: (query) => productKeys.prefixMatch(query.queryKey),
         });
-        qc.invalidateQueries(productKeys.detail(productId));
+        await qc.refetchQueries({
+          predicate: (query) => productKeys.prefixMatch(query.queryKey),
+        });
+        await qc.invalidateQueries(productKeys.detail(productId));
+        await qc.refetchQueries(productKeys.detail(productId));
         onSuccessCallback?.(updatedProduct);
       },
     }
@@ -85,9 +92,12 @@ export const useUpdateProduct = (onSuccessCallback) => {
 export const useDeleteProduct = (onSuccessCallback) => {
   const qc = useQueryClient();
   return useMutation(deleteProduct, {
-    onSuccess: () => {
+    onSuccess: async () => {
       // Invalida todas las consultas de productos para reflejar la eliminación
-      qc.invalidateQueries({
+      await qc.invalidateQueries({
+        predicate: (query) => productKeys.prefixMatch(query.queryKey),
+      });
+      await qc.refetchQueries({
         predicate: (query) => productKeys.prefixMatch(query.queryKey),
       });
       onSuccessCallback?.();
