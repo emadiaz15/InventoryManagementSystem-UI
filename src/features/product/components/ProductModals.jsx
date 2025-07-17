@@ -48,6 +48,12 @@ const ProductModals = ({
         if (prevRawIds.current === ids) return;
         prevRawIds.current = ids;
 
+        const idStr = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevRawIds.current === idStr) return;
+        prevRawIds.current = idStr;
+
         let ignore = false;
         const controller = new AbortController();
         setLoadingFiles(true);

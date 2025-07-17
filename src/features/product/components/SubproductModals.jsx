@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-
 import PropTypes from "prop-types";
 import { useAuth } from "@/context/AuthProvider";
 
@@ -81,12 +80,12 @@ const SubproductModals = ({
 
     useEffect(() => {
         if (!parentProduct?.id || !subproductData?.id) return;
-
-        const ids = Array.isArray(rawFiles)
+        const idStr = Array.isArray(rawFiles)
             ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
             : "";
-        if (prevRawIds.current === ids) return;
-        prevRawIds.current = ids;
+        if (prevRawIds.current === idStr) return;
+        prevRawIds.current = idStr;
+
 
         let ignore = false;
         const controller = new AbortController();
