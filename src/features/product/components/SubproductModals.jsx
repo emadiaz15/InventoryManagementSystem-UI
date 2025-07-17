@@ -79,9 +79,9 @@ const SubproductModals = ({
     );
     const prevRawIds = useRef("init");
 
-
     useEffect(() => {
         if (!parentProduct?.id || !subproductData?.id) return;
+
         const ids = Array.isArray(rawFiles)
             ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
             : "";
@@ -114,7 +114,6 @@ const SubproductModals = ({
             controller.abort();
         };
     }, [parentProduct?.id, subproductData?.id, rawFiles]);
-
 
     const isLoadingFiles = loadingRaw || loadingFiles;
 

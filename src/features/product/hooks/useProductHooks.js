@@ -45,8 +45,8 @@ export const useCreateProduct = (onSuccessCallback) => {
   const qc = useQueryClient();
   return useMutation(createProduct, {
     onSuccess: (newProduct) => {
-      // Invalida la lista de productos
-      qc.invalidateQueries(productKeys.list());
+      // Invalida cualquier consulta de productos para refrescar listas y detalles
+      qc.invalidateQueries({ predicate: productKeys.prefixMatch });
       // Llamada al callback del consumidor (cerrar modal, mostrar mensaje, etc)
       onSuccessCallback?.(newProduct);
     },
@@ -65,7 +65,7 @@ export const useUpdateProduct = (onSuccessCallback) => {
     {
       onSuccess: (updatedProduct, { productId }) => {
         // Invalida la lista y el detalle de este producto
-        qc.invalidateQueries(productKeys.list());
+        qc.invalidateQueries({ predicate: productKeys.prefixMatch });
         qc.invalidateQueries(productKeys.detail(productId));
         onSuccessCallback?.(updatedProduct);
       },
@@ -82,7 +82,8 @@ export const useDeleteProduct = (onSuccessCallback) => {
   const qc = useQueryClient();
   return useMutation(deleteProduct, {
     onSuccess: () => {
-      qc.invalidateQueries(productKeys.list());
+      // Invalida todas las consultas de productos para reflejar la eliminación
+      qc.invalidateQueries({ predicate: productKeys.prefixMatch });
       onSuccessCallback?.();
     },
   });
