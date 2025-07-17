@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listProductFiles,
   uploadFileProduct,
@@ -10,37 +11,11 @@ import { fetchProtectedFile } from "@/services/files/fileAccessService";
 // 📥 useProductFileList
 // ─────────────────────────────────────────────────────────────
 export const useProductFileList = (productId) => {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [listError, setListError] = useState(null);
-
-  const fetchFiles = useCallback(async () => {
-    if (!productId) return;
-
-    setLoading(true);
-    setListError(null);
-
-    try {
-      const result = await listProductFiles(productId);
-      setFiles(result);
-    } catch (err) {
-      console.error("❌ Error al listar archivos:", err);
-      setListError(err.message || "Error al obtener archivos.");
-    } finally {
-      setLoading(false);
-    }
-  }, [productId]);
-
-  useEffect(() => {
-    fetchFiles();
-  }, [productId, fetchFiles]);
-
-  return {
-    files,
-    loading,
-    listError,
-    refreshFiles: fetchFiles,
-  };
+  return useQuery({
+    queryKey: ["product-files", productId],
+    queryFn: () => listProductFiles(productId),
+    enabled: !!productId,
+  });
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -50,6 +25,7 @@ export const useProductFileUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [failedFiles, setFailedFiles] = useState([]);
+  const queryClient = useQueryClient();
 
   const uploadFiles = async (productId, filesArray) => {
     if (!productId || !Array.isArray(filesArray) || filesArray.length === 0) {
@@ -79,7 +55,11 @@ export const useProductFileUpload = () => {
         return false;
       }
 
-      return status === 201 || status === 200;
+      const ok = status === 201 || status === 200;
+      if (ok) {
+        queryClient.invalidateQueries(["product-files", productId]);
+      }
+      return ok;
     } catch (err) {
       console.error("❌ Error al subir archivos:", err);
       setUploadError(err.message || "Error al subir archivos.");
@@ -108,6 +88,7 @@ export const useProductFileUpload = () => {
 export const useProductFileDelete = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const queryClient = useQueryClient();
 
   const deleteFile = async (productId, fileId) => {
     if (!productId || !fileId) {
@@ -120,6 +101,7 @@ export const useProductFileDelete = () => {
 
     try {
       await deleteProductFile(productId, fileId);
+      queryClient.invalidateQueries(["product-files", productId]);
       return true;
     } catch (err) {
       console.error("❌ Error al eliminar archivo:", err);
