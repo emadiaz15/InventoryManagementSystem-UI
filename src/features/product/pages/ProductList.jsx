@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Layout from "@/pages/Layout";
@@ -7,8 +7,8 @@ import Pagination from "@/components/ui/Pagination";
 import SuccessMessage from "@/components/common/SuccessMessage";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import Spinner from "@/components/ui/Spinner";
-import Filter from "@/components/ui/Filter";
 
+import ProductFilter from "@/features/product/components/ProductFilter";
 import ProductModals from "@/features/product/components/ProductModals";
 import ProductTable from "@/features/product/components/ProductTable";
 
@@ -26,7 +26,12 @@ const ProductsList = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const [filters, setFilters] = useState({ code: "" });
+  // Ahora incluimos code, category y type en los filtros
+  const [filters, setFilters] = useState({
+    code: "",
+    category: "",
+    type: "",
+  });
   const [pageUrl, setPageUrl] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
@@ -47,7 +52,6 @@ const ProductsList = () => {
     setModalState({ type: null, productData: null });
 
   const handleSave = (msg) => {
-    // volvemos a primera página y mostramos mensaje
     setPageUrl(null);
     setSuccessMessage(msg);
     setShowSuccess(true);
@@ -73,11 +77,6 @@ const ProductsList = () => {
     setPageUrl(null);
   }, []);
 
-  const filterColumns = useMemo(
-    () => [{ key: "code", label: "Código", filterable: true, type: "number" }],
-    []
-  );
-
   return (
     <>
       <Layout isLoading={loadingProducts}>
@@ -99,7 +98,8 @@ const ProductsList = () => {
             ]}
           />
 
-          <Filter columns={filterColumns} onFilterChange={handleFilterChange} />
+          {/* Nuevo componente de filtros con código, categoría y tipo */}
+          <ProductFilter filters={filters} onFilterChange={handleFilterChange} />
 
           {fetchError && <ErrorMessage message={fetchError.message} />}
 
