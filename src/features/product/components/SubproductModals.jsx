@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+
 import PropTypes from "prop-types";
 import { useAuth } from "@/context/AuthProvider";
 
@@ -76,9 +77,16 @@ const SubproductModals = ({
         parentProduct?.id,
         subproductData?.id
     );
+    const prevRawIds = useRef("init");
+
 
     useEffect(() => {
         if (!parentProduct?.id || !subproductData?.id) return;
+        const ids = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevRawIds.current === ids) return;
+        prevRawIds.current = ids;
 
         let ignore = false;
         const controller = new AbortController();
@@ -105,7 +113,8 @@ const SubproductModals = ({
             ignore = true;
             controller.abort();
         };
-    }, [parentProduct, subproductData, rawFiles]);
+    }, [parentProduct?.id, subproductData?.id, rawFiles]);
+
 
     const isLoadingFiles = loadingRaw || loadingFiles;
 

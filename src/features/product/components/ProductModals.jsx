@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import CreateProductModal from "./CreateProductModal";
 import EditProductModal from "./EditProductModal";
 import ViewProductModal from "./ViewProductModal";
@@ -32,9 +32,15 @@ const ProductModals = ({
     const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
         productId && ["view", "edit"].includes(type) ? productId : null
     );
+    const prevRawIds = useRef("init");
 
     useEffect(() => {
         if (!productId || !["view", "edit"].includes(type)) return;
+        const ids = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevRawIds.current === ids) return;
+        prevRawIds.current = ids;
 
         let ignore = false;
         const controller = new AbortController();
