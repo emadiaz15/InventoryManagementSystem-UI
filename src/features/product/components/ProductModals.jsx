@@ -32,7 +32,9 @@ const ProductModals = ({
     const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
         productId && ["view", "edit"].includes(type) ? productId : null
     );
-    const prevRawIds = useRef("init");
+
+    const prevIdList = useRef("init");
+
 
     useEffect(() => {
         if (!productId || !["view", "edit"].includes(type)) return;
@@ -53,6 +55,12 @@ const ProductModals = ({
             : "";
         if (prevRawIds.current === idStr) return;
         prevRawIds.current = idStr;
+
+        const currentIdList = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevIdList.current === currentIdList) return;
+        prevIdList.current = currentIdList;
 
         let ignore = false;
         const controller = new AbortController();

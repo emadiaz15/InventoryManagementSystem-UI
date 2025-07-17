@@ -76,15 +76,17 @@ const SubproductModals = ({
         parentProduct?.id,
         subproductData?.id
     );
-    const prevRawIds = useRef("init");
+
+    const prevIdList = useRef("init");
 
     useEffect(() => {
         if (!parentProduct?.id || !subproductData?.id) return;
-        const idStr = Array.isArray(rawFiles)
+
+        const currentIdList = Array.isArray(rawFiles)
             ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
             : "";
-        if (prevRawIds.current === idStr) return;
-        prevRawIds.current = idStr;
+        if (prevIdList.current === currentIdList) return;
+        prevIdList.current = currentIdList;
 
 
         let ignore = false;
