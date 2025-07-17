@@ -4,6 +4,7 @@ import { listCategories } from "../../category/services/listCategory";
 import { listTypes } from "../../type/services/listType";
 import { useProductFileList, useEnrichedProductFiles } from "@/features/product/hooks/useProductFileHooks";
 import ProductCarouselOverlay from "../components/ProductCarouselOverlay";
+import { formatArgentineDate } from "@/utils/dateUtils";
 
 const ViewProductModal = ({ product, isOpen, onClose }) => {
     const [categories, setCategories] = useState([]);
@@ -55,16 +56,15 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                     <p><span className="font-semibold">Descripción:</span> {product.description || "SIN DESCRIPCIÓN"}</p>
                     <p><span className="font-semibold">Categoría:</span> {categoryName}</p>
                     <p><span className="font-semibold">Estado:</span> {product.status ? "Activo" : "Inactivo"}</p>
-                    <p><span className="font-semibold">Tiene subproductos? (Cables):</span> {product.has_subproducts ? "Si" : "No"}</p>
+                    <p><span className="font-semibold">Tiene subproductos? (Cables):</span> {product.has_subproducts ? "Sí" : "No"}</p>
                     <p><span className="font-semibold">Stock actual:</span> {product.current_stock ?? 0}</p>
                     <p><span className="font-semibold">Marca:</span> {product.brand || "N/A"}</p>
                     <p><span className="font-semibold">Ubicación:</span> {product.location || "N/A"}</p>
                     <p><span className="font-semibold">Posición:</span> {product.position || "N/A"}</p>
-                    <p><span className="font-semibold">Creado en:</span> {product.created_at || "N/A"}</p>
-                    <p><span className="font-semibold">Modificado en:</span> {product.modified_at || "N/A"}</p>
+                    <p><span className="font-semibold">Creado en:</span> {formatArgentineDate(product.created_at)}</p>
+                    <p><span className="font-semibold">Modificado en:</span> {formatArgentineDate(product.modified_at)}</p>
                     <p><span className="font-semibold">Creado por:</span> {product.created_by || "N/A"}</p>
                     <p><span className="font-semibold">Modificado por:</span> {product.modified_by || "N/A"}</p>
-
                     <div className="flex justify-end mt-4">
                         <button
                             onClick={onClose}
@@ -74,19 +74,11 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                         </button>
                     </div>
                 </div>
-
                 <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
                     {isLoading ? (
-                        <div className="flex items-center justify-center h-full">
-                            {/* si tienes un Spinner importado podrías usarlo aquí */}
-                            Cargando archivos...
-                        </div>
+                        <div className="flex items-center justify-center h-full">Cargando archivos...</div>
                     ) : (
-                        <ProductCarouselOverlay
-                            images={files}
-                            productId={product.id}
-                            isEmbedded
-                        />
+                        <ProductCarouselOverlay images={files} productId={product.id} isEmbedded />
                     )}
                 </div>
             </div>
