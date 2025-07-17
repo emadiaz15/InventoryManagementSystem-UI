@@ -32,10 +32,29 @@ const ProductModals = ({
     const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
         productId && ["view", "edit"].includes(type) ? productId : null
     );
+
     const prevIdList = useRef("init");
+
 
     useEffect(() => {
         if (!productId || !["view", "edit"].includes(type)) return;
+        const ids = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevRawIds.current === ids) return;
+        prevRawIds.current = ids;
+
+        const ids = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevRawIds.current === ids) return;
+        prevRawIds.current = ids;
+
+        const idStr = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevRawIds.current === idStr) return;
+        prevRawIds.current = idStr;
 
         const currentIdList = Array.isArray(rawFiles)
             ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")

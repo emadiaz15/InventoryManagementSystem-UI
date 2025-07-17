@@ -76,6 +76,7 @@ const SubproductModals = ({
         parentProduct?.id,
         subproductData?.id
     );
+
     const prevIdList = useRef("init");
 
     useEffect(() => {
@@ -86,6 +87,7 @@ const SubproductModals = ({
             : "";
         if (prevIdList.current === currentIdList) return;
         prevIdList.current = currentIdList;
+
 
         let ignore = false;
         const controller = new AbortController();
