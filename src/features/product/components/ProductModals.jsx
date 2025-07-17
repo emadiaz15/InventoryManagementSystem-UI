@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import CreateProductModal from "./CreateProductModal";
 import EditProductModal from "./EditProductModal";
 import ViewProductModal from "./ViewProductModal";
@@ -7,7 +7,7 @@ import DeleteMessage from "../../../components/common/DeleteMessage";
 import Spinner from "../../../components/ui/Spinner";
 import { useAuth } from "../../../context/AuthProvider";
 
-import { listProductFiles } from "@/features/product/services/products/files";
+import { useProductFileList } from "@/features/product/hooks/useProductFileHooks";
 import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
 
 /**
@@ -29,26 +29,44 @@ const ProductModals = ({
     const isStaff = user?.is_staff;
     const { type = "", productData = {}, showCarousel = false } = modalState || {};
     const productId = productData?.id;
-
-    const loadFiles = useCallback(async () => {
-        if (!productId || !["view", "edit"].includes(type)) return;
-
-        setLoadingFiles(true);
-        try {
-            const rawFiles = await listProductFiles(productId);
-            const enriched = await enrichFilesWithBlobUrls({ productId, rawFiles });
-            setFiles(enriched);
-        } catch (err) {
-            console.error("❌ No se pudieron cargar archivos del producto:", err);
-            setFiles([]);
-        } finally {
-            setLoadingFiles(false);
-        }
-    }, [productId, type]);
+    const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
+        productId && ["view", "edit"].includes(type) ? productId : null
+    );
+    // Rastreamos la lista previa de IDs para evitar recargar archivos si no hubo cambios
+    const prevFileIdsRef = useRef("init");
 
     useEffect(() => {
-        loadFiles();
-    }, [loadFiles]);
+        if (!productId || !["view", "edit"].includes(type)) return;
+
+        const fileIdSignature = Array.isArray(rawFiles)
+            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
+            : "";
+        if (prevFileIdsRef.current === fileIdSignature) return;
+        prevFileIdsRef.current = fileIdSignature;
+
+        let ignore = false;
+        const controller = new AbortController();
+        setLoadingFiles(true);
+
+        enrichFilesWithBlobUrls({ productId, rawFiles, signal: controller.signal })
+            .then((enriched) => {
+                if (!ignore) setFiles(enriched);
+            })
+            .catch((err) => {
+                console.error("❌ No se pudieron cargar archivos del producto:", err);
+                if (!ignore) setFiles([]);
+            })
+            .finally(() => {
+                if (!ignore) setLoadingFiles(false);
+            });
+
+        return () => {
+            ignore = true;
+            controller.abort();
+        };
+    }, [productId, type, rawFiles]);
+
+    const isLoadingFiles = loadingRaw || loadingFiles;
 
     if (!type) return null;
 
@@ -70,9 +88,8 @@ const ProductModals = ({
                     onClose={closeModal}
                     product={productData}
                     onSave={onUpdateProduct}
-                    onDeleteSuccess={loadFiles}
                 >
-                    {loadingFiles ? (
+                    {isLoadingFiles ? (
                         <div className="flex items-center justify-center h-full">
                             <Spinner size="8" color="text-primary-500" />
                         </div>
@@ -81,7 +98,6 @@ const ProductModals = ({
                             images={files}
                             productId={productId}
                             onClose={closeModal}
-                            onDeleteSuccess={loadFiles}
                             editable={true}
                             isEmbedded
                         />
@@ -95,7 +111,7 @@ const ProductModals = ({
 
             {type === "view" && productData && (
                 <ViewProductModal isOpen={true} onClose={closeModal} product={productData}>
-                    {loadingFiles ? (
+                    {isLoadingFiles ? (
                         <div className="flex items-center justify-center h-full">
                             <Spinner size="8" color="text-primary-500" />
                         </div>
@@ -104,7 +120,6 @@ const ProductModals = ({
                             images={files}
                             productId={productId}
                             onClose={closeModal}
-                            onDeleteSuccess={loadFiles}
                             editable={false}
                             isEmbedded
                         />
