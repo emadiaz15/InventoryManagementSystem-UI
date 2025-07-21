@@ -1,18 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
-import CreateProductModal from "./CreateProductModal";
-import EditProductModal from "./EditProductModal";
-import ViewProductModal from "./ViewProductModal";
-import ProductCarouselOverlay from "./ProductCarouselOverlay";
-import DeleteMessage from "../../../components/common/DeleteMessage";
-import Spinner from "../../../components/ui/Spinner";
-import { useAuth } from "../../../context/AuthProvider";
+import React from "react"
+import CreateProductModal from "./CreateProductModal"
+import EditProductModal from "./EditProductModal"
+import ViewProductModal from "./ViewProductModal"
+import ProductCarouselOverlay from "./ProductCarouselOverlay"
+import DeleteMessage from "@/components/common/DeleteMessage"
+import Spinner from "@/components/ui/Spinner"
+import { useAuth } from "@/context/AuthProvider"
+import {
+    useProductFiles,
+    useEnrichedProductFiles
+} from "@/features/product/hooks/useProductFileHooks"
 
-import { useProductFileList } from "@/features/product/hooks/useProductFileHooks";
-import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
-
-/**
- * Componente central de todos los modales asociados a producto.
- */
 const ProductModals = ({
     modalState,
     closeModal,
@@ -23,120 +21,78 @@ const ProductModals = ({
     deleteError,
     clearDeleteError,
 }) => {
-    const [files, setFiles] = useState([]);
-    const [loadingFiles, setLoadingFiles] = useState(false);
-    const { user } = useAuth();
-    const isStaff = user?.is_staff;
-    const { type = "", productData = {}, showCarousel = false } = modalState || {};
-    const productId = productData?.id;
-    const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
-        productId && ["view", "edit"].includes(type) ? productId : null
-    );
+    const { user } = useAuth()
+    const isStaff = user?.is_staff
 
-    // Rastreamos la lista previa de IDs para evitar recargar archivos si no hubo cambios
-    const prevFileIdsRef = useRef("init");
+    const { type, productData } = modalState
+    const productId = productData?.id
 
-    useEffect(() => {
-        if (!productId || !["view", "edit"].includes(type)) return;
+    // Hooks para archivos
+    const { data: rawFiles = [], isLoading: loadingRaw } = useProductFiles(
+        (type === "view" || type === "edit") ? productId : null
+    )
+    const { files, status: filesStatus } = useEnrichedProductFiles(productId, rawFiles)
+    const isLoadingFiles = loadingRaw || filesStatus === "loading"
 
-        // Calculamos una firma única de IDs de archivos
-        const fileIdSignature = Array.isArray(rawFiles)
-            ? rawFiles.map(f => f.id || f.drive_file_id || f.key).join(",")
-            : "";
-
-        // Si no cambió, salimos sin recargar
-        if (prevFileIdsRef.current === fileIdSignature) return;
-        prevFileIdsRef.current = fileIdSignature;
-
-        let ignore = false;
-        const controller = new AbortController();
-        setLoadingFiles(true);
-
-        enrichFilesWithBlobUrls({ productId, rawFiles, signal: controller.signal })
-            .then(enriched => {
-                if (!ignore) setFiles(enriched);
-            })
-            .catch(err => {
-                console.error("❌ No se pudieron cargar archivos del producto:", err);
-                if (!ignore) setFiles([]);
-            })
-            .finally(() => {
-                if (!ignore) setLoadingFiles(false);
-            });
-
-        return () => {
-            ignore = true;
-            controller.abort();
-        };
-    }, [productId, type, rawFiles]);
-
-    const isLoadingFiles = loadingRaw || loadingFiles;
-    if (!type) return null;
-
-    const hasFiles = Array.isArray(files) && files.length > 0;
+    if (!type) return null
 
     return (
         <>
             {type === "create" && isStaff && (
                 <CreateProductModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
                     onSave={onCreateProduct}
                 />
             )}
 
-            {type === "edit" && isStaff && productData && (
+            {type === "edit" && isStaff && productId && (
                 <EditProductModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
                     product={productData}
-                    onSave={onUpdateProduct}
+                    onSave={() => onUpdateProduct(productData)}
                 >
                     {isLoadingFiles ? (
-                        <div className="flex items-center justify-center h-full">
-                            <Spinner size="8" color="text-primary-500" />
-                        </div>
-                    ) : hasFiles ? (
+                        <Spinner size="8" color="text-primary-500" />
+                    ) : files.length > 0 ? (
                         <ProductCarouselOverlay
                             images={files}
                             productId={productId}
-                            onClose={closeModal}
-                            editable={true}
+                            onDeleteRequest={(file) => onDeleteProductFile(productId, file)}
+                            editable
                             isEmbedded
                         />
                     ) : (
-                        <div className="p-6 text-center text-sm text-gray-600">
-                            No hay archivos multimedia.
-                        </div>
+                        <p className="text-center text-gray-600">No hay archivos multimedia.</p>
                     )}
                 </EditProductModal>
             )}
 
-            {type === "view" && productData && (
-                <ViewProductModal isOpen={true} onClose={closeModal} product={productData}>
+            {type === "view" && productId && (
+                <ViewProductModal
+                    isOpen
+                    onClose={closeModal}
+                    product={productData}
+                >
                     {isLoadingFiles ? (
-                        <div className="flex items-center justify-center h-full">
-                            <Spinner size="8" color="text-primary-500" />
-                        </div>
-                    ) : hasFiles ? (
+                        <Spinner size="8" color="text-primary-500" />
+                    ) : files.length > 0 ? (
                         <ProductCarouselOverlay
                             images={files}
                             productId={productId}
-                            onClose={closeModal}
                             editable={false}
                             isEmbedded
                         />
                     ) : (
-                        <div className="p-6 text-center text-sm text-gray-600">
-                            No hay archivos multimedia.
-                        </div>
+                        <p className="text-center text-gray-600">No hay archivos multimedia.</p>
                     )}
                 </ViewProductModal>
             )}
 
             {type === "deleteConfirm" && isStaff && productData && (
                 <DeleteMessage
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
                     onDelete={() => onDeleteProduct(productData)}
                     isDeleting={isDeleting}
@@ -147,7 +103,7 @@ const ProductModals = ({
                 />
             )}
         </>
-    );
-};
+    )
+}
 
-export default ProductModals;
+export default ProductModals

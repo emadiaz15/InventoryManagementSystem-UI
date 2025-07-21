@@ -1,149 +1,129 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import Modal from '../../../components/ui/Modal';
-import FormInput from '../../../components/ui/form/FormInput';
-import FormSelect from '../../../components/ui/form/FormSelect';
-import ErrorMessage from '../../../components/common/ErrorMessage';
-import logger from '../../../utils/logger';
+// src/features/type/components/TypeEditModal.jsx
+import React, { useState, useEffect, useMemo, useCallback } from "react"
+import Modal from "@/components/ui/Modal"
+import ErrorMessage from "@/components/common/ErrorMessage"
+import SuccessMessage from "@/components/common/SuccessMessage"
+import FormInput from "@/components/ui/form/FormInput"
+import FormSelect from "@/components/ui/form/FormSelect"
 
-const TypeEditModal = ({ type, isOpen, onClose, onSave, categories, loadingCategories }) => {
-    // Estado interno para el formulario, carga y error del modal
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        category: '', // Guardará el ID de la categoría (string)
-    });
-    const [internalLoading, setInternalLoading] = useState(false);
-    const [internalError, setInternalError] = useState('');
+const TypeEditModal = ({
+    type,
+    isOpen,
+    onClose,
+    onUpdateType,
+    categories,
+    loadingCategories
+}) => {
+    const initial = useMemo(
+        () => ({
+            name: type?.name || "",
+            description: type?.description || "",
+            category: type?.category?.toString() || ""
+        }),
+        [type]
+    )
 
-    // Efecto para inicializar el formulario cuando 'type' cambia o se abre el modal
+    const [formData, setFormData] = useState(initial)
+    const [error, setError] = useState("")
+    const [success, setSuccess] = useState("")
+    const [saving, setSaving] = useState(false)
+
     useEffect(() => {
-        if (isOpen && type) {
-            logger.log("Initializing edit form with type:", type);
-            setFormData({
-                name: type.name || '',
-                description: type.description || '',
-                // Usa el ID de la categoría, convertido a string, si existe
-                category: type.category ? type.category.toString() : '',
-            });
-            setInternalError('');
-            setInternalLoading(false);
+        if (isOpen) {
+            setFormData(initial)
+            setError("")
+            setSuccess("")
+            setSaving(false)
         }
-        if (!isOpen) {
-            setFormData({ name: '', description: '', category: '' });
-            setInternalError('');
-        }
-    }, [type, isOpen]);
+    }, [isOpen, initial])
 
-    // Handler para cambios en el formulario
+    const categoryOptions = useMemo(
+        () => categories.map((c) => ({ value: c.id.toString(), label: c.name })),
+        [categories]
+    )
+
     const handleChange = useCallback((e) => {
-        const { name, value } = e.target;
-        setFormData(prevData => ({ ...prevData, [name]: value }));
-    }, []);
+        const { name, value } = e.target
+        setFormData((f) => ({ ...f, [name]: value }))
+    }, [])
 
-    // Handler para el envío del formulario
-    const handleSubmit = useCallback(async (e) => {
-        e.preventDefault();
-        if (!type?.id) {
-            setInternalError("No se puede guardar sin un ID de tipo válido.");
-            return;
-        }
-        setInternalLoading(true);
-        setInternalError('');
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setError("")
+        const errs = {}
+        if (!formData.name.trim()) errs.name = "El nombre es obligatorio."
+        if (!formData.category) errs.category = "La categoría es obligatoria."
+        if (Object.keys(errs).length) return setError(Object.values(errs).join(" "))
 
-        let categoryId = null;
-        if (formData.category) {
-            const parsedId = parseInt(formData.category, 10);
-            if (!isNaN(parsedId)) {
-                categoryId = parsedId;
-            } else {
-                setInternalError("El ID de la categoría seleccionada no es válido.");
-                setInternalLoading(false);
-                return;
-            }
-        }
-
-        const dataToSend = {
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            ...(categoryId !== null && { category: categoryId }),
-        };
-
-        logger.log(`Datos a enviar desde TypeEditModal para ID ${type.id}:`, dataToSend);
-
+        setSaving(true)
         try {
-            await onSave(type.id, dataToSend);
+            const updated = await onUpdateType(type.id, {
+                name: formData.name.trim(),
+                description: formData.description.trim(),
+                category: parseInt(formData.category, 10)
+            })
+            setSuccess(`Tipo "${updated.name}" actualizado.`)
+            setTimeout(() => {
+                setSuccess("")
+                onClose()
+            }, 2000)
         } catch (err) {
-            console.error('❌ Error capturado en TypeEditModal:', err);
-            setInternalError(err.message || 'Hubo un problema al actualizar el tipo.');
+            setError(err.message || "Error al actualizar el tipo.")
         } finally {
-            setInternalLoading(false);
+            setSaving(false)
         }
-    }, [formData, type, onSave]);
-
-    // Genera opciones para el select sin placeholder duplicado
-    const categoryOptions = useMemo(() => {
-        const options = [];
-        categories.forEach(cat => {
-            options.push({ value: cat.id.toString(), label: cat.name });
-        });
-        return options;
-    }, [categories]);
+    }
 
     return (
-        <>
-            <Modal isOpen={isOpen} onClose={onClose} title={`Editar Tipo: ${type?.name || ''}`}>
-                <form onSubmit={handleSubmit}>
-                    {internalError && <ErrorMessage message={internalError} onClose={() => setInternalError('')} />}
-                    <FormInput
-                        label="Nombre del Tipo"
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        disabled={internalLoading}
-                    />
-                    <FormInput
-                        label="Descripción"
-                        type="text"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                        disabled={internalLoading}
-                    />
-                    <FormSelect
-                        label="Categoría"
-                        name="category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        options={categoryOptions}
-                        required
-                        loading={loadingCategories}
-                        disabled={internalLoading || loadingCategories}
-                    />
-                    <div className="flex justify-end mt-4">
-                        <div className="flex space-x-2">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 transition-colors disabled:opacity-50"
-                                disabled={internalLoading}
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 transition-colors ${internalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={internalLoading || loadingCategories}
-                            >
-                                {internalLoading ? 'Guardando...' : 'Guardar Cambios'}
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </Modal>
-        </>
-    );
-};
+        <Modal isOpen={isOpen} onClose={onClose} title="Editar Tipo">
+            {error && <ErrorMessage message={error} onClose={() => setError("")} />}
+            {success && <SuccessMessage message={success} />}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <FormInput
+                    label="Nombre"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    disabled={saving}
+                />
+                <FormInput
+                    label="Descripción"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    disabled={saving}
+                />
+                <FormSelect
+                    label="Categoría"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    options={categoryOptions}
+                    required
+                    loading={loadingCategories}
+                    disabled={saving || loadingCategories}
+                />
+                <div className="flex justify-end space-x-2 pt-4 border-t">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={saving}
+                        className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600 disabled:opacity-50"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={saving || loadingCategories}
+                        className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 disabled:opacity-50"
+                    >
+                        {saving ? "Guardando..." : "Guardar"}
+                    </button>
+                </div>
+            </form>
+        </Modal>
+    )
+}
 
-export default TypeEditModal;
+export default TypeEditModal

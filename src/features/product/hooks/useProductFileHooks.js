@@ -1,198 +1,86 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// src/features/product/hooks/useProductFileHooks.js
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMemo } from "react"
 import {
   listProductFiles,
   uploadFileProduct,
-  deleteProductFile,
-} from "@/features/product/services/products/files";
-import { fetchProtectedFile } from "@/services/files/fileAccessService";
+  deleteProductFile
+} from "@/features/product/services/products/files"
+import { fetchProtectedFile } from "@/services/files/fileAccessService"
+import { productKeys } from "@/features/product/utils/queryKeys"
 
-// ─────────────────────────────────────────────────────────────
-// 📥 useProductFileList
-// ─────────────────────────────────────────────────────────────
-export const useProductFileList = (productId) => {
-  return useQuery({
-    queryKey: ["product-files", productId],
+/** Listar archivos multimedia de un producto */
+export const useProductFiles = (productId) =>
+  useQuery({
+    queryKey: productKeys.files(productId),
     queryFn: () => listProductFiles(productId),
     enabled: !!productId,
-  });
-};
+  })
 
-// ─────────────────────────────────────────────────────────────
-// 📤 useProductFileUpload
-// ─────────────────────────────────────────────────────────────
-export const useProductFileUpload = () => {
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState(null);
-  const [failedFiles, setFailedFiles] = useState([]);
-  const queryClient = useQueryClient();
-
-  const uploadFiles = async (productId, filesArray) => {
-    if (!productId || !Array.isArray(filesArray) || filesArray.length === 0) {
-      setUploadError("No hay archivos para subir.");
-      return false;
-    }
-
-    if (filesArray.length > 5) {
-      setUploadError("Máximo 5 archivos permitidos.");
-      return false;
-    }
-
-    setUploading(true);
-    setUploadError(null);
-    setFailedFiles([]);
-
-    try {
-      const { data, status } = await uploadFileProduct(productId, filesArray);
-
-      if (status === 207 && data?.failed_files?.length) {
-        setUploadError(
-          `Falló la subida de: ${data.failed_files
-            .map((f) => f.name || f)
-            .join(", ")}`
-        );
-        setFailedFiles(data.failed_files);
-        return false;
-      }
-
-      const ok = status === 201 || status === 200;
-      if (ok) {
-        queryClient.invalidateQueries(["product-files", productId]);
-      }
-      return ok;
-    } catch (err) {
-      console.error("❌ Error al subir archivos:", err);
-      setUploadError(err.message || "Error al subir archivos.");
-      return false;
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const clearUploadError = useCallback(() => {
-    setUploadError(null);
-  }, []);
+/** Subir archivos (hasta 5) a un producto */
+export const useUploadProductFiles = () => {
+  const qc = useQueryClient()
+  const mut = useMutation({
+    mutationFn: ({ productId, files }) => uploadFileProduct(productId, files),
+    onSuccess: (_, { productId }) =>
+      qc.invalidateQueries(productKeys.files(productId)),
+  })
 
   return {
-    uploading,
-    uploadError,
-    failedFiles,
-    uploadFiles,
-    clearUploadError,
-  };
-};
+    uploadFiles: mut.mutateAsync,
+    uploading: mut.isLoading,
+    uploadError: mut.error,
+    clearUploadError: mut.reset,
+  }
+}
 
-// ─────────────────────────────────────────────────────────────
-// 🗑️ useProductFileDelete
-// ─────────────────────────────────────────────────────────────
-export const useProductFileDelete = () => {
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState(null);
-  const queryClient = useQueryClient();
-
-  const deleteFile = async (productId, fileId) => {
-    if (!productId || !fileId) {
-      setDeleteError("ID de producto y archivo requeridos.");
-      return false;
-    }
-
-    setDeleting(true);
-    setDeleteError(null);
-
-    try {
-      await deleteProductFile(productId, fileId);
-      queryClient.invalidateQueries(["product-files", productId]);
-      return true;
-    } catch (err) {
-      console.error("❌ Error al eliminar archivo:", err);
-      setDeleteError(err.message || "Error al eliminar archivo.");
-      return false;
-    } finally {
-      setDeleting(false);
-    }
-  };
+/** Eliminar un archivo de un producto */
+export const useDeleteProductFile = () => {
+  const qc = useQueryClient()
+  const mut = useMutation({
+    mutationFn: ({ productId, fileId }) => deleteProductFile(productId, fileId),
+    onSuccess: (_, { productId }) =>
+      qc.invalidateQueries(productKeys.files(productId)),
+  })
 
   return {
-    deleting,
-    deleteError,
-    deleteFile,
-  };
-};
+    deleteFile: mut.mutateAsync,
+    deleting: mut.isLoading,
+    deleteError: mut.error,
+  }
+}
 
-// ─────────────────────────────────────────────────────────────
-// 🔽 useDownloadProductFile
-// ─────────────────────────────────────────────────────────────
+/** Descargar un archivo protegido */
 export const useDownloadProductFile = () => {
-  const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState(null);
-  const controllerRef = useRef(null);
-
-  const downloadFile = useCallback(async (productId, fileId) => {
-    if (!productId || !fileId) {
-      setDownloadError("ID de producto o archivo no válidos.");
-      return null;
-    }
-
-    controllerRef.current = new AbortController();
-    setDownloading(true);
-    setDownloadError(null);
-
-    try {
-      const blobUrl = await fetchProtectedFile(productId, fileId, null, controllerRef.current.signal);
-      return blobUrl;
-    } catch (err) {
-      if (err.name === "AbortError") {
-        console.warn("⛔ Descarga cancelada");
-        return null;
-      }
-      console.error(`❌ Error al descargar archivo ${fileId}:`, err);
-      setDownloadError(err.message || "No se pudo descargar el archivo.");
-      return null;
-    } finally {
-      setDownloading(false);
-    }
-  }, []);
-
-  const abortDownload = () => {
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
-  };
+  const mut = useMutation({
+    mutationFn: ({ productId, fileId, signal }) =>
+      fetchProtectedFile(productId, fileId, null, signal),
+  })
 
   return {
-    downloading,
-    downloadError,
-    downloadFile,
-    abortDownload,
-  };
-};
+    downloadFile: mut.mutateAsync,
+    status: mut.status,
+    error: mut.error,
+  }
+}
 
-// ─────────────────────────────────────────────────────────────
-// 🎨 useEnrichedProductFiles
-// ─────────────────────────────────────────────────────────────
-const getFileId = (file) => {
-  if (!file) return "";
-  return file.key || file.id || "";
-};
+/** Enriquecer archivos con URL de blob para mostrar previews */
+export const useEnrichedProductFiles = (productId) => {
+  const { data: rawFiles = [], status: listStatus } = useProductFiles(productId)
+  const { downloadFile, status: downloadStatus, error: downloadError } =
+    useDownloadProductFile()
 
-export const useEnrichedProductFiles = (productId, rawFiles = []) => {
   const files = useMemo(() => {
-    if (!productId || !Array.isArray(rawFiles)) return [];
-    return rawFiles
-      .filter((f) => f.url)
-      .map((f) => ({
-        ...f,
-        id: getFileId(f),
-        url: f.url,
-        filename: f.name || f.filename || "archivo",
-        contentType: f.mimeType || f.contentType || "application/octet-stream",
-      }));
-  }, [productId, rawFiles]);
+    if (listStatus !== "success") return []
+    return rawFiles.map((f) => ({
+      ...f,
+      blobUrl: downloadFile({ productId, fileId: f.id }),
+    }))
+  }, [rawFiles, listStatus, downloadFile, productId])
 
   return {
     files,
-    loading: false,
-    loadError: null,
-    refresh: () => {},
-  };
-};
+    status: downloadStatus,
+    error: downloadError,
+  }
+}

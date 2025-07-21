@@ -1,44 +1,60 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { listCategories } from "../features/category/services/listCategory";
-import { listTypes } from "../features/type/services/listType";
+import { createContext, useContext } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/context/AuthProvider"
+import { listCategories } from "@/features/category/services/categories"
+import { listTypes } from "@/features/type/services/types"
 
-const DataPrefetchContext = createContext();
+const DataPrefetchContext = createContext({
+  categories: [],
+  types: [],
+  loading: true,
+  loaded: false,
+})
 
 export const DataPrefetchProvider = ({ children }) => {
-  const { data: catData, isLoading: loadingCats } = useQuery({
+  const { isAuthenticated, loading: authLoading } = useAuth()
+
+  const {
+    data: catData,
+    isLoading: loadingCats,
+  } = useQuery({
     queryKey: ["prefetch", "categories"],
-    queryFn: () => listCategories("/inventory/categories/?limit=1000&status=true"),
-    staleTime: 5 * 60 * 1000, // ✅ 5 minutos
-  });
+    queryFn: () => listCategories({ limit: 1000, status: true }),
+    staleTime: 5 * 60 * 1000,
+    enabled: !authLoading && isAuthenticated,
+  })
 
-  const { data: typeData, isLoading: loadingTypes } = useQuery({
+  const {
+    data: typeData,
+    isLoading: loadingTypes,
+  } = useQuery({
     queryKey: ["prefetch", "types"],
-    queryFn: () => listTypes("/inventory/types/?limit=1000&status=true"),
-    staleTime: 5 * 60 * 1000, // ✅ 5 minutos
-  });
+    queryFn: () => listTypes({ limit: 1000, status: true }),
+    staleTime: 5 * 60 * 1000,
+    enabled: !authLoading && isAuthenticated,
+  })
 
-  const categories = catData?.results || [];
+  const categories = catData?.results || []
   const types =
     typeData?.results ??
     typeData?.activeTypes ??
-    (Array.isArray(typeData) ? typeData : []);
+    (Array.isArray(typeData) ? typeData : [])
 
-  const loading = loadingCats || loadingTypes;
-  const loaded = !!catData && !!typeData;
+  const loading = authLoading || loadingCats || loadingTypes
+  const loaded = !loading && !!catData && !!typeData
 
   return (
     <DataPrefetchContext.Provider value={{ categories, types, loading, loaded }}>
       {children}
     </DataPrefetchContext.Provider>
-  );
-};
+  )
+}
 
 export const usePrefetchedData = () => {
-  const context = useContext(DataPrefetchContext);
-  if (!context) {
-    throw new Error("usePrefetchedData debe usarse dentro de un <DataPrefetchProvider>");
+  const ctx = useContext(DataPrefetchContext)
+  if (!ctx) {
+    throw new Error("usePrefetchedData debe usarse dentro de <DataPrefetchProvider>")
   }
-  return context;
-};
+  return ctx
+}

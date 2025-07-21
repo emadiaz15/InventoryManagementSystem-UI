@@ -1,58 +1,61 @@
-import { useState } from 'react';
-import { createType } from '../services/createType'; // Importa el servicio para crear tipos
+// src/features/type/hooks/useTypeForm.js
+import { useState } from "react"
+import { useTypes } from "./useTypes"
 
+/**
+ * Hook para el formulario de creación de Tipo.
+ * @param {Function} onClose Callback que cierra el modal y recibe el nuevo tipo.
+ */
 const useTypeForm = (onClose) => {
-  const [formData, setFormData] = useState({ name: '', description: '', category: '' }); // Añade category
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    category: ""
+  })
+  const [error, setError] = useState("")
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  const { createType, status } = useTypes()
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
+    e.preventDefault()
+    setError("")
     try {
-      await createType(formData); // Llama al servicio para crear tipos
-      setShowSuccess(true);
+      const nuevo = await createType(formData)
+      setShowSuccess(true)
       setTimeout(() => {
-        setShowSuccess(false);
-        onClose();
-      }, 4000);
-    } catch (error) {
-      console.error('Error al crear el tipo:', error);
+        setShowSuccess(false)
+        onClose(nuevo)
+      }, 2000)
+    } catch (err) {
       setError(
-        error.response?.data?.name
-          ? 'El nombre del tipo ya existe. Debe ser único.'
-          : 'Hubo un problema al crear el tipo. Inténtalo de nuevo.'
-      );
-    } finally {
-      setLoading(false);
+        err.message.includes("unique")
+          ? "El nombre ya existe. Debe ser único."
+          : "Error al crear el tipo. Inténtalo de nuevo."
+      )
     }
-  };
+  }
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', category: '' }); // Añade category
-    setError('');
-    setShowSuccess(false);
-  };
+    setFormData({ name: "", description: "", category: "" })
+    setError("")
+    setShowSuccess(false)
+  }
 
   return {
     formData,
-    loading,
-    error,
-    showSuccess,
     handleChange,
     handleSubmit,
     resetForm,
-  };
-};
+    error,
+    showSuccess,
+    isSubmitting: status.create === "loading"
+  }
+}
 
-export default useTypeForm;
+export default useTypeForm

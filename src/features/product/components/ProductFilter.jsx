@@ -1,4 +1,3 @@
-// src/features/product/components/ProductFilter.jsx
 import React, { useState, useEffect } from "react";
 import FormInput from "@/components/ui/form/FormInput";
 import FormSelect from "@/components/ui/form/FormSelect";
@@ -17,8 +16,8 @@ const ProductFilter = ({ filters, onFilterChange }) => {
     // Carga todas las categorías al montar
     useEffect(() => {
         listCategories("/inventory/categories/?limit=1000&status=true")
-            .then(res => setCategories(res.results || []))
-            .catch(err => console.error("Error cargando categorías:", err));
+            .then((res) => setCategories(res.results || []))
+            .catch((err) => console.error("Error cargando categorías:", err));
     }, []);
 
     // Cuando cambia la categoría, recarga los tipos y resetea el filtro 'type'
@@ -26,25 +25,25 @@ const ProductFilter = ({ filters, onFilterChange }) => {
         const catId = localFilters.category;
         if (!catId) {
             setTypes([]);
-            // Reseteamos 'type' tanto local como en el padre
-            setLocalFilters(prev => {
-                const updated = { ...prev, type: "" };
-                onFilterChange(updated);
-                return updated;
-            });
+            setLocalFilters((prev) => ({ ...prev, type: "" }));
             return;
         }
 
-        listTypes(`/inventory/types/?limit=1000&status=true&category=${catId}`)
-            .then(res => setTypes(res.results || []))
-            .catch(err => console.error("Error cargando tipos:", err));
-    }, [localFilters.category, onFilterChange]); // <-- agregamos onFilterChange
+        listTypes(
+            `/inventory/types/?limit=1000&status=true&category=${catId}`
+        )
+            .then((res) => setTypes(res.results || []))
+            .catch((err) => console.error("Error cargando tipos:", err));
+    }, [localFilters.category]);
 
-    const handleChange = e => {
+    // Notificar cambios al padre cuando localFilters cambie
+    useEffect(() => {
+        onFilterChange(localFilters);
+    }, [localFilters, onFilterChange]);
+
+    const handleChange = (e) => {
         const { name, value } = e.target;
-        const updated = { ...localFilters, [name]: value };
-        setLocalFilters(updated);
-        onFilterChange(updated);
+        setLocalFilters((prev) => ({ ...prev, [name]: value }));
     };
 
     return (
@@ -70,7 +69,7 @@ const ProductFilter = ({ filters, onFilterChange }) => {
                     onChange={handleChange}
                     options={[
                         { value: "", label: "Todas" },
-                        ...categories.map(c => ({ value: String(c.id), label: c.name }))
+                        ...categories.map((c) => ({ value: String(c.id), label: c.name })),
                     ]}
                 />
             </div>
@@ -84,7 +83,7 @@ const ProductFilter = ({ filters, onFilterChange }) => {
                     onChange={handleChange}
                     options={[
                         { value: "", label: "Todos" },
-                        ...types.map(t => ({ value: String(t.id), label: t.name }))
+                        ...types.map((t) => ({ value: String(t.id), label: t.name })),
                     ]}
                     disabled={!localFilters.category}
                 />

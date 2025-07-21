@@ -1,106 +1,92 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   listProducts,
   createProduct,
   updateProduct,
-  deleteProduct,
-} from "@/features/product/services/products/products";
-import { buildQueryString } from "@/utils/queryUtils";
-import { productKeys } from "@/features/product/utils/queryKeys";
+  deleteProduct
+} from "@/features/product/services/products/products.js"
+import { buildQueryString } from "@/utils/queryUtils"
+import { productKeys } from "@/features/product/utils/queryKeys"
 
-const BASE_URL = "/inventory/products/";
+const BASE_URL = "/inventory/products/"
 
 /**
- * 📦 Listar productos con paginación y filtros
+ * Hook para listar y paginar productos, y exponer estados de carga/errores.
+ * @param {Object} filters  { name, category, type, page, page_size, status, ... }
+ * @param {string|null} pageUrl URL absoluta de next/previous page (opcional)
  */
-export const useListProducts = (filters = {}, pageUrl = null) => {
-  const queryClient = useQueryClient();
-  const url = pageUrl || `${BASE_URL}${buildQueryString(filters)}`;
+export const useProducts = (filters = {}, pageUrl = null) => {
+  const qc = useQueryClient()
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: productKeys.list(filters, pageUrl),
-    queryFn: () => listProducts(typeof url === "string" ? url : filters),
+  // URL de consulta o filtros
+  const urlOrFilters = pageUrl || filters
+
+  // Clave de cache: incluye URL o filtros
+  const queryKey = pageUrl
+    ? productKeys.list(filters, pageUrl)
+    : productKeys.list(filters)
+
+  // Query principal (v5 object signature)
+  const {
+    data,
+    isLoading,
+    isError,
+    error
+  } = useQuery({
+    queryKey,
+    queryFn: () => listProducts(urlOrFilters),
     keepPreviousData: true,
-    staleTime: 0,
-    cacheTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-  });
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  })
+
+  // 🤝 Mutations v5
+  const createMut = useMutation({
+    mutationFn: createProduct,
+    onSuccess: () => qc.invalidateQueries(productKeys.all)
+  })
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, payload }) => updateProduct(id, payload),
+    onSuccess: () => qc.invalidateQueries(productKeys.all)
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => qc.invalidateQueries(productKeys.all)
+  })
+
+  // Prefetch de la siguiente/previa página (v5 prefetchQuery object signature)
+  const prefetchPage = (nextUrl) => {
+    qc.prefetchQuery({
+      queryKey: productKeys.list(filters, nextUrl),
+      queryFn: () => listProducts(nextUrl)
+    })
+  }
 
   return {
-    products: data?.results ?? [],
-    nextPageUrl: data?.next ?? null,
-    previousPageUrl: data?.previous ?? null,
-    loadingProducts: isLoading,
-    fetchError: error,
-  };
-};
+    // Datos
+    products: data?.results     || [],
+    total:    data?.count       || 0,
+    nextPageUrl:     data?.next     || null,
+    previousPageUrl: data?.previous || null,
 
-/**
- * ➕ Crear producto
- *
- * onSuccessCallback (optional): función a ejecutar tras crearse el producto
- */
-export const useCreateProduct = (onSuccessCallback) => {
-  const qc = useQueryClient();
-  return useMutation(createProduct, {
-    onSuccess: async (newProduct) => {
-      // Invalida cualquier consulta de productos y espera la recarga
-      await qc.invalidateQueries({
-        predicate: (query) => productKeys.prefixMatch(query.queryKey),
-      });
-      await qc.refetchQueries({
-        predicate: (query) => productKeys.prefixMatch(query.queryKey),
-      });
-      // Llamada al callback del consumidor (cerrar modal, mostrar mensaje, etc)
-      onSuccessCallback?.(newProduct);
+    // Estados
+    loading: isLoading,
+    isError,
+    error,
+
+    // CRUD
+    createProduct: createMut.mutateAsync,
+    updateProduct: (id, payload) => updateMut.mutateAsync({ id, payload }),
+    deleteProduct: deleteMut.mutateAsync,
+
+    status: {
+      creating: createMut.status,
+      updating: updateMut.status,
+      deleting: deleteMut.status
     },
-  });
-};
 
-/**
- * 📝 Actualizar producto
- *
- * onSuccessCallback (optional): función a ejecutar tras actualizarse el producto
- */
-export const useUpdateProduct = (onSuccessCallback) => {
-  const qc = useQueryClient();
-  return useMutation(
-    ({ productId, productData }) => updateProduct(productId, productData),
-    {
-      onSuccess: async (updatedProduct, { productId }) => {
-        // Invalida la lista y el detalle de este producto y espera la recarga
-        await qc.invalidateQueries({
-          predicate: (query) => productKeys.prefixMatch(query.queryKey),
-        });
-        await qc.refetchQueries({
-          predicate: (query) => productKeys.prefixMatch(query.queryKey),
-        });
-        await qc.invalidateQueries(productKeys.detail(productId));
-        await qc.refetchQueries(productKeys.detail(productId));
-        onSuccessCallback?.(updatedProduct);
-      },
-    }
-  );
-};
-
-/**
- * 🗑️ Eliminar producto
- *
- * onSuccessCallback (optional): función a ejecutar tras eliminarse el producto
- */
-export const useDeleteProduct = (onSuccessCallback) => {
-  const qc = useQueryClient();
-  return useMutation(deleteProduct, {
-    onSuccess: async () => {
-      // Invalida todas las consultas de productos para reflejar la eliminación
-      await qc.invalidateQueries({
-        predicate: (query) => productKeys.prefixMatch(query.queryKey),
-      });
-      await qc.refetchQueries({
-        predicate: (query) => productKeys.prefixMatch(query.queryKey),
-      });
-      onSuccessCallback?.();
-    },
-  });
-};
+    prefetchPage
+  }
+}

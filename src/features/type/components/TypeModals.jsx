@@ -1,82 +1,62 @@
-import React from "react";
-import TypeCreateModal from "./TypeCreateModal";
-import TypeEditModal from "./TypeEditModal";
-import TypeViewModal from "./TypeViewModal";
-import DeleteMessage from "../../../components/common/DeleteMessage";
+// src/features/type/components/TypeModals.jsx
+import React from "react"
+import TypeCreateModal from "./TypeCreateModal"
+import TypeEditModal from "./TypeEditModal"
+import TypeViewModal from "./TypeViewModal"
+import DeleteMessage from "@/components/common/DeleteMessage"
 
 const TypeModals = ({
-    modalState,         // Estado del modal desde TypeList { type: 'create'|'edit'|'view'|'deleteConfirm', typeData: object|null }
-    closeModal,         // Función para cerrar cualquier modal, desde TypeList
-    // Handlers CRUD desde TypeList
+    modalState,
+    closeModal,
     onCreateType,
     onUpdateType,
     onDeleteType,
-    // Props para DeleteMessage
-    isDeleting,
-    deleteError,
-    clearDeleteError,
-    // Datos necesarios para los modales de formulario/vista
     categories,
     loadingCategories,
-    getCategoryName, // Para TypeViewModal si necesita mostrar nombre
-
+    getCategoryName
 }) => {
-
-    if (!modalState || !modalState.type) return null; // No renderizar si no hay modal activo
+    const { type, typeData } = modalState
 
     return (
         <>
-            {/* --- Modal de Creación --- */}
-            {modalState.type === "create" && (
+            {type === "create" && (
                 <TypeCreateModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
-                    // Pasa el handler de creación de TypeList. El modal interno llamará a este
-                    // después de validar y preparar los datos.
-                    onCreate={onCreateType}
-                    categories={categories} // Pasa las categorías para el selector
+                    onCreateType={onCreateType}
+                    categories={categories}
                     loadingCategories={loadingCategories}
                 />
             )}
-
-            {/* --- Modal de Edición --- */}
-            {modalState.type === "edit" && modalState.typeData && (
+            {type === "edit" && typeData && (
                 <TypeEditModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
-                    type={modalState.typeData} // Los datos actuales del tipo a editar
-                    // Pasa el handler de actualización de TypeList. El modal interno llamará a este.
-                    onSave={onUpdateType}
-                    categories={categories} // Pasa las categorías para el selector
+                    type={typeData}
+                    onUpdateType={onUpdateType}
+                    categories={categories}
                     loadingCategories={loadingCategories}
                 />
             )}
-
-            {/* --- Modal de Vista --- */}
-            {modalState.type === "view" && modalState.typeData && (
+            {type === "view" && typeData && (
                 <TypeViewModal
-                    isOpen={true}
+                    isOpen
                     onClose={closeModal}
-                    type={modalState.typeData} // Los datos del tipo a visualizar
-                    getCategoryName={getCategoryName} // Pasa la función si es necesaria en este modal
+                    type={typeData}
+                    getCategoryName={getCategoryName}
                 />
             )}
-
-            {/* --- Modal de Confirmación de Eliminación --- */}
-            {modalState.type === "deleteConfirm" && modalState.typeData && (
+            {type === "deleteConfirm" && typeData && (
                 <DeleteMessage
-                    isOpen={true} // Siempre abierto si modalState.type es 'deleteConfirm'
+                    isOpen
                     onClose={closeModal}
-                    onDelete={() => onDeleteType(modalState.typeData)} // Llama al handler de eliminación de TypeList
-                    isDeleting={isDeleting} // Estado de carga de eliminación
-                    deleteError={deleteError} // Error específico de eliminación
-                    clearDeleteError={clearDeleteError} // Para limpiar el error
-                    itemName="el tipo" // Texto personalizable
-                    itemIdentifier={modalState.typeData.name} // Identificador del item
+                    onDelete={() => onDeleteType(typeData)}
+                    itemName="el tipo"
+                    itemIdentifier={typeData.name}
                 />
             )}
         </>
-    );
-};
+    )
+}
 
-export default TypeModals;
+export default TypeModals

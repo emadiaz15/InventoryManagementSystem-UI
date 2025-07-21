@@ -1,36 +1,34 @@
-import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
+// src/features/product/components/CreateProductModal.jsx
+import React, { useState, useEffect, useCallback } from "react"
+import PropTypes from "prop-types"
+import { useQuery } from "@tanstack/react-query"
 
-import Modal from "../../../components/ui/Modal";
-import FormInput from "../../../components/ui/form/FormInput";
-import FormSelect from "../../../components/ui/form/FormSelect";
-import FormStockInput from "../components/FormStockInput";
-import ErrorMessage from "../../../components/common/ErrorMessage";
-import SuccessMessage from "../../../components/common/SuccessMessage";
+import Modal from "@/components/ui/Modal"
+import FormInput from "@/components/ui/form/FormInput"
+import FormSelect from "@/components/ui/form/FormSelect"
+import FormStockInput from "../components/FormStockInput"
+import ErrorMessage from "@/components/common/ErrorMessage"
+import SuccessMessage from "@/components/common/SuccessMessage"
 
-import { listCategories } from "../../category/services/listCategory";
-import { listTypes, listTypesByCategory } from "../../type/services/listType";
+import { listCategories } from "@/features/category/services/categories"
+import { listTypes } from "@/features/type/services/types"
 
-import {
-  useCreateProduct,
-  useListProducts,
-} from "@/features/product/hooks/useProductHooks";
-import { useProductFileUpload } from "@/features/product/hooks/useProductFileHooks";
+import { useProducts } from "@/features/product/hooks/useProductHooks"
+import { useUploadProductFiles } from "@/features/product/hooks/useProductFileHooks"
 
 const CreateProductModal = ({ isOpen, onClose, onSave }) => {
-  const [categories, setCategories] = useState([]);
-  const [types, setTypes] = useState([]);
-  const [filteredTypes, setFilteredTypes] = useState([]);
-  const [error, setError] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [previewFiles, setPreviewFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // 1️⃣ Cargar categorías activas (hasta 1000)
+  const {
+    data: catPage = {},
+    isLoading: loadingCategories,
+  } = useQuery(
+    ["categories", { limit: 1000, status: true }],
+    () => listCategories({ limit: 1000, status: true }),
+    { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
+  )
+  const categories = catPage.results ?? []
 
-  const { uploadFiles, uploading, uploadError, clearUploadError } = useProductFileUpload();
-  // Pasamos onSave al hook para que dispare la acción tras crear
-  const { mutateAsync: createProductMutate } = useCreateProduct(onSave);
-  const { products = [] } = useListProducts({}, null);
-
+  // 2️⃣ State formulario
   const [formData, setFormData] = useState({
     name: "",
     code: "",
@@ -41,17 +39,42 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     category: "",
     type: "",
     initial_stock_quantity: "",
-    images: [],
     has_subproducts: false,
-  });
+    images: []
+  })
+  const [previewFiles, setPreviewFiles] = useState([])
+  const [error, setError] = useState("")
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
 
+  // 3️⃣ Cargar tipos según categoría
+  const {
+    data: typePage = {},
+    isLoading: loadingTypes,
+  } = useQuery(
+    ["types", { limit: 1000, status: true, category: formData.category }],
+    () => listTypes({ limit: 1000, status: true, category: formData.category }),
+    { enabled: !!formData.category, staleTime: 5 * 60 * 1000 }
+  )
+  const types = typePage.results ?? []
+
+  // 4️⃣ Hook único para productos: listado + crear
+  const {
+    products = [],
+    loading: loadingProducts,
+    createProduct
+  } = useProducts({ status: true, page_size: 1000 })
+
+  // 5️⃣ Subida de archivos
+  const { uploadFiles, uploading, uploadError, clearUploadError } = useUploadProductFiles()
+  // 6️⃣ Reset al abrir
   useEffect(() => {
-    if (!isOpen) return;
-
-    clearUploadError();
-    setError("");
-    setShowSuccess(false);
-    setPreviewFiles([]);
+    if (!isOpen) return
+    clearUploadError()
+    setError("")
+    setShowSuccess(false)
+    setPreviewFiles([])
+    setLoading(false)
     setFormData({
       name: "",
       code: "",
@@ -62,183 +85,137 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
       category: "",
       type: "",
       initial_stock_quantity: "",
-      images: [],
       has_subproducts: false,
-    });
+      images: []
+    })
+  }, [isOpen, clearUploadError])
 
-    const fetchData = async () => {
-      try {
-        const [catResp, typeResp] = await Promise.all([
-          listCategories("/inventory/categories/?limit=1000&status=true"),
-          listTypes("/inventory/types/?limit=1000&status=true"),
-        ]);
-        setCategories(catResp.results || []);
-        const allTypes = typeResp.results ?? typeResp.activeTypes ?? [];
-        setTypes(allTypes);
-      } catch (err) {
-        console.error("Error al cargar datos iniciales:", err);
-        setError("No se pudo conectar con el servidor.");
-      }
-    };
-
-    fetchData();
-  }, [isOpen, clearUploadError]);
-
-  useEffect(() => {
-    if (!formData.category) {
-      setFilteredTypes([]);
-      return;
-    }
-
-    const catId = parseInt(formData.category, 10);
-
-    const loadTypes = async () => {
-      try {
-        const data = await listTypesByCategory(catId);
-        const fetched = data.results ?? [];
-        if (fetched.length) {
-          setFilteredTypes(fetched);
-          return;
-        }
-      } catch (err) {
-        console.error("Error al filtrar tipos:", err);
-      }
-
-      setFilteredTypes(
-        types.filter((t) => {
-          if (t.category?.id != null) return t.category.id === catId;
-          if (t.category_id != null) return t.category_id === catId;
-          return t.category === catId;
-        })
-      );
-    };
-
-    loadTypes();
-  }, [formData.category, types]);
-
-  const handleChange = (e) => {
-    const { name, type, value, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  // 7️⃣ Handlers
+  const handleChange = useCallback((e) => {
+    const { name, type, value, checked } = e.target
+    setFormData((f) => ({
+      ...f,
+      [name]: type === "checkbox" ? checked : value
+    }))
+  }, [])
 
   const handleStockChange = (e) => {
-    setFormData((prev) => ({ ...prev, initial_stock_quantity: e.target.value }));
-  };
+    setFormData((f) => ({ ...f, initial_stock_quantity: e.target.value }))
+  }
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files)
     if (formData.images.length + files.length > 5) {
-      setError("Máximo 5 archivos permitidos.");
-      return;
+      setError("Máximo 5 archivos permitidos.")
+      return
     }
-    const imgs = [...formData.images, ...files];
-    setFormData((prev) => ({ ...prev, images: imgs }));
-    setPreviewFiles(imgs.map((f) => f.name));
-  };
+    setFormData((f) => ({ ...f, images: [...f.images, ...files] }))
+    setPreviewFiles((p) => [...p, ...files.map((f) => f.name)])
+  }
 
   const removeFile = (idx) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== idx),
-    }));
-    setPreviewFiles((prev) => prev.filter((_, i) => i !== idx));
-  };
+    setFormData((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
+    setPreviewFiles((p) => p.filter((_, i) => i !== idx))
+  }
 
-  const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "");
-
+  // 8️⃣ Validar código único
+  const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "")
   const validateCodeUnique = () => {
-    const codeStr = normalize(formData.code);
+    const codeStr = normalize(formData.code)
     const clash = products.find(
       (p) => p.code && normalize(String(p.code)) === codeStr
-    );
+    )
     if (clash) {
-      setError("El código ya está en uso por otro producto.");
-      return false;
+      setError("El código ya está en uso por otro producto.")
+      return false
     }
-    return true;
-  };
+    return true
+  }
 
+  // 9️⃣ Submit
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setShowSuccess(false);
+    e.preventDefault()
+    setError("")
+    setShowSuccess(false)
 
-    if (!validateCodeUnique()) return;
+    if (!validateCodeUnique()) return
     if (!formData.category) {
-      setError("Selecciona una categoría.");
-      return;
+      setError("Selecciona una categoría.")
+      return
     }
 
-    const payload = new FormData();
-    payload.append("name", formData.name.trim());
+    const payload = new FormData()
+    payload.append("name", formData.name.trim())
 
-    const codeNum = parseInt(formData.code, 10);
+    const codeNum = parseInt(formData.code, 10)
     if (isNaN(codeNum)) {
-      setError("El código debe ser un número válido.");
-      return;
+      setError("El código debe ser un número válido.")
+      return
     }
-    payload.append("code", codeNum.toString());
-    payload.append("description", formData.description.trim());
-    payload.append("brand", formData.brand.trim());
-    payload.append("location", formData.location.trim());
-    payload.append("position", formData.position.trim());
-    payload.append("category", formData.category);
-    if (formData.type) {
-      payload.append("type", formData.type);
-    }
+    payload.append("code", codeNum.toString())
+    payload.append("description", formData.description.trim())
+    payload.append("brand", formData.brand.trim())
+    payload.append("location", formData.location.trim())
+    payload.append("position", formData.position.trim())
+    payload.append("category", formData.category)
+    if (formData.type) payload.append("type", formData.type)
 
-    const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
+    const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "")
     if (stockVal && parseFloat(stockVal) > 0) {
-      payload.append("initial_stock_quantity", stockVal);
+      payload.append("initial_stock_quantity", stockVal)
     }
-    payload.append("has_subproducts", formData.has_subproducts ? "true" : "false");
+    payload.append("has_subproducts", formData.has_subproducts ? "true" : "false")
 
     try {
-      setLoading(true);
-      const newProd = await createProductMutate(payload);
+      setLoading(true)
+      // Usamos createProduct del hook useProducts
+      const newProd = await createProduct(payload)
 
       if (formData.images.length) {
-        const ok = await uploadFiles(newProd.id, formData.images);
+        const ok = await uploadFiles(newProd.id, formData.images)
         if (!ok && uploadError) {
-          setError(uploadError);
-          return;
+          setError(uploadError)
+          return
         }
       }
 
-      setShowSuccess(true);
-      onClose();
-      // onSave ya se llamó desde el hook useCreateProduct(onSave)
+      setShowSuccess(true)
+      setTimeout(() => {
+        setShowSuccess(false)
+        onClose()
+      }, 2000)
     } catch (err) {
-      const data = err.response?.data;
+      const data = err.response?.data
       const msg =
         data?.detail ||
         (data?.code && Array.isArray(data.code) ? data.code[0] : null) ||
         err.message ||
-        "Error al crear el producto.";
-      setError(msg);
+        "Error al crear el producto."
+      setError(msg)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Producto">
       <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
+        {/* Errores */}
         {error && <ErrorMessage message={error} onClose={() => setError("")} />}
         {uploadError && <ErrorMessage message={uploadError} onClose={clearUploadError} />}
 
+        {/* Categoría */}
         <FormSelect
           label="Categoría"
           name="category"
           value={formData.category}
           onChange={handleChange}
-          options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
+          options={categories.map((c) => ({ value: `${c.id}`, label: c.name }))}
+          loading={loadingCategories}
           required
         />
 
+        {/* Tipo (depende categoría) */}
         <FormSelect
           label="Tipo (opcional)"
           name="type"
@@ -246,26 +223,18 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           onChange={handleChange}
           options={[
             { value: "", label: "N/A" },
-            ...filteredTypes.map((t) => ({
-              value: String(t.id),
-              label: t.name,
-            })),
+            ...types.map((t) => ({ value: `${t.id}`, label: t.name }))
           ]}
+          loading={loadingTypes}
+          disabled={!formData.category || loadingTypes}
         />
 
-        <FormInput
-          label="Nombre / Medida"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
-
+        {/* Resto de campos */}
+        <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
           <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
         </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormStockInput
             label="Stock Inicial"
@@ -277,23 +246,22 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           <FormInput label="Ubicación" name="location" value={formData.location} onChange={handleChange} />
           <FormInput label="Posición" name="position" value={formData.position} onChange={handleChange} />
         </div>
-
         <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
 
-        <div className="flex items-center ps-4 border rounded-sm bg-background-100 h-[46px]">
+        {/* Subproductos */}
+        <div className="flex items-center space-x-2">
           <input
-            id="has_subproducts"
             type="checkbox"
+            id="has_subproducts"
             name="has_subproducts"
             checked={formData.has_subproducts}
             onChange={handleChange}
             className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
           />
-          <label htmlFor="has_subproducts" className="ms-2 text-sm">
-            Este producto tiene subproductos
-          </label>
+          <label htmlFor="has_subproducts" className="ml-2 text-sm">Este producto tiene subproductos</label>
         </div>
 
+        {/* Archivos */}
         <div>
           <label className="block mb-2 text-sm">Archivos (máx. 5)</label>
           <div className="flex items-center space-x-4">
@@ -333,6 +301,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           )}
         </div>
 
+        {/* Botones */}
         <div className="flex justify-end space-x-2">
           <button
             type="button"
@@ -351,6 +320,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
 
+        {/* Éxito */}
         {showSuccess && (
           <SuccessMessage
             message="¡Producto creado exitosamente!"
@@ -359,13 +329,13 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         )}
       </form>
     </Modal>
-  );
-};
+  )
+}
 
 CreateProductModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func,
-};
+}
 
-export default CreateProductModal;
+export default CreateProductModal

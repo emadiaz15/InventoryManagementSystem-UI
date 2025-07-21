@@ -1,45 +1,50 @@
-import React, { useState, useEffect } from "react";
-import Modal from "../../../components/ui/Modal";
-import { listCategories } from "../../category/services/listCategory";
-import { listTypes } from "../../type/services/listType";
-import { useProductFileList, useEnrichedProductFiles } from "@/features/product/hooks/useProductFileHooks";
-import ProductCarouselOverlay from "../components/ProductCarouselOverlay";
-import { formatArgentineDate } from "@/utils/dateUtils";
+// src/features/product/components/ViewProductModal.jsx
+import React from "react"
+import Modal from "@/components/ui/Modal"
+import { usePrefetchedData } from "@/context/DataPrefetchContext"
+import {
+    useProductFiles,
+    useEnrichedProductFiles,
+} from "@/features/product/hooks/useProductFileHooks"
+import ProductCarouselOverlay from "../components/ProductCarouselOverlay"
+import { formatArgentineDate } from "@/utils/dateUtils"
+import Spinner from "@/components/ui/Spinner"
 
 const ViewProductModal = ({ product, isOpen, onClose }) => {
-    const [categories, setCategories] = useState([]);
-    const [types, setTypes] = useState([]);
-    const { data: rawFiles = [], isLoading: loadingRaw } = useProductFileList(
-        isOpen ? product?.id : null
-    );
+    // 1️⃣ Determinar productId (null si está cerrado)
+    const productId = isOpen ? product?.id : null
 
-    useEffect(() => {
-        if (!isOpen || !product?.id) return;
+    // 2️⃣ HOOKS TOP-LEVEL, SIEMPRE en el mismo orden
+    const { categories, types } = usePrefetchedData()
+    const {
+        data: rawFiles = [],
+        isLoading: loadingRaw,
+        error: rawError,
+    } = useProductFiles(productId)
+    const {
+        files,
+        status: downloadStatus,
+        error: downloadError,
+    } = useEnrichedProductFiles(productId)
 
-        const fetchData = async () => {
-            try {
-                const [catResp, typeResp] = await Promise.all([
-                    listCategories("/inventory/categories/?limit=1000&status=true"),
-                    listTypes("/inventory/types/?limit=1000&status=true"),
-                ]);
-                setCategories(catResp.results || []);
-                setTypes(typeResp.results || []);
-            } catch (err) {
-                console.error("Error cargando datos del producto:", err);
-            }
-        };
+    const loadingFiles = loadingRaw || downloadStatus === "loading"
+    const filesError = rawError || downloadError
 
-        fetchData();
-    }, [isOpen, product?.id]);
+    // 3️⃣ Early return SOLO para el caso de no haber producto
+    if (!product) return null
 
-    const { files, loading } = useEnrichedProductFiles(product?.id, rawFiles);
-    const isLoading = loading || loadingRaw;
+    // 4️⃣ Nombre legible de categoría y tipo
+    const categoryName =
+        categories.find((c) => c.id === product.category)?.name ||
+        product.category_name ||
+        "Sin categoría"
 
-    if (!product) return null;
+    const typeName =
+        types.find((t) => t.id === product.type)?.name ||
+        product.type_name ||
+        "Sin tipo"
 
-    const categoryName = product.category_name || "Sin categoría";
-    const typeName = product.type_name || "Sin tipo";
-
+    // 5️⃣ Renderizado
     return (
         <Modal
             isOpen={isOpen}
@@ -48,23 +53,24 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
             maxWidth="max-w-6xl"
         >
             <div className="flex flex-col md:flex-row gap-4 h-full text-text-primary">
+                {/* — Detalles */}
                 <div className="flex-1 space-y-2 bg-background-100 p-4 rounded overflow-y-auto max-h-[80vh]">
-                    <p><span className="font-semibold">ID:</span> {product.id}</p>
-                    <p><span className="font-semibold">Código:</span> {product.code || "N/A"}</p>
-                    <p><span className="font-semibold">Tipo:</span> {typeName}</p>
-                    <p><span className="font-semibold">Nombre/Medida:</span> {product.name || "SIN NOMBRE"}</p>
-                    <p><span className="font-semibold">Descripción:</span> {product.description || "SIN DESCRIPCIÓN"}</p>
-                    <p><span className="font-semibold">Categoría:</span> {categoryName}</p>
-                    <p><span className="font-semibold">Estado:</span> {product.status ? "Activo" : "Inactivo"}</p>
-                    <p><span className="font-semibold">Tiene subproductos? (Cables):</span> {product.has_subproducts ? "Sí" : "No"}</p>
-                    <p><span className="font-semibold">Stock actual:</span> {product.current_stock ?? 0}</p>
-                    <p><span className="font-semibold">Marca:</span> {product.brand || "N/A"}</p>
-                    <p><span className="font-semibold">Ubicación:</span> {product.location || "N/A"}</p>
-                    <p><span className="font-semibold">Posición:</span> {product.position || "N/A"}</p>
-                    <p><span className="font-semibold">Creado en:</span> {formatArgentineDate(product.created_at)}</p>
-                    <p><span className="font-semibold">Modificado en:</span> {formatArgentineDate(product.modified_at)}</p>
-                    <p><span className="font-semibold">Creado por:</span> {product.created_by || "N/A"}</p>
-                    <p><span className="font-semibold">Modificado por:</span> {product.modified_by || "N/A"}</p>
+                    <p><strong>ID:</strong> {product.id}</p>
+                    <p><strong>Código:</strong> {product.code || "N/A"}</p>
+                    <p><strong>Categoría:</strong> {categoryName}</p>
+                    <p><strong>Tipo:</strong> {typeName}</p>
+                    <p><strong>Nombre/Medida:</strong> {product.name || "SIN NOMBRE"}</p>
+                    <p><strong>Descripción:</strong> {product.description || "SIN DESCRIPCIÓN"}</p>
+                    <p><strong>Estado:</strong> {product.status ? "Activo" : "Inactivo"}</p>
+                    <p><strong>Subproductos?</strong> {product.has_subproducts ? "Sí" : "No"}</p>
+                    <p><strong>Stock actual:</strong> {product.current_stock ?? 0}</p>
+                    <p><strong>Marca:</strong> {product.brand || "N/A"}</p>
+                    <p><strong>Ubicación:</strong> {product.location || "N/A"}</p>
+                    <p><strong>Posición:</strong> {product.position || "N/A"}</p>
+                    <p><strong>Creado en:</strong> {formatArgentineDate(product.created_at)}</p>
+                    <p><strong>Modificado en:</strong> {formatArgentineDate(product.modified_at)}</p>
+                    <p><strong>Creado por:</strong> {product.created_by || "N/A"}</p>
+                    <p><strong>Modificado por:</strong> {product.modified_by || "N/A"}</p>
                     <div className="flex justify-end mt-4">
                         <button
                             onClick={onClose}
@@ -74,16 +80,26 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                         </button>
                     </div>
                 </div>
+
+                {/* — Carousel */}
                 <div className="flex-1 bg-background-50 p-4 rounded overflow-y-auto max-h-[80vh]">
-                    {isLoading ? (
-                        <div className="flex items-center justify-center h-full">Cargando archivos...</div>
+                    {loadingFiles ? (
+                        <div className="flex items-center justify-center h-full">
+                            <Spinner size="8" color="text-primary-500" />
+                        </div>
+                    ) : filesError ? (
+                        <p className="text-red-500">Error cargando archivos.</p>
                     ) : (
-                        <ProductCarouselOverlay images={files} productId={product.id} isEmbedded />
+                        <ProductCarouselOverlay
+                            images={files}
+                            productId={product.id}
+                            isEmbedded
+                        />
                     )}
                 </div>
             </div>
         </Modal>
-    );
-};
+    )
+}
 
-export default ViewProductModal;
+export default ViewProductModal
