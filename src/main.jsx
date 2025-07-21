@@ -12,10 +12,6 @@ import { DataPrefetchProvider } from './context/DataPrefetchContext'
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
 
-// Mostrar siempre el entorno DEV (logs para depuración)
-console.log('import.meta.env.DEV =', import.meta.env.DEV)
-console.log('process.env.NODE_ENV =', process.env.NODE_ENV)
-
 root.render(
   <React.StrictMode>
     <BrowserRouter>
@@ -26,12 +22,14 @@ root.render(
           </DataPrefetchProvider>
         </AuthProvider>
 
-        {/* React Query Devtools siempre visible */}
-        <ReactQueryDevtools
-          initialIsOpen={true}
-          position="bottom-right"
-          toggleButtonProps={{ style: { bottom: '20px', right: '20px', opacity: 1 } }}
-        />
+        {import.meta.env.DEV && (
+          <ReactQueryDevtools
+            initialIsOpen={true}
+            buttonPosition="bottom-left"  // posición del botón
+            position="bottom"             // posición del panel
+          />
+        )}
+
       </QueryClientProvider>
     </BrowserRouter>
   </React.StrictMode>
