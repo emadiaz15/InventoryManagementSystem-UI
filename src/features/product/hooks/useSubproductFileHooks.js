@@ -1,50 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listSubproductFiles,
-  uploadSubproductFile,
+  uploadSubproductFiles,
   deleteSubproductFile,
 } from "../../product/services/subproducts/subproductsFiles";
 import { fetchProtectedFile } from "@/services/files/fileAccessService";
 
 // 📄 Listar archivos de un subproducto
 export const useSubproductFileList = (productId, subproductId) => {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [listError, setListError] = useState(null);
-
-  const fetchFiles = useCallback(async () => {
-    if (!productId || !subproductId) return;
-
-    setLoading(true);
-    setListError(null);
-
-    try {
-      const result = await listSubproductFiles(productId, subproductId);
-      setFiles(result);
-    } catch (err) {
-      console.error("❌ Error al listar archivos de subproducto:", err);
-      setListError(err.message || "Error al obtener archivos.");
-    } finally {
-      setLoading(false);
-    }
-  }, [productId, subproductId]);
-
-  useEffect(() => {
-    fetchFiles();
-  }, [fetchFiles, productId, subproductId]);
-
-  return {
-    files,
-    loading,
-    listError,
-    refreshFiles: fetchFiles,
-  };
+  return useQuery({
+    queryKey: ["subproduct-files", productId, subproductId],
+    queryFn: () => listSubproductFiles(productId, subproductId),
+    enabled: !!productId && !!subproductId,
+  });
 };
 
 // 📤 Subir archivo al subproducto
 export const useSubproductFileUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const queryClient = useQueryClient();
 
   const clearUploadError = useCallback(() => setUploadError(""), []);
 
@@ -58,10 +34,22 @@ export const useSubproductFileUpload = () => {
     setUploadError("");
 
     try {
-      for (const file of files) {
-        await uploadSubproductFile(productId, subproductId, file.key || file.id || file.name, file);
+      const { data, status } = await uploadSubproductFiles(productId, subproductId, files);
+
+      if (status === 207 && data?.failed_files?.length) {
+        setUploadError(
+          `Falló la subida de: ${data.failed_files
+            .map((f) => f.name || f)
+            .join(", ")}`
+        );
+        return false;
       }
-      return true;
+
+      const ok = status === 201 || status === 200;
+      if (ok) {
+        queryClient.invalidateQueries(["subproduct-files", productId, subproductId]);
+      }
+      return ok;
     } catch (err) {
       console.error("❌ Error subiendo archivo de subproducto:", err);
       setUploadError(err.message || "Error al subir archivo.");
@@ -83,6 +71,7 @@ export const useSubproductFileUpload = () => {
 export const useSubproductFileDelete = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const queryClient = useQueryClient();
 
   const deleteFile = async (productId, subproductId, fileId) => {
     if (!productId || !subproductId || !fileId) {
@@ -95,6 +84,7 @@ export const useSubproductFileDelete = () => {
 
     try {
       await deleteSubproductFile(productId, subproductId, fileId);
+      queryClient.invalidateQueries(["subproduct-files", productId, subproductId]);
       return true;
     } catch (err) {
       console.error("❌ Error al eliminar archivo de subproducto:", err);

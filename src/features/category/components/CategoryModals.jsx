@@ -1,3 +1,4 @@
+// src/features/category/components/CategoryModals.jsx
 import React from "react";
 import CategoryCreateModal from "./CategoryCreateModal";
 import CategoryEditModal from "./CategoryEditModal";
@@ -7,53 +8,50 @@ import DeleteMessage from "../../../components/common/DeleteMessage";
 const CategoryModals = ({
     modalState,
     closeModal,
-    handleUpdateCategory,
-    handleDeleteCategory,
-    isDeleting,
-    deleteError,
-    clearDeleteError,
-    handleActionSuccess,
-    handleCreateCategory,
+    onCreate,
+    onUpdateCategory,
+    onDelete,
+    isProcessing,
+    actionError,
 }) => {
-    const commonProps = {
-        isOpen: modalState.type !== null,
-        onClose: closeModal,
-    };
+    const common = { isOpen: modalState.type !== null, onClose: closeModal };
 
     return (
         <>
             {modalState.type === "create" && (
                 <CategoryCreateModal
-                    {...commonProps}
-                    onCreateSuccess={(message) =>
-                        handleActionSuccess(message || "Categoría creada con éxito.")
-                    }
+                    {...common}
+                    onCreate={onCreate}
+                    isProcessing={isProcessing}
+                    error={actionError}
                 />
             )}
 
             {modalState.type === "edit" && modalState.category && (
                 <CategoryEditModal
-                    {...commonProps}
+                    {...common}
                     category={modalState.category}
-                    onSaveSuccess={handleUpdateCategory}
+                    onUpdateCategory={onUpdateCategory}
+                    isProcessing={isProcessing}
+                    error={actionError}
                 />
             )}
 
             {modalState.type === "view" && modalState.category && (
                 <CategoryViewModal
-                    {...commonProps}
+                    {...common}
                     category={modalState.category}
                 />
             )}
 
             {modalState.type === "deleteConfirm" && modalState.category && (
                 <DeleteMessage
-                    {...commonProps}
-                    onDelete={() => handleDeleteCategory(modalState.category)}
-                    isDeleting={isDeleting}
-                    deleteError={deleteError}
-                    clearDeleteError={clearDeleteError}
-                    itemName="la categoría"
+                    {...common}
+                    onDelete={() => onDelete(modalState.category)}
+                    isDeleting={isProcessing}
+                    deleteError={actionError}
+                    clearDeleteError={closeModal}
+                    itemName="categoría"
                     itemIdentifier={modalState.category.name}
                 />
             )}

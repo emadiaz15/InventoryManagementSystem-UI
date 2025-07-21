@@ -1,42 +1,38 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App.jsx';
-import './index.css';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App.jsx'
+import './index.css'
 
-// 🛡️ Contextos
-import { AuthProvider } from './context/AuthProvider';
-import { DataPrefetchProvider } from './context/DataPrefetchContext';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './lib/queryClient';
+import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { queryClient } from './lib/queryClient'
+import { AuthProvider } from './context/AuthProvider'
+import { DataPrefetchProvider } from './context/DataPrefetchContext'
 
-const isDev = import.meta.env.DEV;
+const root = ReactDOM.createRoot(document.getElementById('root'))
 
-async function renderApp() {
-  let Devtools = () => null;
+// Mostrar siempre el entorno DEV (logs para depuración)
+console.log('import.meta.env.DEV =', import.meta.env.DEV)
+console.log('process.env.NODE_ENV =', process.env.NODE_ENV)
 
-  // Carga dinámica solo en desarrollo
-  if (isDev) {
-    const mod = await import('@tanstack/react-query-devtools');
-    Devtools = mod.ReactQueryDevtools;
-  }
+root.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <DataPrefetchProvider>
+            <App />
+          </DataPrefetchProvider>
+        </AuthProvider>
 
-  const root = ReactDOM.createRoot(document.getElementById('root'));
-
-  root.render(
-    <React.StrictMode>
-      <BrowserRouter>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <DataPrefetchProvider>
-              <App />
-            </DataPrefetchProvider>
-          </AuthProvider>
-          {isDev && <Devtools initialIsOpen={false} />}
-        </QueryClientProvider>
-      </BrowserRouter>
-    </React.StrictMode>
-  );
-}
-
-renderApp();
+        {/* React Query Devtools siempre visible */}
+        <ReactQueryDevtools
+          initialIsOpen={true}
+          position="bottom-right"
+          toggleButtonProps={{ style: { bottom: '20px', right: '20px', opacity: 1 } }}
+        />
+      </QueryClientProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+)

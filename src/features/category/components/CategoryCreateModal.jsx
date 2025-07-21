@@ -1,103 +1,68 @@
-import React, { useState } from 'react';
-import Modal from '../../../components/ui/Modal';
-import ErrorMessage from '../../../components/common/ErrorMessage';
-import SuccessMessage from '../../../components/common/SuccessMessage';
-import { useCategoriesQuery } from '@/features/category/queries/useCategoriesList';
+// src/features/category/components/CategoryCreateModal.jsx
+import React, { useState } from "react";
+import Modal from "../../../components/ui/Modal";
+import ErrorMessage from "../../../components/common/ErrorMessage";
+import Spinner from "../../../components/ui/Spinner";
 
-const CategoryCreateModal = ({ isOpen, onClose, onCreateSuccess }) => {
-  const [formData, setFormData] = useState({ name: '', description: '' });
-  const [formError, setFormError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+const CategoryCreateModal = ({
+  isOpen,
+  onClose,
+  onCreate,
+  isProcessing,
+  error,
+}) => {
+  const [form, setForm] = useState({ name: "", description: "" });
 
-  const { createCategory, createStatus } = useCategoriesQuery();
-  const isLoading = createStatus === "pending";
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const handleChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError('');
-
-    if (!formData.name?.trim()) {
-      setFormError('El nombre de la categoría es obligatorio.');
-      return;
-    }
-
-    try {
-      const result = await createCategory(formData);
-
-      if (!result || !result.name) {
-        throw new Error('Error inesperado: la respuesta del servidor no contiene el nombre.');
-      }
-
-      setSuccessMessage(`Categoría "${result.name}" creada con éxito.`);
-      if (onCreateSuccess) onCreateSuccess(`Categoría "${result.name}" creada con éxito.`);
-
-      setTimeout(() => {
-        setSuccessMessage('');
-        setFormData({ name: '', description: '' });
-        onClose();
-      }, 2000);
-
-    } catch (err) {
-      const msg = err?.response?.data?.detail || err?.message || 'Error al crear la categoría.';
-      setFormError(msg);
-    }
+    if (!form.name.trim()) return;
+    await onCreate(form);
+    setForm({ name: "", description: "" });
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Crear Nueva Categoría" position="center">
-      {formError && <ErrorMessage message={formError} />}
-      {successMessage && <SuccessMessage message={successMessage} />}
-
+    <Modal isOpen={isOpen} onClose={onClose} title="Crear Nueva Categoría">
+      {error && <ErrorMessage message={error} />}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium">
+          <label className="block text-sm font-medium">
             Nombre <span className="text-red-500">*</span>
           </label>
           <input
-            type="text"
-            id="name"
             name="name"
-            value={formData.name}
+            value={form.name}
             onChange={handleChange}
             required
             className="w-full border p-2 rounded"
           />
         </div>
-
         <div>
-          <label htmlFor="description" className="block text-sm font-medium">
-            Descripción
-          </label>
+          <label className="block text-sm font-medium">Descripción</label>
           <textarea
-            id="description"
             name="description"
-            rows="3"
-            value={formData.description}
+            value={form.description}
             onChange={handleChange}
             className="w-full border p-2 rounded"
           />
         </div>
-
         <div className="flex justify-end space-x-2 pt-4 border-t">
           <button
             type="button"
             onClick={onClose}
             className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600"
-            disabled={isLoading}
+            disabled={isProcessing}
           >
             Cancelar
           </button>
           <button
             type="submit"
             className="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 disabled:opacity-50"
-            disabled={isLoading}
+            disabled={isProcessing}
           >
-            {isLoading ? 'Guardando...' : 'Crear Categoría'}
+            {isProcessing ? <Spinner size="5" /> : "Crear Categoría"}
           </button>
         </div>
       </form>

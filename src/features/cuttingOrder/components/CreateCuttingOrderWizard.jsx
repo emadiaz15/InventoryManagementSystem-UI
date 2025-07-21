@@ -1,9 +1,10 @@
+// src/features/cuttingOrder/pages/CreateCuttingOrderWizard.jsx
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useAuth } from "../../../context/AuthProvider";
 import { listUsers } from "../../user/services/listUsers";
 import { listSubproducts } from "../../product/services/subproducts/subproducts";
-import { useListProducts } from "@/features/product/hooks/useProductHooks";
+import { useProducts } from "@/features/product/hooks/useProductHooks";
 import createCuttingOrder from "../services/createCuttingOrder";
 import { buildCuttingOrderPayload } from "../utils/buildCuttingOrderPayload";
 
@@ -26,30 +27,33 @@ export default function CreateCuttingOrderWizard({
     const [customer, setCustomer] = useState("");
     const [assignedTo, setAssignedTo] = useState("");
 
-    // usuarios
+    // Usuarios
     const [users, setUsers] = useState([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [usersError, setUsersError] = useState("");
 
-    // productos para elegir
+    // Productos para elegir
     const {
         products,
-        loadingProducts,
-        error: productsError
-    } = useListProducts({ status: true, page_size: 100 });
+        loading: loadingProducts,
+        isError: productsErrorFlag,
+        error: productsError,
+    } = useProducts({ status: true, page_size: 100 });
     const [selectedProductId, setSelectedProductId] = useState(productId || "");
 
-    // subproductos
+    // Subproductos
     const activeProductId = productId || selectedProductId;
     const [subproducts, setSubproducts] = useState([]);
     const [loadingSubs, setLoadingSubs] = useState(false);
     const [subsError, setSubsError] = useState("");
 
+    // Validaciones internas
     const [selectedItems, setSelectedItems] = useState({});
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
+    // Cuando se abre el wizard, reiniciar todo
     useEffect(() => {
         if (isOpen) {
             setStep(1);
@@ -67,6 +71,7 @@ export default function CreateCuttingOrderWizard({
         }
     }, [isOpen, productId]);
 
+    // Cargar usuarios activos
     useEffect(() => {
         if (!isOpen) return;
         setLoadingUsers(true);
@@ -76,6 +81,7 @@ export default function CreateCuttingOrderWizard({
             .finally(() => setLoadingUsers(false));
     }, [isOpen]);
 
+    // Cargar subproductos del producto seleccionado
     useEffect(() => {
         if (!isOpen || !activeProductId) return;
         setLoadingSubs(true);
@@ -93,8 +99,11 @@ export default function CreateCuttingOrderWizard({
 
     const handleNext = () => {
         setError("");
-        if (!validateStep1()) setError("Rellena todos los campos del paso 1");
-        else setStep(2);
+        if (!validateStep1()) {
+            setError("Rellena todos los campos del paso 1");
+        } else {
+            setStep(2);
+        }
     };
 
     const handleBack = () => {
@@ -105,14 +114,18 @@ export default function CreateCuttingOrderWizard({
     const toggleSubproduct = (id) => {
         setSelectedItems((prev) => {
             const nxt = { ...prev };
-            nxt[id] ? delete nxt[id] : (nxt[id] = 1);
+            if (nxt[id]) delete nxt[id];
+            else nxt[id] = 1;
             return nxt;
         });
     };
 
     const handleQuantityChange = (id, val) => {
         const n = parseFloat(val);
-        setSelectedItems((prev) => ({ ...prev, [id]: isNaN(n) ? "" : n }));
+        setSelectedItems((prev) => ({
+            ...prev,
+            [id]: isNaN(n) ? "" : n,
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -122,10 +135,14 @@ export default function CreateCuttingOrderWizard({
             setError("Debes elegir al menos un subproducto y cantidad.");
             return;
         }
+
+        // Construir items
         const items = Object.entries(selectedItems).map(([sub, qty]) => ({
             subproduct: sub,
             cutting_quantity: qty,
         }));
+
+        // Payload
         const payload = buildCuttingOrderPayload({
             order_number: orderNumber,
             customer,
@@ -164,7 +181,7 @@ export default function CreateCuttingOrderWizard({
                         <FormInput
                             label="Número de Pedido"
                             name="order_number"
-                            type="number"
+                            type="text"
                             value={orderNumber}
                             onChange={(e) => setOrderNumber(e.target.value)}
                             required
@@ -187,7 +204,7 @@ export default function CreateCuttingOrderWizard({
                                     { value: "", label: "Seleccione un producto" },
                                     ...products.map((p) => ({
                                         value: String(p.id),
-                                        label: p.name,
+                                        label: p.name || `#${p.id}`,
                                     })),
                                 ]}
                                 required
@@ -238,8 +255,8 @@ export default function CreateCuttingOrderWizard({
                                         <div
                                             key={sp.id}
                                             className={`relative border rounded p-3 shadow-sm transition-all duration-200 cursor-pointer ${sel
-                                                ? "border-primary-500 bg-primary-50"
-                                                : "hover:border-primary-300"
+                                                    ? "border-primary-500 bg-primary-50"
+                                                    : "hover:border-primary-300"
                                                 }`}
                                             onClick={() => toggleSubproduct(sp.id)}
                                         >

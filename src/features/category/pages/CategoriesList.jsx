@@ -1,6 +1,6 @@
 // src/features/category/pages/CategoryList.jsx
-import React, { useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";  // ← agregado
+import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import Toolbar from "../../../components/common/Toolbar";
 import SuccessMessage from "../../../components/common/SuccessMessage";
 import ErrorMessage from "../../../components/common/ErrorMessage";
@@ -9,121 +9,127 @@ import Layout from "../../../pages/Layout";
 import Spinner from "../../../components/ui/Spinner";
 import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
-import { useCategoriesQuery } from "@/features/category/queries/useCategoriesList";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCategories } from "@/features/category/hooks/useCategories";
 
 const CategoryList = () => {
-  const navigate = useNavigate();  // ← agregado
+  const navigate = useNavigate();
 
-  const [filters, setFilters] = useState({ name: "" });
+  // 1️⃣ Filtros de búsqueda / paginación
+  const [filters, setFilters] = useState({ name: "", page: 1, page_size: 10 });
+
+  // 2️⃣ Estados para modales y mensajes
+  const [modalState, setModalState] = useState({ type: null, category: null });
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [modalState, setModalState] = useState({ type: null, category: null });
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState(null);
 
-  const queryClient = useQueryClient();
-
+  // 3️⃣ React Query hook para listado y mutaciones
   const {
     categories,
-    loadingCategories,
-    error: fetchError,
+    total,
     nextPageUrl,
     previousPageUrl,
-    next: goToNextPage,
-    previous: goToPreviousPage,
+    loading,
+    isError,
+    error,
     createCategory,
     updateCategory,
     deleteCategory,
-  } = useCategoriesQuery(filters);
+    prefetchPage,
+  } = useCategories(filters);
 
+  // 4️⃣ Columnas para el componente Filter
   const filterColumns = useMemo(
     () => [{ key: "name", label: "Nombre Categoría", filterType: "text" }],
     []
   );
 
-  const openCreateModal = () =>
-    setModalState({ type: "create", category: null });
-  const openEditModal = (category) =>
-    setModalState({ type: "edit", category });
-  const openViewModal = (category) =>
-    setModalState({ type: "view", category });
-  const openDeleteConfirmModal = (category) =>
-    setModalState({ type: "deleteConfirm", category });
+  // 5️⃣ Handlers para abrir/cerrar modales
+  const openCreateModal = () => setModalState({ type: "create", category: null });
+  const openEditModal = (cat) => setModalState({ type: "edit", category: cat });
+  const openViewModal = (cat) => setModalState({ type: "view", category: cat });
+  const openDeleteConfirmModal = (cat) =>
+    setModalState({ type: "deleteConfirm", category: cat });
   const closeModal = () => {
     setModalState({ type: null, category: null });
     setActionError(null);
   };
 
+  // 6️⃣ Mostrar mensaje de éxito
   const handleActionSuccess = (message) => {
     setSuccessMessage(message);
     setShowSuccess(true);
     closeModal();
-    queryClient.invalidateQueries(["categories"]);
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const handleCreateCategory = async (newCategoryData) => {
+  // 7️⃣ CRUD: creación, actualización y eliminación
+  const handleCreateCategory = async (data) => {
     setIsProcessing(true);
     setActionError(null);
     try {
-      const createdCategory = await createCategory(newCategoryData);
-      handleActionSuccess(`Categoría "${createdCategory.name}" creada.`);
+      const res = await createCategory(data);
+      handleActionSuccess(`Categoría "${res.name}" creada.`);
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail ||
-        err.message ||
+      const msg = err.response?.data?.detail || err.message ||
         "Error al crear categoría.";
-      setActionError({ message: errorMsg });
+      setActionError(msg);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleUpdateCategory = async (updatedData) => {
+  const handleUpdateCategory = async ({ id, payload }) => {
     if (!modalState.category) return;
     setIsProcessing(true);
     setActionError(null);
     try {
-      const updatedCategory = await updateCategory(
-        modalState.category.id,
-        updatedData
-      );
-      handleActionSuccess(`Categoría "${updatedCategory.name}" actualizada.`);
+      const res = await updateCategory({ id, payload });
+      handleActionSuccess(`Categoría "${res.name}" actualizada.`);
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail ||
-        err.message ||
+      const msg = err.response?.data?.detail || err.message ||
         "Error al actualizar categoría.";
-      setActionError({ message: errorMsg });
+      setActionError(msg);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleDeleteCategory = async (categoryToDelete) => {
-    if (!categoryToDelete) return;
+  const handleDeleteCategory = async () => {
+    if (!modalState.category) return;
     setIsProcessing(true);
     setActionError(null);
     try {
-      await deleteCategory(categoryToDelete.id);
-      handleActionSuccess(`Categoría "${categoryToDelete.name}" eliminada.`);
+      await deleteCategory(modalState.category.id);
+      handleActionSuccess(`Categoría "${modalState.category.name}" eliminada.`);
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail ||
-        err.message ||
+      const msg = err.response?.data?.detail || err.message ||
         "Error al eliminar categoría.";
-      setActionError({ message: errorMsg });
+      setActionError(msg);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // 8️⃣ Paginación: cambiar página y prefetch
+  const goToNextPage = () => {
+    if (!nextPageUrl) return;
+    setFilters((prev) => ({ ...prev, page: prev.page + 1 }));
+    prefetchPage(nextPageUrl);
+  };
+
+  const goToPreviousPage = () => {
+    if (!previousPageUrl) return;
+    setFilters((prev) => ({ ...prev, page: prev.page - 1 }));
+    prefetchPage(previousPageUrl);
   };
 
   return (
     <>
       <Layout>
         {showSuccess && (
-          <div className="fixed top-20 right-5 z-[10000]">
+          <div className="fixed top-20 right-5 z-50">
             <SuccessMessage
               message={successMessage}
               onClose={() => setShowSuccess(false)}
@@ -134,26 +140,28 @@ const CategoryList = () => {
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar
             title="Lista de Categorías"
-            onBackClick={() => navigate("/product-list")}  // ← actualizado
+            onBackClick={() => navigate("/product-list")}
             onButtonClick={openCreateModal}
             buttonText="Nueva Categoría"
           />
 
           <Filter
             columns={filterColumns}
-            onFilterChange={setFilters}
             initialFilters={filters}
+            onFilterChange={(newFilters) =>
+              setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }))
+            }
           />
 
-          {fetchError && (
+          {isError && (
             <div className="my-4">
               <ErrorMessage
-                message={fetchError.message || "Error al cargar datos."}
+                message={error.message || "Error al cargar categorías."}
               />
             </div>
           )}
 
-          {loadingCategories ? (
+          {loading ? (
             <div className="my-8 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
@@ -163,8 +171,8 @@ const CategoryList = () => {
               openViewModal={openViewModal}
               openEditModal={openEditModal}
               openDeleteConfirmModal={openDeleteConfirmModal}
-              goToNextPage={nextPageUrl ? goToNextPage : null}
-              goToPreviousPage={previousPageUrl ? goToPreviousPage : null}
+              goToNextPage={goToNextPage}
+              goToPreviousPage={goToPreviousPage}
               nextPageUrl={nextPageUrl}
               previousPageUrl={previousPageUrl}
             />
@@ -179,13 +187,11 @@ const CategoryList = () => {
       <CategoryModals
         modalState={modalState}
         closeModal={closeModal}
-        handleCreateCategory={handleCreateCategory}
-        handleUpdateCategory={handleUpdateCategory}
-        handleDeleteCategory={handleDeleteCategory}
-        handleActionSuccess={handleActionSuccess}
-        isDeleting={isProcessing}
-        deleteError={actionError?.message}
-        clearDeleteError={closeModal}
+        onCreate={handleCreateCategory}
+        onUpdateCategory={handleUpdateCategory}
+        onDelete={handleDeleteCategory}
+        isProcessing={isProcessing}
+        actionError={actionError}
       />
     </>
   );
