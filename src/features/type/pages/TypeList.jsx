@@ -121,7 +121,7 @@ const TypeList = () => {
 
   return (
     <>
-      <Layout>
+      <Layout isLoading={loadingTypes || loadingCategories}>
         {/* Éxito */}
         {successMessage && (
           <div className="fixed top-20 right-5 z-50">
