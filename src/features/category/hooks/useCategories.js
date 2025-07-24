@@ -28,7 +28,7 @@ export const useCategories = (filters = {}) => {
     mutationFn: (payload) =>
       djangoApi.post("/inventory/categories/create/", payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries(["categories"])
     },
   })
 
@@ -36,7 +36,7 @@ export const useCategories = (filters = {}) => {
     mutationFn: ({ id, payload }) =>
       djangoApi.put(`/inventory/categories/${id}/`, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries(["categories"])
     },
   })
 
@@ -44,7 +44,7 @@ export const useCategories = (filters = {}) => {
     mutationFn: (id) =>
       djangoApi.delete(`/inventory/categories/${id}/`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries(["categories"])
     },
   })
 

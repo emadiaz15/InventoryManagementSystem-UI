@@ -16,7 +16,7 @@ const BASE_URL = "/inventory/products/"
  * @param {string|null} pageUrl URL absoluta de next/previous page (opcional)
  */
 export const useProducts = (filters = {}, pageUrl = null) => {
-  const qc = useQueryClient()
+  const queryClient = useQueryClient()
 
   // URL de consulta o filtros
   const urlOrFilters = pageUrl || filters
@@ -43,22 +43,22 @@ export const useProducts = (filters = {}, pageUrl = null) => {
   // 🤝 Mutations v5
   const createMut = useMutation({
     mutationFn: createProduct,
-    onSuccess: () => qc.invalidateQueries(productKeys.all)
+    onSuccess: () => queryClient.invalidateQueries(["products"])
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, payload }) => updateProduct(id, payload),
-    onSuccess: () => qc.invalidateQueries(productKeys.all)
+    onSuccess: () => queryClient.invalidateQueries(["products"])
   })
 
   const deleteMut = useMutation({
     mutationFn: deleteProduct,
-    onSuccess: () => qc.invalidateQueries(productKeys.all)
+    onSuccess: () => queryClient.invalidateQueries(["products"])
   })
 
   // Prefetch de la siguiente/previa página (v5 prefetchQuery object signature)
   const prefetchPage = (nextUrl) => {
-    qc.prefetchQuery({
+    queryClient.prefetchQuery({
       queryKey: productKeys.list(filters, nextUrl),
       queryFn: () => listProducts(nextUrl)
     })

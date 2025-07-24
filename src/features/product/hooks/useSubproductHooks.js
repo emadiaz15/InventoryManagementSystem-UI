@@ -31,10 +31,7 @@ export const useCreateSubproduct = (productId) => {
   return useMutation({
     mutationFn: (formData) => createSubproduct(productId, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === "subproducts" && query.queryKey[1] === productId,
-      });
+      queryClient.invalidateQueries(["subproducts"])
     },
   });
 };
@@ -47,10 +44,7 @@ export const useUpdateSubproduct = (productId) => {
     mutationFn: ({ subproductId, formData }) =>
       updateSubproduct(productId, subproductId, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === "subproducts" && query.queryKey[1] === productId,
-      });
+      queryClient.invalidateQueries(["subproducts"])
     },
   });
 };
@@ -62,10 +56,7 @@ export const useDeleteSubproduct = (productId) => {
   return useMutation({
     mutationFn: (subproductId) => deleteSubproduct(productId, subproductId),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          query.queryKey[0] === "subproducts" && query.queryKey[1] === productId,
-      });
+      queryClient.invalidateQueries(["subproducts"])
     },
   });
 };
