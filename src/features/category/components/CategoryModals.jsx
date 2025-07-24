@@ -11,48 +11,51 @@ const CategoryModals = ({
     onCreate,
     onUpdateCategory,
     onDelete,
-    isProcessing,
+    createStatus,
+    updateStatus,
+    deleteStatus,
     actionError,
 }) => {
-    const common = { isOpen: modalState.type !== null, onClose: closeModal };
+    const { type, category } = modalState;
+    const common = { isOpen: type !== null, onClose: closeModal };
 
     return (
         <>
-            {modalState.type === "create" && (
+            {type === "create" && (
                 <CategoryCreateModal
                     {...common}
                     onCreate={onCreate}
-                    isProcessing={isProcessing}
+                    isProcessing={createStatus === "loading"}
                     error={actionError}
                 />
             )}
 
-            {modalState.type === "edit" && modalState.category && (
+            {type === "edit" && category && (
                 <CategoryEditModal
                     {...common}
-                    category={modalState.category}
+                    category={category}
                     onUpdateCategory={onUpdateCategory}
-                    isProcessing={isProcessing}
+                    isProcessing={updateStatus === "loading"}
                     error={actionError}
                 />
             )}
 
-            {modalState.type === "view" && modalState.category && (
+            {type === "view" && category && (
                 <CategoryViewModal
                     {...common}
-                    category={modalState.category}
+                    category={category}
                 />
             )}
 
-            {modalState.type === "deleteConfirm" && modalState.category && (
+            {type === "deleteConfirm" && category && (
                 <DeleteMessage
                     {...common}
-                    onDelete={() => onDelete(modalState.category)}
-                    isDeleting={isProcessing}
+                    onDelete={() => onDelete(category)}
+                    isDeleting={deleteStatus === "loading"}
                     deleteError={actionError}
                     clearDeleteError={closeModal}
                     itemName="categoría"
-                    itemIdentifier={modalState.category.name}
+                    itemIdentifier={category.name}
                 />
             )}
         </>

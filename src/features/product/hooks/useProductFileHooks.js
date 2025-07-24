@@ -1,86 +1,132 @@
 // src/features/product/hooks/useProductFileHooks.js
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useMemo } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   listProductFiles,
+  enrichFilesWithBlobUrls,
   uploadFileProduct,
-  deleteProductFile
+  deleteProductFile,
 } from "@/features/product/services/products/files"
-import { fetchProtectedFile } from "@/services/files/fileAccessService"
 import { productKeys } from "@/features/product/utils/queryKeys"
 
-/** Listar archivos multimedia de un producto */
-export const useProductFiles = (productId) =>
-  useQuery({
-    queryKey: productKeys.files(productId),
+/**
+ * Hook combinado para obtener raw + enriched files de un producto.
+ * @param {string|number|null} productId
+ */
+export function useProductFilesData(productId) {
+  const filesKey    = productKeys.files(productId)
+  const enrichedKey = [...filesKey, "enriched"]
+
+  // 1️⃣ RAW: metadatos
+  const rawQuery = useQuery({
+    queryKey: filesKey,
     queryFn: () => listProductFiles(productId),
-    enabled: !!productId,
+    enabled: Boolean(productId),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   })
 
-/** Subir archivos (hasta 5) a un producto */
-export const useUploadProductFiles = () => {
-  const qc = useQueryClient()
-  const mut = useMutation({
-    mutationFn: ({ productId, files }) => uploadFileProduct(productId, files),
-    onSuccess: (_, { productId }) =>
-      qc.invalidateQueries(productKeys.files(productId)),
+  // 2️⃣ ENRICHED: blob URLs + filename + contentType
+  const enrichedQuery = useQuery({
+    queryKey: enrichedKey,
+    queryFn: () =>
+      enrichFilesWithBlobUrls({
+        productId,
+        rawFiles: rawQuery.data || [],
+      }),
+    enabled: Boolean(productId) && rawQuery.isSuccess,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   })
 
   return {
-    uploadFiles: mut.mutateAsync,
-    uploading: mut.isLoading,
-    uploadError: mut.error,
-    clearUploadError: mut.reset,
+    // RAW
+    rawFiles:   rawQuery.data || [],
+    rawStatus:  rawQuery.status,
+    rawError:   rawQuery.error,
+
+    // ENRICHED
+    files:      enrichedQuery.data || [],
+    status:     enrichedQuery.status,
+    error:      enrichedQuery.error || rawQuery.error,
+
+    // Flags útiles
+    isLoading:  rawQuery.isLoading  || enrichedQuery.isLoading,
+    isError:    rawQuery.isError    || enrichedQuery.isError,
   }
 }
 
-/** Eliminar un archivo de un producto */
-export const useDeleteProductFile = () => {
-  const qc = useQueryClient()
-  const mut = useMutation({
-    mutationFn: ({ productId, fileId }) => deleteProductFile(productId, fileId),
-    onSuccess: (_, { productId }) =>
-      qc.invalidateQueries(productKeys.files(productId)),
-  })
+/**
+ * Hook para subir archivos a un producto con React Query.
+ * Incluye optimistic update + rollback + invalidación.
+ * @param {string|number} productId
+ */
+export function useUploadProductFiles(productId) {
+  const qc        = useQueryClient()
+  const filesKey  = productKeys.files(productId)
+  const detailKey = productKeys.detail(productId)
 
-  return {
-    deleteFile: mut.mutateAsync,
-    deleting: mut.isLoading,
-    deleteError: mut.error,
-  }
+  return useMutation({
+    mutationFn: (files) => uploadFileProduct(productId, files),
+    onMutate: async (files) => {
+      await qc.cancelQueries(filesKey)
+      const previous = qc.getQueryData(filesKey) || []
+
+      // placeholders
+      const placeholders = files.map((file) => ({
+        id:          `tmp-${file.name}-${Date.now()}`,
+        name:        file.name,
+        mimeType:    file.type,
+        url:         URL.createObjectURL(file),
+        isUploading: true,
+      }))
+
+      qc.setQueryData(filesKey, (old = []) => [
+        ...placeholders,
+        ...old,
+      ])
+      return { previous }
+    },
+    onError: (_err, _files, context) => {
+      if (context?.previous) {
+        qc.setQueryData(filesKey, context.previous)
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries(filesKey)
+      qc.invalidateQueries(detailKey)
+    },
+  })
 }
 
-/** Descargar un archivo protegido */
-export const useDownloadProductFile = () => {
-  const mut = useMutation({
-    mutationFn: ({ productId, fileId, signal }) =>
-      fetchProtectedFile(productId, fileId, null, signal),
+/**
+ * Hook para eliminar un archivo de un producto con React Query.
+ * Incluye optimistic update + rollback + invalidación.
+ * @param {string|number} productId
+ */
+export function useDeleteProductFile(productId) {
+  const qc        = useQueryClient()
+  const filesKey  = productKeys.files(productId)
+  const detailKey = productKeys.detail(productId)
+
+  return useMutation({
+    mutationFn: (fileId) => deleteProductFile(productId, fileId),
+    onMutate: async (fileId) => {
+      await qc.cancelQueries(filesKey)
+      const previous = qc.getQueryData(filesKey) || []
+
+      qc.setQueryData(filesKey, (old = []) =>
+        old.filter((f) => (f.id || f.key) !== fileId)
+      )
+      return { previous }
+    },
+    onError: (_err, _fileId, context) => {
+      if (context?.previous) {
+        qc.setQueryData(filesKey, context.previous)
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries(filesKey)
+      qc.invalidateQueries(detailKey)
+    },
   })
-
-  return {
-    downloadFile: mut.mutateAsync,
-    status: mut.status,
-    error: mut.error,
-  }
-}
-
-/** Enriquecer archivos con URL de blob para mostrar previews */
-export const useEnrichedProductFiles = (productId) => {
-  const { data: rawFiles = [], status: listStatus } = useProductFiles(productId)
-  const { downloadFile, status: downloadStatus, error: downloadError } =
-    useDownloadProductFile()
-
-  const files = useMemo(() => {
-    if (listStatus !== "success") return []
-    return rawFiles.map((f) => ({
-      ...f,
-      blobUrl: downloadFile({ productId, fileId: f.id }),
-    }))
-  }, [rawFiles, listStatus, downloadFile, productId])
-
-  return {
-    files,
-    status: downloadStatus,
-    error: downloadError,
-  }
 }

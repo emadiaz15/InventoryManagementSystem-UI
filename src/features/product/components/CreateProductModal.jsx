@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import Modal from "@/components/ui/Modal"
 import FormInput from "@/components/ui/form/FormInput"
 import FormSelect from "@/components/ui/form/FormSelect"
-import FormStockInput from "../components/FormStockInput"
+import FormStockInput from "@/features/product/components/FormStockInput"
 import ErrorMessage from "@/components/common/ErrorMessage"
 import SuccessMessage from "@/components/common/SuccessMessage"
 
@@ -17,19 +17,21 @@ import { useProducts } from "@/features/product/hooks/useProductHooks"
 import { useUploadProductFiles } from "@/features/product/hooks/useProductFileHooks"
 
 const CreateProductModal = ({ isOpen, onClose, onSave }) => {
-  // 1️⃣ Cargar categorías activas (hasta 1000)
+  // 1️⃣ Cargar categorías
   const {
     data: catPage = {},
     isLoading: loadingCategories,
   } = useQuery({
     queryKey: ["categories", { limit: 1000, status: true }],
     queryFn: () => listCategories({ limit: 1000, status: true }),
+
     staleTime: 5 * 60 * 1000,
+
     refetchOnWindowFocus: false,
   })
   const categories = catPage.results ?? []
 
-  // 2️⃣ State formulario
+  // 2️⃣ Estado del formulario
   const [formData, setFormData] = useState({
     name: "",
     code: "",
@@ -41,18 +43,19 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     type: "",
     initial_stock_quantity: "",
     has_subproducts: false,
-    images: []
+    images: [],
   })
   const [previewFiles, setPreviewFiles] = useState([])
   const [error, setError] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   // 3️⃣ Cargar tipos según categoría
   const {
     data: typePage = {},
     isLoading: loadingTypes,
   } = useQuery({
+
     queryKey: [
       "types",
       { limit: 1000, status: true, category: formData.category },
@@ -61,26 +64,29 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
       listTypes({ limit: 1000, status: true, category: formData.category }),
     enabled: !!formData.category,
     staleTime: 5 * 60 * 1000,
+
   })
   const types = typePage.results ?? []
 
-  // 4️⃣ Hook único para productos: listado + crear
-  const {
-    products = [],
-    loading: loadingProducts,
-    createProduct
-  } = useProducts({ status: true, page_size: 1000 })
+  // 4️⃣ Productos (para validar código único y crear)
+  const { products, createProduct } = useProducts({ status: true, page_size: 1000 })
 
-  // 5️⃣ Subida de archivos
-  const { uploadFiles, uploading, uploadError, clearUploadError } = useUploadProductFiles()
-  // 6️⃣ Reset al abrir
+  // 5️⃣ Hook de subida de archivos
+  const {
+    uploadFiles,
+    uploading,
+    uploadError,
+    clearUploadError,
+  } = useUploadProductFiles()
+
+  // 6️⃣ Resetear al abrir modal
   useEffect(() => {
     if (!isOpen) return
     clearUploadError()
     setError("")
     setShowSuccess(false)
     setPreviewFiles([])
-    setLoading(false)
+    setSubmitting(false)
     setFormData({
       name: "",
       code: "",
@@ -92,7 +98,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
       type: "",
       initial_stock_quantity: "",
       has_subproducts: false,
-      images: []
+      images: [],
     })
   }, [isOpen, clearUploadError])
 
@@ -101,13 +107,11 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     const { name, type, value, checked } = e.target
     setFormData((f) => ({
       ...f,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }))
   }, [])
-
-  const handleStockChange = (e) => {
+  const handleStockChange = (e) =>
     setFormData((f) => ({ ...f, initial_stock_quantity: e.target.value }))
-  }
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files)
@@ -120,7 +124,10 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   }
 
   const removeFile = (idx) => {
-    setFormData((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
+    setFormData((f) => ({
+      ...f,
+      images: f.images.filter((_, i) => i !== idx),
+    }))
     setPreviewFiles((p) => p.filter((_, i) => i !== idx))
   }
 
@@ -128,10 +135,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "")
   const validateCodeUnique = () => {
     const codeStr = normalize(formData.code)
-    const clash = products.find(
-      (p) => p.code && normalize(String(p.code)) === codeStr
-    )
-    if (clash) {
+    if (products.some((p) => p.code && normalize(String(p.code)) === codeStr)) {
       setError("El código ya está en uso por otro producto.")
       return false
     }
@@ -150,6 +154,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
       return
     }
 
+    // Armar FormData
     const payload = new FormData()
     payload.append("name", formData.name.trim())
 
@@ -173,12 +178,16 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     payload.append("has_subproducts", formData.has_subproducts ? "true" : "false")
 
     try {
-      setLoading(true)
-      // Usamos createProduct del hook useProducts
+      setSubmitting(true)
+      // Crear producto
       const newProd = await createProduct(payload)
 
+      // Subir imágenes si las hay
       if (formData.images.length) {
-        const ok = await uploadFiles(newProd.id, formData.images)
+        const ok = await uploadFiles({
+          productId: newProd.id,
+          files: formData.images,
+        })
         if (!ok && uploadError) {
           setError(uploadError)
           return
@@ -187,41 +196,32 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
 
       setShowSuccess(true)
       setTimeout(() => {
-        setShowSuccess(false)
+        onSave?.(newProd)
         onClose()
-      }, 2000)
+      }, 1500)
     } catch (err) {
-      const data = err.response?.data
-      const msg =
-        data?.detail ||
-        (data?.code && Array.isArray(data.code) ? data.code[0] : null) ||
-        err.message ||
-        "Error al crear el producto."
-      setError(msg)
+      setError(err.message || "Error al crear el producto.")
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Producto">
       <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-4">
-        {/* Errores */}
         {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-        {uploadError && <ErrorMessage message={uploadError} onClose={clearUploadError} />}
+        {showSuccess && <SuccessMessage message="¡Producto creado exitosamente!" />}
 
-        {/* Categoría */}
         <FormSelect
           label="Categoría"
           name="category"
           value={formData.category}
           onChange={handleChange}
-          options={categories.map((c) => ({ value: `${c.id}`, label: c.name }))}
+          options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
           loading={loadingCategories}
           required
         />
 
-        {/* Tipo (depende categoría) */}
         <FormSelect
           label="Tipo (opcional)"
           name="type"
@@ -229,18 +229,19 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           onChange={handleChange}
           options={[
             { value: "", label: "N/A" },
-            ...types.map((t) => ({ value: `${t.id}`, label: t.name }))
+            ...types.map((t) => ({ value: String(t.id), label: t.name })),
           ]}
           loading={loadingTypes}
           disabled={!formData.category || loadingTypes}
         />
 
-        {/* Resto de campos */}
         <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
           <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormStockInput
             label="Stock Inicial"
@@ -252,9 +253,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           <FormInput label="Ubicación" name="location" value={formData.location} onChange={handleChange} />
           <FormInput label="Posición" name="position" value={formData.position} onChange={handleChange} />
         </div>
+
         <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
 
-        {/* Subproductos */}
         <div className="flex items-center space-x-2">
           <input
             type="checkbox"
@@ -264,17 +265,15 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
             onChange={handleChange}
             className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
           />
-          <label htmlFor="has_subproducts" className="ml-2 text-sm">Este producto tiene subproductos</label>
+          <label htmlFor="has_subproducts" className="ml-2 text-sm">
+            Este producto tiene subproductos
+          </label>
         </div>
 
-        {/* Archivos */}
         <div>
           <label className="block mb-2 text-sm">Archivos (máx. 5)</label>
           <div className="flex items-center space-x-4">
-            <label
-              htmlFor="images"
-              className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600"
-            >
+            <label htmlFor="images" className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600">
               Seleccionar archivos
             </label>
             <span className="text-sm">
@@ -294,11 +293,7 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
               {previewFiles.map((nm, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="truncate">{nm}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(i)}
-                    className="text-gray-400 hover:text-red-600"
-                  >
+                  <button type="button" onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-600">
                     ✖
                   </button>
                 </li>
@@ -307,32 +302,23 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
           )}
         </div>
 
-        {/* Botones */}
         <div className="flex justify-end space-x-2">
           <button
             type="button"
             onClick={onClose}
-            disabled={loading}
+            disabled={submitting}
             className="bg-neutral-500 text-white px-4 py-2 rounded hover:bg-neutral-600"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            disabled={loading || uploading}
+            disabled={submitting || uploading}
             className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600"
           >
-            {loading || uploading ? "Guardando..." : "Crear Producto"}
+            {submitting || uploading ? "Guardando..." : "Crear Producto"}
           </button>
         </div>
-
-        {/* Éxito */}
-        {showSuccess && (
-          <SuccessMessage
-            message="¡Producto creado exitosamente!"
-            onClose={() => setShowSuccess(false)}
-          />
-        )}
       </form>
     </Modal>
   )
