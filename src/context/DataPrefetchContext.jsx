@@ -20,7 +20,7 @@ export const DataPrefetchProvider = ({ children }) => {
     isLoading: loadingCats,
   } = useQuery({
     queryKey: ["prefetch", "categories"],
-    queryFn: () => listCategories({ limit: 1000, status: true }),
+    queryFn: () => listCategories({ /* vacío o solo page_size si lo quieres */ }),
     staleTime: 5 * 60 * 1000,
     enabled: !authLoading && isAuthenticated,
   })

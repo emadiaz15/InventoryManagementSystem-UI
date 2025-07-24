@@ -1,152 +1,185 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+// src/features/product/hooks/useSubproductFileHooks.js
+import { useState, useRef, useCallback } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   listSubproductFiles,
   uploadSubproductFiles,
   deleteSubproductFile,
-} from "../../product/services/subproducts/subproductsFiles";
-import { fetchProtectedFile } from "@/services/files/fileAccessService";
+} from "@/features/product/services/subproducts/subproductsFiles.js"
+import { fetchProtectedFile } from "@/services/files/fileAccessService.js"
+import { productKeys } from "@/features/product/utils/queryKeys.js"
 
-// 📄 Listar archivos de un subproducto
-export const useSubproductFileList = (productId, subproductId) => {
-  return useQuery({
-    queryKey: ["subproduct-files", productId, subproductId],
+/**
+ * Hook unificado para obtener metadatos RAW y archivos ENRIQUECIDOS (blob URLs).
+ */
+export function useSubproductFilesData(productId, subproductId) {
+  const listKey     = productKeys.subproductFiles(productId, subproductId)
+  const enrichedKey = [...listKey, "enriched"]
+
+  // 1️⃣ Query raw
+  const rawQuery = useQuery({
+    queryKey: listKey,
     queryFn: () => listSubproductFiles(productId, subproductId),
     enabled: !!productId && !!subproductId,
-  });
-};
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  })
 
-// 📤 Subir archivo al subproducto
-export const useSubproductFileUpload = () => {
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-  const queryClient = useQueryClient();
-
-  const clearUploadError = useCallback(() => setUploadError(""), []);
-
-  const uploadFiles = async (productId, subproductId, files) => {
-    if (!productId || !subproductId || !Array.isArray(files) || files.length === 0) {
-      setUploadError("Parámetros inválidos o sin archivos.");
-      return false;
-    }
-
-    setUploading(true);
-    setUploadError("");
-
-    try {
-      const { data, status } = await uploadSubproductFiles(productId, subproductId, files);
-
-      if (status === 207 && data?.failed_files?.length) {
-        setUploadError(
-          `Falló la subida de: ${data.failed_files
-            .map((f) => f.name || f)
-            .join(", ")}`
-        );
-        return false;
-      }
-
-      const ok = status === 201 || status === 200;
-      if (ok) {
-        queryClient.invalidateQueries(["subproduct-files", productId, subproductId]);
-      }
-      return ok;
-    } catch (err) {
-      console.error("❌ Error subiendo archivo de subproducto:", err);
-      setUploadError(err.message || "Error al subir archivo.");
-      return false;
-    } finally {
-      setUploading(false);
-    }
-  };
+  // 2️⃣ Query enriched
+  const enrichedQuery = useQuery({
+    queryKey: enrichedKey,
+    queryFn: async () => {
+      const raw = rawQuery.data || []
+      const enriched = await Promise.all(
+        raw.map(async (f) => {
+          const id = f.drive_file_id || f.id || f.key
+          if (!id) return null
+          const url = await fetchProtectedFile(productId, id, subproductId)
+          if (!url) return null
+          return {
+            ...f,
+            id,
+            url,
+            filename:   f.name || f.filename || "",
+            contentType: f.mimeType || f.contentType || "",
+          }
+        })
+      )
+      return enriched.filter(Boolean)
+    },
+    enabled: rawQuery.isSuccess,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  })
 
   return {
-    uploadFiles,
-    uploading,
-    uploadError,
-    clearUploadError,
-  };
-};
+    // RAW metadata
+    rawFiles:   rawQuery.data || [],
+    rawStatus:  rawQuery.status,
+    rawError:   rawQuery.error,
+    // Enriched
+    files:      enrichedQuery.data || [],
+    status:     enrichedQuery.status,
+    error:      enrichedQuery.error || rawQuery.error,
+    // Combined flags
+    isLoading:  rawQuery.isLoading  || enrichedQuery.isLoading,
+    isError:    rawQuery.isError    || enrichedQuery.isError,
+  }
+}
 
-// 🗑️ Eliminar archivo de subproducto
-export const useSubproductFileDelete = () => {
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState(null);
-  const queryClient = useQueryClient();
+/**
+ * Hook para subir archivos a un subproducto con optimistic updates.
+ */
+export function useUploadSubproductFiles(productId, subproductId) {
+  const qc        = useQueryClient()
+  const listKey   = productKeys.subproductFiles(productId, subproductId)
+  const detailKey = productKeys.subproductDetail(productId, subproductId)
 
-  const deleteFile = async (productId, subproductId, fileId) => {
-    if (!productId || !subproductId || !fileId) {
-      setDeleteError("Parámetros incompletos.");
-      return false;
+  return useMutation(
+    (files) => uploadSubproductFiles(productId, subproductId, files),
+    {
+      onMutate: async (files) => {
+        await qc.cancelQueries(listKey)
+        const previous = qc.getQueryData(listKey) || []
+
+        const placeholders = files.map((file) => ({
+          id:          `tmp-${file.name}-${Date.now()}`,
+          name:        file.name,
+          mimeType:    file.type,
+          url:         URL.createObjectURL(file),
+          isUploading: true,
+        }))
+
+        qc.setQueryData(listKey, (old = []) => [
+          ...placeholders,
+          ...old,
+        ])
+
+        return { previous }
+      },
+      onError: (_err, _files, context) => {
+        if (context?.previous) {
+          qc.setQueryData(listKey, context.previous)
+        }
+      },
+      onSettled: () => {
+        qc.invalidateQueries(listKey)
+        qc.invalidateQueries(detailKey)
+      },
     }
+  )
+}
 
-    setDeleting(true);
-    setDeleteError(null);
+/**
+ * Hook para eliminar un archivo de un subproducto con optimistic updates.
+ */
+export function useDeleteSubproductFile(productId, subproductId) {
+  const qc        = useQueryClient()
+  const listKey   = productKeys.subproductFiles(productId, subproductId)
+  const detailKey = productKeys.subproductDetail(productId, subproductId)
 
-    try {
-      await deleteSubproductFile(productId, subproductId, fileId);
-      queryClient.invalidateQueries(["subproduct-files", productId, subproductId]);
-      return true;
-    } catch (err) {
-      console.error("❌ Error al eliminar archivo de subproducto:", err);
-      setDeleteError(err.message || "Error al eliminar archivo.");
-      return false;
-    } finally {
-      setDeleting(false);
+  return useMutation(
+    (fileId) => deleteSubproductFile(productId, subproductId, fileId),
+    {
+      onMutate: async (fileId) => {
+        await qc.cancelQueries(listKey)
+        const previous = qc.getQueryData(listKey) || []
+
+        qc.setQueryData(listKey, (old = []) =>
+          old.filter((f) => (f.id || f.key) !== fileId)
+        )
+
+        return { previous }
+      },
+      onError: (_err, _fileId, context) => {
+        if (context?.previous) {
+          qc.setQueryData(listKey, context.previous)
+        }
+      },
+      onSettled: () => {
+        qc.invalidateQueries(listKey)
+        qc.invalidateQueries(detailKey)
+      },
     }
-  };
+  )
+}
 
-  return {
-    deleting,
-    deleteError,
-    deleteFile,
-  };
-};
+/**
+ * Hook para descargar un archivo de subproducto (blob URL).
+ */
+export function useDownloadSubproductFile() {
+  const [downloading, setDownloading]   = useState(false)
+  const [downloadError, setDownloadError] = useState(null)
+  const controllerRef = useRef(null)
 
-// 🔽 Descargar archivo protegido
-export const useDownloadSubproductFile = () => {
-  const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState(null);
-  const controllerRef = useRef(null);
+  const downloadFile = useCallback(
+    async (productId, subproductId, fileId) => {
+      controllerRef.current?.abort()
+      const controller = new AbortController()
+      controllerRef.current = controller
+      setDownloading(true)
+      setDownloadError(null)
 
-  const downloadFile = useCallback(async (productId, subproductId, fileId) => {
-    if (!productId || !subproductId || !fileId) {
-      setDownloadError("ID de producto, subproducto o archivo no válidos.");
-      return null;
-    }
-
-    controllerRef.current = new AbortController();
-    setDownloading(true);
-    setDownloadError(null);
-
-    try {
-      const blobUrl = await fetchProtectedFile(
-        productId,
-        fileId,
-        subproductId,
-        controllerRef.current.signal
-      );
-      return blobUrl;
-    } catch (err) {
-      if (err.name === "AbortError") {
-        console.warn("⛔ Descarga cancelada");
-        return null;
+      try {
+        return await fetchProtectedFile(
+          productId,
+          fileId,
+          subproductId,
+          controller.signal
+        )
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setDownloadError(err.message || "Error descargando archivo")
+        }
+        return null
+      } finally {
+        setDownloading(false)
       }
-      console.error("❌ Error al descargar archivo del subproducto:", err);
-      setDownloadError(err.message || "No se pudo descargar el archivo.");
-      return null;
-    } finally {
-      setDownloading(false);
-    }
-  }, []);
+    },
+    []
+  )
 
-  const abortDownload = () => {
-    controllerRef.current?.abort();
-  };
+  const abortDownload = () => controllerRef.current?.abort()
 
-  return {
-    downloading,
-    downloadError,
-    downloadFile,
-    abortDownload,
-  };
-};
+  return { downloadFile, downloading, downloadError, abortDownload }
+}

@@ -1,39 +1,28 @@
 // src/features/product/components/ViewProductModal.jsx
 import React from "react"
+import PropTypes from "prop-types"
+
 import Modal from "@/components/ui/Modal"
 import { usePrefetchedData } from "@/context/DataPrefetchContext"
-import {
-    useProductFiles,
-    useEnrichedProductFiles,
-} from "@/features/product/hooks/useProductFileHooks"
-import ProductCarouselOverlay from "../components/ProductCarouselOverlay"
+import { useProductFilesData } from "@/features/product/hooks/useProductFileHooks"
+import ProductCarouselOverlay from "@/features/product/components/ProductCarouselOverlay"
 import { formatArgentineDate } from "@/utils/dateUtils"
 import Spinner from "@/components/ui/Spinner"
 
 const ViewProductModal = ({ product, isOpen, onClose }) => {
-    // 1️⃣ Determinar productId (null si está cerrado)
-    const productId = isOpen ? product?.id : null
-
-    // 2️⃣ HOOKS TOP-LEVEL, SIEMPRE en el mismo orden
+    // 1️⃣ Hooks SIEMPRE al tope del componente:
     const { categories, types } = usePrefetchedData()
+    const productId = isOpen ? product?.id : null
     const {
-        data: rawFiles = [],
-        isLoading: loadingRaw,
-        error: rawError,
-    } = useProductFiles(productId)
-    const {
-        files,
-        status: downloadStatus,
-        error: downloadError,
-    } = useEnrichedProductFiles(productId)
+        files = [],
+        isLoading: loadingFiles,
+        error: filesError,
+    } = useProductFilesData(productId)
 
-    const loadingFiles = loadingRaw || downloadStatus === "loading"
-    const filesError = rawError || downloadError
-
-    // 3️⃣ Early return SOLO para el caso de no haber producto
+    // 2️⃣ Early return tras los hooks:
     if (!product) return null
 
-    // 4️⃣ Nombre legible de categoría y tipo
+    // 3️⃣ Cálculos derivados:
     const categoryName =
         categories.find((c) => c.id === product.category)?.name ||
         product.category_name ||
@@ -44,7 +33,6 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
         product.type_name ||
         "Sin tipo"
 
-    // 5️⃣ Renderizado
     return (
         <Modal
             isOpen={isOpen}
@@ -56,7 +44,7 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                 {/* — Detalles */}
                 <div className="flex-1 space-y-2 bg-background-100 p-4 rounded overflow-y-auto max-h-[80vh]">
                     <p><strong>ID:</strong> {product.id}</p>
-                    <p><strong>Código:</strong> {product.code || "N/A"}</p>
+                    <p><strong>Código:</strong> {product.code ?? "N/A"}</p>
                     <p><strong>Categoría:</strong> {categoryName}</p>
                     <p><strong>Tipo:</strong> {typeName}</p>
                     <p><strong>Nombre/Medida:</strong> {product.name || "SIN NOMBRE"}</p>
@@ -89,17 +77,46 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                         </div>
                     ) : filesError ? (
                         <p className="text-red-500">Error cargando archivos.</p>
-                    ) : (
+                    ) : files.length > 0 ? (
                         <ProductCarouselOverlay
                             images={files}
                             productId={product.id}
                             isEmbedded
                         />
+                    ) : (
+                        <p className="text-center text-gray-600">
+                            No hay archivos multimedia.
+                        </p>
                     )}
                 </div>
             </div>
         </Modal>
     )
+}
+
+ViewProductModal.propTypes = {
+    product: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        code: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        category: PropTypes.number,
+        category_name: PropTypes.string,
+        type: PropTypes.number,
+        type_name: PropTypes.string,
+        name: PropTypes.string,
+        description: PropTypes.string,
+        status: PropTypes.bool,
+        has_subproducts: PropTypes.bool,
+        current_stock: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        brand: PropTypes.string,
+        location: PropTypes.string,
+        position: PropTypes.string,
+        created_at: PropTypes.string,
+        modified_at: PropTypes.string,
+        created_by: PropTypes.string,
+        modified_by: PropTypes.string,
+    }).isRequired,
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
 }
 
 export default ViewProductModal
