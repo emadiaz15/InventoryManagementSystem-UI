@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 /**
  * Hook para manejar mensajes de éxito y error, con control de tiempo y tipo.
@@ -7,49 +7,71 @@ const useSuccess = ({ timeout = 3000 } = {}) => {
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState(null);
 
+  // Guardamos el timer para limpiarlo si el componente se desmonta antes
+  const timerRef = useRef(null);
+
+  // Limpia el timer al desmontar
+  useEffect(() => {
+    return () => {
+      clearTimeout(timerRef.current);
+    };
+  }, []);
+
   /**
    * Muestra mensaje de éxito durante un tiempo controlado
    * @param {string} message - Texto del mensaje
    */
-  const handleSuccess = (message) => {
+  const handleSuccess = useCallback((message) => {
     setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(""), timeout);
-  };
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setSuccessMessage("");
+    }, timeout);
+  }, [timeout]);
 
   /**
    * Interpreta errores comunes de API y genera mensaje de error
    * @param {any} err - Error recibido desde catch()
    */
-  const handleError = (err) => {
+  const handleError = useCallback((err) => {
     console.error("❌ Error:", err);
 
-    if (err?.response?.data) {
-      const data = err.response.data;
-
-      if (data.name?.[0]?.includes("ya existe")) {
+    // Axios-like error shape
+    const data = err?.response?.data;
+    if (data) {
+      // Validación de unicidad
+      if (Array.isArray(data.name) && data.name[0]?.includes("ya existe")) {
         setError("El nombre ya existe. Debe ser único.");
         return;
       }
-
-      if (data.detail) {
+      // Mensaje genérico en .detail
+      if (typeof data.detail === "string") {
         setError(data.detail);
         return;
       }
-
+      // Cualquier otro objeto: concatenar valores
       if (typeof data === "object") {
-        const messages = Object.values(data).flat().join(" ");
-        setError(messages);
+        const msgs = Object.values(data)
+          .flat()
+          .map((m) => (typeof m === "string" ? m : JSON.stringify(m)))
+          .join(" ");
+        setError(msgs);
         return;
       }
     }
 
+    // Fallback simple
     setError(err.message || "Ocurrió un error inesperado.");
-  };
+  }, []);
 
-  const clear = () => {
-    setError(null);
+  /**
+   * Limpia mensajes de éxito y error
+   */
+  const clear = useCallback(() => {
+    clearTimeout(timerRef.current);
     setSuccessMessage("");
-  };
+    setError(null);
+  }, []);
 
   return {
     successMessage,
