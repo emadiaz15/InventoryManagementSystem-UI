@@ -10,7 +10,13 @@ import Spinner from "@/components/ui/Spinner";
 
 import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
-import { useCategories } from "../hooks/useCategories";
+import { useCategories } from "@/features/category/hooks/useCategories";
+import {
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "@/features/category/hooks/useCategoryMutations";
+
 
 export default function CategoryList() {
   const navigate = useNavigate();
@@ -19,6 +25,8 @@ export default function CategoryList() {
   const [successMessage, setSuccessMessage] = useState("");
   const [actionError, setActionError] = useState(null);
 
+  // 3️⃣ React Query hook para listado
+
   const {
     categories,
     nextPageUrl,
@@ -26,15 +34,18 @@ export default function CategoryList() {
     loading,
     isError,
     error,
-    createCategory,
-    updateCategory,
-    deleteCategory,
     prefetchPage,
     createStatus,
     updateStatus,
     deleteStatus,
   } = useCategories(filters);
 
+  // 4️⃣ Mutaciones individuales
+  const createMut = useCreateCategory();
+  const updateMut = useUpdateCategory();
+  const deleteMut = useDeleteCategory();
+
+  // 4️⃣ Columnas para el componente Filter
   const filterColumns = useMemo(
     () => [{ key: "name", label: "Nombre Categoría", filterType: "text" }],
     []
@@ -56,8 +67,8 @@ export default function CategoryList() {
   // create
   const handleCreate = async (data) => {
     try {
-      const res = await createCategory(data);
-      onSuccess(`Categoría "${res.name}" creada.`);
+      const res = await createMut.mutateAsync(data);
+      handleActionSuccess(`Categoría "${res.name}" creada.`);
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
@@ -65,8 +76,8 @@ export default function CategoryList() {
   // update
   const handleUpdate = async ({ id, payload }) => {
     try {
-      const res = await updateCategory({ id, payload });
-      onSuccess(`Categoría "${res.name}" actualizada.`);
+      const res = await updateMut.mutateAsync({ id, payload });
+      handleActionSuccess(`Categoría "${res.name}" actualizada.`);
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
@@ -75,8 +86,8 @@ export default function CategoryList() {
   const handleDelete = async () => {
     if (!modalState.category) return;
     try {
-      await deleteCategory(modalState.category.id);
-      onSuccess(`Categoría "${modalState.category.name}" eliminada.`);
+      await deleteMut.mutateAsync(modalState.category.id);
+      handleActionSuccess(`Categoría "${modalState.category.name}" eliminada.`);
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }

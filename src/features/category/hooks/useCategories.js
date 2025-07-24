@@ -1,5 +1,5 @@
 // src/features/category/hooks/useCategories.js
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { djangoApi } from "@/api/clients"
 import { buildQueryString } from "@/utils/queryUtils"
 
@@ -67,16 +67,6 @@ export const useCategories = (filters = {}) => {
     loading,
     isError,
     error,
-
-    // acciones
-    createCategory: createCategory.mutateAsync,
-    updateCategory: updateCategory.mutateAsync,
-    deleteCategory: deleteCategory.mutateAsync,
-    prefetchPage,
-
-    // status de mutaciones
-    createStatus: createCategory.status,
-    updateStatus: updateCategory.status,
-    deleteStatus: deleteCategory.status,
+    prefetchPage
   }
 }
