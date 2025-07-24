@@ -10,6 +10,11 @@ import Spinner from "../../../components/ui/Spinner";
 import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
 import { useCategories } from "@/features/category/hooks/useCategories";
+import {
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "@/features/category/hooks/useCategoryMutations";
 
 const CategoryList = () => {
   const navigate = useNavigate();
@@ -24,7 +29,7 @@ const CategoryList = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState(null);
 
-  // 3️⃣ React Query hook para listado y mutaciones
+  // 3️⃣ React Query hook para listado
   const {
     categories,
     total,
@@ -33,11 +38,13 @@ const CategoryList = () => {
     loading,
     isError,
     error,
-    createCategory,
-    updateCategory,
-    deleteCategory,
     prefetchPage,
   } = useCategories(filters);
+
+  // 4️⃣ Mutaciones individuales
+  const createMut = useCreateCategory();
+  const updateMut = useUpdateCategory();
+  const deleteMut = useDeleteCategory();
 
   // 4️⃣ Columnas para el componente Filter
   const filterColumns = useMemo(
@@ -69,7 +76,7 @@ const CategoryList = () => {
     setIsProcessing(true);
     setActionError(null);
     try {
-      const res = await createCategory(data);
+      const res = await createMut.mutateAsync(data);
       handleActionSuccess(`Categoría "${res.name}" creada.`);
     } catch (err) {
       const msg = err.response?.data?.detail || err.message ||
@@ -85,7 +92,7 @@ const CategoryList = () => {
     setIsProcessing(true);
     setActionError(null);
     try {
-      const res = await updateCategory({ id, payload });
+      const res = await updateMut.mutateAsync({ id, payload });
       handleActionSuccess(`Categoría "${res.name}" actualizada.`);
     } catch (err) {
       const msg = err.response?.data?.detail || err.message ||
@@ -101,7 +108,7 @@ const CategoryList = () => {
     setIsProcessing(true);
     setActionError(null);
     try {
-      await deleteCategory(modalState.category.id);
+      await deleteMut.mutateAsync(modalState.category.id);
       handleActionSuccess(`Categoría "${modalState.category.name}" eliminada.`);
     } catch (err) {
       const msg = err.response?.data?.detail || err.message ||

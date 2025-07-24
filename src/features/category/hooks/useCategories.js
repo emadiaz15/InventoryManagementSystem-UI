@@ -1,5 +1,5 @@
 // src/features/category/hooks/useCategories.js
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { djangoApi } from "@/api/clients"
 import { buildQueryString } from "@/utils/queryUtils"
 
@@ -23,30 +23,6 @@ export const useCategories = (filters = {}) => {
     refetchOnWindowFocus: false,
   })
 
-  // MUTATIONS
-  const createCategory = useMutation({
-    mutationFn: (payload) =>
-      djangoApi.post("/inventory/categories/create/", payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
-    },
-  })
-
-  const updateCategory = useMutation({
-    mutationFn: ({ id, payload }) =>
-      djangoApi.put(`/inventory/categories/${id}/`, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
-    },
-  })
-
-  const deleteCategory = useMutation({
-    mutationFn: (id) =>
-      djangoApi.delete(`/inventory/categories/${id}/`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
-    },
-  })
 
   // PREFETCH de páginas
   const prefetchPage = (pageUrl) => {
@@ -66,12 +42,6 @@ export const useCategories = (filters = {}) => {
     loading,
     isError,
     error,
-    createCategory: createCategory.mutateAsync,
-    updateCategory: updateCategory.mutateAsync,
-    deleteCategory: deleteCategory.mutateAsync,
-    createStatus: createCategory.status,
-    updateStatus: updateCategory.status,
-    deleteStatus: deleteCategory.status,
     prefetchPage,
   }
 }
