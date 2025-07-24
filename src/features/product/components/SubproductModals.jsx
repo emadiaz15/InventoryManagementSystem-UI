@@ -1,52 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
-import { useAuth } from "@/context/AuthProvider";
+// src/features/product/components/SubproductModals.jsx
+import React from "react"
+import PropTypes from "prop-types"
+import { useAuth } from "@/context/AuthProvider"
 
-import CreateSubproductModal from "./CreateSubproductModal";
-import EditSubproductModal from "./EditSubproductModal";
-import ViewSubproductModal from "./ViewSubproductModal";
-import CreateCuttingOrderWizard from "@/features/cuttingOrder/components/CreateCuttingOrderWizard";
-import DeleteMessage from "@/components/common/DeleteMessage";
-import Spinner from "@/components/ui/Spinner";
-import ProductCarouselOverlay from "./ProductCarouselOverlay";
+import CreateSubproductModal from "./CreateSubproductModal"
+import EditSubproductModal from "./EditSubproductModal"
+import ViewSubproductModal from "./ViewSubproductModal"
+import CreateCuttingOrderWizard from "@/features/cuttingOrder/components/CreateCuttingOrderWizard"
+import DeleteMessage from "@/components/common/DeleteMessage"
+import Spinner from "@/components/ui/Spinner"
+import ProductCarouselOverlay from "./ProductCarouselOverlay"
 
-import { useSubproductFileList } from "@/features/product/hooks/useSubproductFileHooks";
-import { enrichFilesWithBlobUrls } from "@/services/files/fileAccessService";
-
-const MultimediaWrapper = ({ files, loading, productId, subproductId, onClose }) => {
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <Spinner size="8" color="text-primary-500" />
-            </div>
-        );
-    }
-    if (files.length > 0) {
-        return (
-            <ProductCarouselOverlay
-                images={files}
-                productId={productId}
-                subproductId={subproductId}
-                onClose={onClose}
-                editable={false}
-                isEmbedded
-            />
-        );
-    }
-    return (
-        <div className="p-4 text-center text-sm text-gray-600">
-            No hay archivos multimedia.
-        </div>
-    );
-};
-
-MultimediaWrapper.propTypes = {
-    files: PropTypes.array.isRequired,
-    loading: PropTypes.bool.isRequired,
-    productId: PropTypes.number.isRequired,
-    subproductId: PropTypes.number.isRequired,
-    onClose: PropTypes.func.isRequired,
-};
+import { useSubproductFilesData } from "@/features/product/hooks/useSubproductFileHooks"
 
 const SubproductModals = ({
     modalState,
@@ -60,74 +25,31 @@ const SubproductModals = ({
     clearDeleteError,
     parentProduct,
 }) => {
-    const { user } = useAuth();
-    const isStaff = user?.is_staff;
+    const { user } = useAuth()
+    const isStaff = user?.is_staff
 
-    const { type, subproductData } = modalState || {};
-    const [files, setFiles] = useState([]);
-    const [loadingFiles, setLoadingFiles] = useState(false);
+    const { type, subproductData } = modalState || {}
+    const productId = parentProduct?.id
+    const subproductId = subproductData?.id
 
-    const handleCreateSuccess = () => {
-        closeModal();
-        onCreateSubproduct();
-    };
+    // 🔄 raw + enriched files
+    const {
+        files = [],
+        isLoading: isLoadingFiles,
+    } = useSubproductFilesData(
+        type && subproductId ? productId : null,
+        type && subproductId ? subproductId : null
+    )
 
-    const { data: rawFiles = [], isLoading: loadingRaw } = useSubproductFileList(
-        parentProduct?.id,
-        subproductData?.id
-    );
-    // Guarda el listado previo de IDs para evitar recargas innecesarias
-    const prevFileIdsRef = useRef("init");
-
-
-    useEffect(() => {
-        if (!parentProduct?.id || !subproductData?.id) return;
-
-        const fileIdSignature = Array.isArray(rawFiles)
-            ? rawFiles.map((f) => f.id || f.drive_file_id || f.key).join(",")
-            : "";
-        if (prevFileIdsRef.current === fileIdSignature) return;
-        prevFileIdsRef.current = fileIdSignature;
-
-
-        let ignore = false;
-        const controller = new AbortController();
-        setLoadingFiles(true);
-
-        enrichFilesWithBlobUrls({
-            productId: parentProduct.id,
-            subproductId: subproductData.id,
-            rawFiles,
-            signal: controller.signal,
-        })
-            .then((enriched) => {
-                if (!ignore) setFiles(enriched);
-            })
-            .catch((err) => {
-                console.error("❌ No se pudieron cargar los archivos:", err);
-                if (!ignore) setFiles([]);
-            })
-            .finally(() => {
-                if (!ignore) setLoadingFiles(false);
-            });
-
-        return () => {
-            ignore = true;
-            controller.abort();
-        };
-    }, [parentProduct?.id, subproductData?.id, rawFiles]);
-
-    const isLoadingFiles = loadingRaw || loadingFiles;
-
-    if (!type) return null;
+    if (!type) return null
 
     return (
         <>
-            {type === "create" && parentProduct && isStaff && (
+            {type === "create" && productId && isStaff && (
                 <CreateSubproductModal
                     isOpen
                     onClose={closeModal}
-                    onSave={handleCreateSuccess}
+                    onSave={onCreateSubproduct}
                     product={parentProduct}
                 />
             )}
@@ -137,15 +59,25 @@ const SubproductModals = ({
                     isOpen
                     onClose={closeModal}
                     subproduct={subproductData}
-                    onSave={onUpdateSubproduct}
+                    onSave={(updated) => onUpdateSubproduct(parentProduct.id, updated)}
                 >
-                    <MultimediaWrapper
-                        files={files}
-                        loading={isLoadingFiles}
-                        productId={parentProduct.id}
-                        subproductId={subproductData.id}
-                        onClose={closeModal}
-                    />
+                    {isLoadingFiles ? (
+                        <div className="flex items-center justify-center h-full">
+                            <Spinner size="8" color="text-primary-500" />
+                        </div>
+                    ) : files.length > 0 ? (
+                        <ProductCarouselOverlay
+                            images={files}
+                            productId={productId}
+                            subproductId={subproductId}
+                            editable
+                            isEmbedded
+                        />
+                    ) : (
+                        <p className="p-4 text-center text-sm text-gray-600">
+                            No hay archivos multimedia.
+                        </p>
+                    )}
                 </EditSubproductModal>
             )}
 
@@ -155,13 +87,23 @@ const SubproductModals = ({
                     onClose={closeModal}
                     subproduct={subproductData}
                     mediaPanel={
-                        <MultimediaWrapper
-                            files={files}
-                            loading={isLoadingFiles}
-                            productId={parentProduct.id}
-                            subproductId={subproductData.id}
-                            onClose={closeModal}
-                        />
+                        isLoadingFiles ? (
+                            <div className="flex items-center justify-center h-full">
+                                <Spinner size="8" color="text-primary-500" />
+                            </div>
+                        ) : files.length > 0 ? (
+                            <ProductCarouselOverlay
+                                images={files}
+                                productId={productId}
+                                subproductId={subproductId}
+                                editable={false}
+                                isEmbedded
+                            />
+                        ) : (
+                            <p className="p-4 text-center text-sm text-gray-600">
+                                No hay archivos multimedia.
+                            </p>
+                        )
                     }
                 />
             )}
@@ -169,8 +111,8 @@ const SubproductModals = ({
             {type === "createOrder" && isStaff && subproductData && (
                 <CreateCuttingOrderWizard
                     isOpen
-                    productId={parentProduct.id}
-                    subproductId={subproductData.id}
+                    productId={productId}
+                    subproductId={subproductId}
                     onClose={closeModal}
                     onCreateOrder={() => onCreateOrder(subproductData)}
                 />
@@ -180,7 +122,7 @@ const SubproductModals = ({
                 <DeleteMessage
                     isOpen
                     onClose={closeModal}
-                    onDelete={() => onDeleteSubproduct(subproductData)}
+                    onDelete={() => onDeleteSubproduct(subproductData.id)}
                     isDeleting={isDeleting}
                     deleteError={deleteError}
                     clearDeleteError={clearDeleteError}
@@ -189,12 +131,18 @@ const SubproductModals = ({
                 />
             )}
         </>
-    );
-};
+    )
+}
 
 SubproductModals.propTypes = {
     modalState: PropTypes.shape({
-        type: PropTypes.oneOf(["create", "edit", "view", "createOrder", "deleteConfirm"]),
+        type: PropTypes.oneOf([
+            "create",
+            "edit",
+            "view",
+            "createOrder",
+            "deleteConfirm",
+        ]),
         subproductData: PropTypes.object,
     }),
     closeModal: PropTypes.func.isRequired,
@@ -205,7 +153,7 @@ SubproductModals.propTypes = {
     isDeleting: PropTypes.bool,
     deleteError: PropTypes.string,
     clearDeleteError: PropTypes.func.isRequired,
-    parentProduct: PropTypes.shape({ id: PropTypes.number }),
-};
+    parentProduct: PropTypes.shape({ id: PropTypes.number }).isRequired,
+}
 
-export default SubproductModals;
+export default SubproductModals

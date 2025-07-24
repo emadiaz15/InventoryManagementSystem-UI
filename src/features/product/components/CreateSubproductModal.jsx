@@ -1,23 +1,24 @@
-import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
-import Modal from "../../../components/ui/Modal";
-import FormInput from "../../../components/ui/form/FormInput";
-import FormSelect from "../../../components/ui/form/FormSelect";
-import ErrorMessage from "../../../components/common/ErrorMessage";
-import SuccessMessage from "../../../components/common/SuccessMessage";
+// src/features/product/components/CreateSubproductModal.jsx
+import React, { useState, useEffect, useRef } from "react"
+import PropTypes from "prop-types"
+import Modal from "@/components/ui/Modal"
+import FormInput from "@/components/ui/form/FormInput"
+import FormSelect from "@/components/ui/form/FormSelect"
+import ErrorMessage from "@/components/common/ErrorMessage"
+import SuccessMessage from "@/components/common/SuccessMessage"
 
-import { createSubproduct } from "@/features/product/services/subproducts/subproducts";
-import { useSubproductFileUpload } from "@/features/product/hooks/useSubproductFileHooks";
+import { useCreateSubproduct } from "@/features/product/hooks/useSubproductHooks"
+import { useUploadSubproductFiles } from "@/features/product/hooks/useSubproductFileHooks"
 
 const locationOptions = [
     { value: "Deposito Principal", label: "Depósito Principal" },
     { value: "Deposito Secundario", label: "Depósito Secundario" },
-];
+]
 
 const formTypeOptions = [
     { value: "Bobina", label: "Bobina" },
     { value: "Rollo", label: "Rollo" },
-];
+]
 
 const initialState = {
     brand: "",
@@ -31,130 +32,100 @@ const initialState = {
     form_type: "Bobina",
     observations: "",
     images: [],
-};
+}
 
 const CreateSubproductModal = ({ product, isOpen, onClose, onSave }) => {
-    const [formData, setFormData] = useState(initialState);
-    const [previewFiles, setPreviewFiles] = useState([]);
-    const [error, setError] = useState("");
-    const [showSuccess, setShowSuccess] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formData, setFormData] = useState(initialState)
+    const [previewFiles, setPreviewFiles] = useState([])
+    const [error, setError] = useState("")
+    const [showSuccess, setShowSuccess] = useState(false)
 
-    const { uploadFiles, uploading, uploadError, clearUploadError } = useSubproductFileUpload();
-    const submitAbortRef = useRef(null);
+    // Hook para crear subproducto
+    const createMut = useCreateSubproduct(product.id)
+    // Hook para subir archivos de subproducto
+    const uploadMut = useUploadSubproductFiles(product.id)
 
+    // Reset al abrir/cerrar
     useEffect(() => {
-        if (!isOpen) return;
-        setFormData(initialState);
-        setPreviewFiles([]);
-        setError("");
-        setShowSuccess(false);
-        setIsSubmitting(false);
-        clearUploadError();
-        submitAbortRef.current = null;
-
-        return () => {
-            if (submitAbortRef.current) {
-                submitAbortRef.current.abort();
-            }
-        };
-    }, [isOpen, clearUploadError]);
+        if (!isOpen) return
+        setFormData(initialState)
+        setPreviewFiles([])
+        setError("")
+        setShowSuccess(false)
+        createMut.reset()
+        uploadMut.reset()
+    }, [isOpen, createMut, uploadMut])
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+        const { name, value } = e.target
+        setFormData((prev) => ({ ...prev, [name]: value }))
+    }
 
     const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
+        const files = Array.from(e.target.files)
         if (formData.images.length + files.length > 5) {
-            setError("Máximo 5 archivos permitidos.");
-            return;
+            setError("Máximo 5 archivos permitidos.")
+            return
         }
-        const all = [...formData.images, ...files];
-        setFormData((prev) => ({ ...prev, images: all }));
-        setPreviewFiles(all.map((f) => f.name));
-    };
+        setFormData((prev) => ({ ...prev, images: [...prev.images, ...files] }))
+        setPreviewFiles((prev) => [...prev, ...files.map((f) => f.name)])
+    }
 
     const removeFile = (idx) => {
-        const imgs = formData.images.filter((_, i) => i !== idx);
-        setFormData((prev) => ({ ...prev, images: imgs }));
-        setPreviewFiles((prev) => prev.filter((_, i) => i !== idx));
-    };
+        setFormData((prev) => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== idx),
+        }))
+        setPreviewFiles((prev) => prev.filter((_, i) => i !== idx))
+    }
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (isSubmitting) return;
+        e.preventDefault()
+        setError("")
+        setShowSuccess(false)
 
-        const controller = new AbortController();
-        submitAbortRef.current = controller;
-
-        setIsSubmitting(true);
-        setError("");
-        clearUploadError();
-
-        // Validate numeric fields
-        const qty = String(formData.initial_stock_quantity)
-            .replace(/[^0-9.]/g, "")
-            .trim();
-        if (qty && isNaN(parseFloat(qty))) {
-            setError("La cantidad de stock inicial no es válida.");
-            setIsSubmitting(false);
-            submitAbortRef.current = null;
-            return;
+        // Validar número de stock
+        const qtyStr = formData.initial_stock_quantity.trim()
+        if (qtyStr && isNaN(parseFloat(qtyStr))) {
+            setError("La cantidad de stock inicial no es válida.")
+            return
         }
 
-        const fd = new FormData();
+        // Armar FormData
+        const fd = new FormData()
         Object.entries(formData).forEach(([key, val]) => {
-            if (val !== "" && val != null && key !== "images") {
-                fd.append(
-                    key,
-                    key === "initial_stock_quantity" ? qty : val
-                );
-            }
-        });
+            if (key === "images" || val === "" || val == null) return
+            fd.append(key, key === "initial_stock_quantity" ? qtyStr : val)
+        })
 
         try {
-            const newSub = await createSubproduct(product.id, fd, controller.signal);
+            // 1) Crear subproducto
+            const newSub = await createMut.mutateAsync(fd)
 
+            // 2) Subir imágenes si las hay
             if (formData.images.length) {
-                const ok = await uploadFiles(product.id, newSub.id, formData.images);
-                if (!ok && uploadError) {
-                    setError(uploadError);
-                    setIsSubmitting(false);
-                    submitAbortRef.current = null;
-                    return;
-                }
+                await uploadMut.mutateAsync({
+                    subproductId: newSub.id,
+                    files: formData.images,
+                })
             }
 
-            setShowSuccess(true);
+            // 3) Mostrar éxito y cerrar
+            setShowSuccess(true)
             setTimeout(() => {
-                setIsSubmitting(false);
-                submitAbortRef.current = null;
-                onSave?.();
-                onClose();
-            }, 1000);
+                onSave?.(newSub)
+                onClose()
+            }, 1000)
         } catch (err) {
-            if (err.name !== "AbortError") {
-                console.error("Error al crear subproducto:", err);
-                setError(err.message || "No se pudo guardar el subproducto.");
-            }
-            setIsSubmitting(false);
-            submitAbortRef.current = null;
+            setError(err.message || "No se pudo crear el subproducto.")
         }
-    };
+    }
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Crear Subproducto">
-            <form
-                onSubmit={handleSubmit}
-                encType="multipart/form-data"
-                className="space-y-4"
-            >
+            <form onSubmit={handleSubmit} className="space-y-4">
                 {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-                {uploadError && (
-                    <ErrorMessage message={uploadError} onClose={clearUploadError} />
-                )}
+                {showSuccess && <SuccessMessage message="¡Subproducto creado con éxito!" />}
 
                 <FormSelect
                     label="Tipo de Forma"
@@ -246,10 +217,8 @@ const CreateSubproductModal = ({ product, isOpen, onClose, onSave }) => {
                         >
                             Seleccionar archivos
                         </label>
-                        <span className="text-sm text-text-secondary">
-                            {previewFiles.length
-                                ? `${previewFiles.length} archivo(s)`
-                                : "Sin archivos"}
+                        <span className="text-sm">
+                            {previewFiles.length ? `${previewFiles.length} archivo(s)` : "Sin archivos"}
                         </span>
                     </div>
                     <input
@@ -282,39 +251,29 @@ const CreateSubproductModal = ({ product, isOpen, onClose, onSave }) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        disabled={uploading || isSubmitting}
+                        disabled={createMut.isLoading || uploadMut.isLoading}
                         className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600"
                     >
                         Cancelar
                     </button>
                     <button
                         type="submit"
-                        disabled={uploading || isSubmitting}
-                        className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 ${uploading || isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
+                        disabled={createMut.isLoading || uploadMut.isLoading}
+                        className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 ${createMut.isLoading || uploadMut.isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                        {uploading || isSubmitting
-                            ? "Guardando..."
-                            : "Crear Subproducto"}
+                        {(createMut.isLoading || uploadMut.isLoading) ? "Guardando..." : "Crear Subproducto"}
                     </button>
                 </div>
-
-                {showSuccess && (
-                    <SuccessMessage
-                        message="¡Subproducto creado con éxito!"
-                        onClose={() => setShowSuccess(false)}
-                    />
-                )}
             </form>
         </Modal>
-    );
-};
+    )
+}
 
 CreateSubproductModal.propTypes = {
     product: PropTypes.shape({ id: PropTypes.number.isRequired }).isRequired,
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     onSave: PropTypes.func,
-};
+}
 
-export default CreateSubproductModal;
+export default CreateSubproductModal

@@ -15,7 +15,8 @@ export const clearCategoriesCache = () => categoryCache.clear();
  * 📋 Listar categorías con paginación/filtros
  */
 export const listCategories = async (params = {}) => {
-  const qs = buildQueryString(params);
+  // No pasamos ni status ni limit aquí
+  // Dejamos que el backend use su propio filterset y su propio page_size
   const url = `/inventory/categories/${qs}`;
   const dataFromCache = getCachedCategories(url);
   if (dataFromCache) return dataFromCache;
