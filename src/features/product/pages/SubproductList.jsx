@@ -131,7 +131,7 @@ const SubproductList = () => {
   };
 
   return (
-    <Layout>
+    <Layout isLoading={loading}>
       {showSuccess && (
         <div className="fixed top-20 right-5 z-[10000]">
           <SuccessMessage

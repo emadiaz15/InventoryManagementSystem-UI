@@ -102,7 +102,7 @@ const CuttingOrderCart = () => {
     }));
 
     return (
-        <Layout>
+        <Layout isLoading={submitting || loadingUsers}>
             <Toolbar
                 title="Carrito de Corte"
                 buttonText="Volver"

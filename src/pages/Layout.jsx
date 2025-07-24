@@ -3,8 +3,9 @@ import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
 import Footer from "../components/common/Footer";
 import { useAuth } from "../context/AuthProvider";
+import Spinner from "../components/ui/Spinner";
 
-const Layout = ({ children }) => {
+const Layout = ({ children, isLoading = false }) => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
     const { profileImage } = useAuth();
 
@@ -13,7 +14,7 @@ const Layout = ({ children }) => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-background-100 text-text-primary">
+        <div className="flex flex-col min-h-screen bg-background-100 text-text-primary relative">
             <Navbar key={profileImage || 'default'} />
 
             <div className="flex flex-1 relative bg-background-100">
@@ -25,6 +26,12 @@ const Layout = ({ children }) => {
                 >
                     {children}
                 </div>
+
+                {isLoading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                        <Spinner size="8" color="text-primary-500" />
+                    </div>
+                )}
             </div>
 
             <Footer />

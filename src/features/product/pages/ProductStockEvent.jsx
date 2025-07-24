@@ -142,7 +142,7 @@ const ProductStockEvent = () => {
     });
 
     return (
-        <Layout>
+        <Layout isLoading={loading}>
             <div className="flex-1 p-2 mt-14">
                 <Toolbar title="Historial de Stock" buttonText="Modificar Stock" />
                 <DateFilter onFilterChange={handleFilterChange} />
