@@ -24,7 +24,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   } = useQuery({
     queryKey: ["categories", { limit: 1000, status: true }],
     queryFn: () => listCategories({ limit: 1000, status: true }),
-    staleTime: 5 * 60_000,
+
+    staleTime: 5 * 60 * 1000,
+
     refetchOnWindowFocus: false,
   })
   const categories = catPage.results ?? []
@@ -53,15 +55,16 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
     data: typePage = {},
     isLoading: loadingTypes,
   } = useQuery({
-    queryKey: ["types", { limit: 1000, status: true, category: formData.category }],
+
+    queryKey: [
+      "types",
+      { limit: 1000, status: true, category: formData.category },
+    ],
     queryFn: () =>
-      listTypes({
-        limit: 1000,
-        status: true,
-        category: formData.category,
-      }),
+      listTypes({ limit: 1000, status: true, category: formData.category }),
     enabled: !!formData.category,
-    staleTime: 5 * 60_000,
+    staleTime: 5 * 60 * 1000,
+
   })
   const types = typePage.results ?? []
 
