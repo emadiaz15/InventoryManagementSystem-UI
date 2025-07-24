@@ -21,11 +21,12 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   const {
     data: catPage = {},
     isLoading: loadingCategories,
-  } = useQuery(
-    ["categories", { limit: 1000, status: true }],
-    () => listCategories({ limit: 1000, status: true }),
-    { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
-  )
+  } = useQuery({
+    queryKey: ["categories", { limit: 1000, status: true }],
+    queryFn: () => listCategories({ limit: 1000, status: true }),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  })
   const categories = catPage.results ?? []
 
   // 2️⃣ State formulario
@@ -51,11 +52,16 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   const {
     data: typePage = {},
     isLoading: loadingTypes,
-  } = useQuery(
-    ["types", { limit: 1000, status: true, category: formData.category }],
-    () => listTypes({ limit: 1000, status: true, category: formData.category }),
-    { enabled: !!formData.category, staleTime: 5 * 60 * 1000 }
-  )
+  } = useQuery({
+    queryKey: [
+      "types",
+      { limit: 1000, status: true, category: formData.category },
+    ],
+    queryFn: () =>
+      listTypes({ limit: 1000, status: true, category: formData.category }),
+    enabled: !!formData.category,
+    staleTime: 5 * 60 * 1000,
+  })
   const types = typePage.results ?? []
 
   // 4️⃣ Hook único para productos: listado + crear

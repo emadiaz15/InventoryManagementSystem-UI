@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import FormInput from "@/components/ui/form/FormInput";
 import FormSelect from "@/components/ui/form/FormSelect";
-import { listCategories } from "@/features/category/services/listCategory";
-import { listTypes } from "@/features/type/services/listType";
+import { listCategories } from "@/features/category/services/categories";
+import { listTypes } from "@/features/type/services/types";
 
 const ProductFilter = ({ filters, onFilterChange }) => {
     const [localFilters, setLocalFilters] = useState({
@@ -10,30 +11,43 @@ const ProductFilter = ({ filters, onFilterChange }) => {
         category: filters.category || "",
         type: filters.type || "",
     });
-    const [categories, setCategories] = useState([]);
-    const [types, setTypes] = useState([]);
+    // Categories query
+    const {
+        data: catPage = {},
+        isLoading: loadingCategories,
+    } = useQuery({
+        queryKey: ["categories", { limit: 1000, status: true }],
+        queryFn: () => listCategories({ limit: 1000, status: true }),
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+    });
+    const categories = catPage.results || [];
 
-    // Carga todas las categorías al montar
-    useEffect(() => {
-        listCategories("/inventory/categories/?limit=1000&status=true")
-            .then((res) => setCategories(res.results || []))
-            .catch((err) => console.error("Error cargando categorías:", err));
-    }, []);
+    // Types query (depends on category)
+    const {
+        data: typePage = {},
+        isLoading: loadingTypes,
+    } = useQuery({
+        queryKey: [
+            "types",
+            { limit: 1000, status: true, category: localFilters.category },
+        ],
+        queryFn: () =>
+            listTypes({
+                limit: 1000,
+                status: true,
+                category: localFilters.category,
+            }),
+        enabled: !!localFilters.category,
+        staleTime: 5 * 60 * 1000,
+    });
+    const types = typePage.results || [];
 
-    // Cuando cambia la categoría, recarga los tipos y resetea el filtro 'type'
+    // Reset type filter when category changes to empty
     useEffect(() => {
-        const catId = localFilters.category;
-        if (!catId) {
-            setTypes([]);
+        if (!localFilters.category) {
             setLocalFilters((prev) => ({ ...prev, type: "" }));
-            return;
         }
-
-        listTypes(
-            `/inventory/types/?limit=1000&status=true&category=${catId}`
-        )
-            .then((res) => setTypes(res.results || []))
-            .catch((err) => console.error("Error cargando tipos:", err));
     }, [localFilters.category]);
 
     // Notificar cambios al padre cuando localFilters cambie
@@ -71,6 +85,7 @@ const ProductFilter = ({ filters, onFilterChange }) => {
                         { value: "", label: "Todas" },
                         ...categories.map((c) => ({ value: String(c.id), label: c.name })),
                     ]}
+                    loading={loadingCategories}
                 />
             </div>
 
@@ -85,7 +100,8 @@ const ProductFilter = ({ filters, onFilterChange }) => {
                         { value: "", label: "Todos" },
                         ...types.map((t) => ({ value: String(t.id), label: t.name })),
                     ]}
-                    disabled={!localFilters.category}
+                    disabled={!localFilters.category || loadingTypes}
+                    loading={loadingTypes}
                 />
             </div>
         </div>
