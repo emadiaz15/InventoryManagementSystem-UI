@@ -31,17 +31,17 @@ export const useTypes = (filters = {}) => {
   // 👉 Mutations
   const createMut = useMutation({
     mutationFn: createType,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["types"] })
+    onSuccess: () => queryClient.invalidateQueries(["types"])
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, payload }) => updateType(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["types"] })
+    onSuccess: () => queryClient.invalidateQueries(["types"])
   })
 
   const deleteMut = useMutation({
     mutationFn: deleteType,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["types"] })
+    onSuccess: () => queryClient.invalidateQueries(["types"])
   })
 
   // 👉 Prefetch de paginación (si lo necesitas)

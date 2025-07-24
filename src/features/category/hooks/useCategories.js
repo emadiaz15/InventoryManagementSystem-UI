@@ -31,20 +31,31 @@ export const useCategories = (filters = {}) => {
 
   // ➕ Crear
   const createCategory = useMutation({
-    mutationFn: (payload) => djangoApi.post("/inventory/categories/create/", payload),
-    onSuccess: invalidateAll,
+    mutationFn: (payload) =>
+      djangoApi.post("/inventory/categories/create/", payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["categories"])
+    },
   })
 
   // ✏️ Actualizar
   const updateCategory = useMutation({
-    mutationFn: ({ id, payload }) => djangoApi.put(`/inventory/categories/${id}/`, payload),
-    onSuccess: invalidateAll,
+    mutationFn: ({ id, payload }) =>
+      djangoApi.put(`/inventory/categories/${id}/`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["categories"])
+    },
+
   })
 
   // 🗑️ Borrar
   const deleteCategory = useMutation({
-    mutationFn: (id) => djangoApi.delete(`/inventory/categories/${id}/`),
-    onSuccess: invalidateAll,
+    mutationFn: (id) =>
+      djangoApi.delete(`/inventory/categories/${id}/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["categories"])
+    },
+
   })
 
   // 🔮 Prefetch de páginas
