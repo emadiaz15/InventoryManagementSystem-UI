@@ -1,4 +1,3 @@
-// src/features/category/pages/CategoryList.jsx
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Toolbar from "../../../components/common/Toolbar";
@@ -7,26 +6,30 @@ import ErrorMessage from "../../../components/common/ErrorMessage";
 import Filter from "../../../components/ui/Filter";
 import Layout from "../../../pages/Layout";
 import Spinner from "@/components/ui/Spinner";
+import Pagination from "../../../components/ui/Pagination";
 
 import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
-import { useCategories } from "@/features/category/hooks/useCategories";
+import { useCategories } from "../hooks/useCategories";
 import {
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
-} from "@/features/category/hooks/useCategoryMutations";
-
+} from "../hooks/useCategoryMutations";
 
 export default function CategoryList() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({ name: "", page: 1, page_size: 10 /* NO status */ }); const [modalState, setModalState] = useState({ type: null, category: null });
+  const [filters, setFilters] = useState({
+    name: "",
+    page: 1,
+    page_size: 10,
+  });
+  const [modalState, setModalState] = useState({ type: null, category: null });
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [actionError, setActionError] = useState(null);
 
-  // 3️⃣ React Query hook para listado
-
+  // 📦 React Query hook para listado
   const {
     categories,
     nextPageUrl,
@@ -34,18 +37,13 @@ export default function CategoryList() {
     loading,
     isError,
     error,
-    prefetchPage,
-    createStatus,
-    updateStatus,
-    deleteStatus,
   } = useCategories(filters);
 
-  // 4️⃣ Mutaciones individuales
+  // ⚙️ Mutations
   const createMut = useCreateCategory();
   const updateMut = useUpdateCategory();
   const deleteMut = useDeleteCategory();
 
-  // 4️⃣ Columnas para el componente Filter
   const filterColumns = useMemo(
     () => [{ key: "name", label: "Nombre Categoría", filterType: "text" }],
     []
@@ -64,30 +62,36 @@ export default function CategoryList() {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  // create
+  // ➕ Crear
   const handleCreate = async (data) => {
     try {
-      const res = await createMut.mutateAsync(data);
-      handleActionSuccess(`Categoría "${res.name}" creada.`);
+      const created = await createMut.mutateAsync(data);
+      onSuccess(`Categoría "${created.name}" creada.`);
+      // resetear a página 1 para que aparezca la nueva
+      setFilters((f) => ({ ...f, page: 1 }));
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
   };
-  // update
+
+  // ✏️ Actualizar
   const handleUpdate = async ({ id, payload }) => {
     try {
-      const res = await updateMut.mutateAsync({ id, payload });
-      handleActionSuccess(`Categoría "${res.name}" actualizada.`);
+      const updated = await updateMut.mutateAsync({ id, payload });
+      onSuccess(`Categoría "${updated.name}" actualizada.`);
+      setFilters((f) => ({ ...f, page: 1 }));
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
   };
-  // delete
+
+  // 🗑️ Eliminar
   const handleDelete = async () => {
     if (!modalState.category) return;
     try {
       await deleteMut.mutateAsync(modalState.category.id);
-      handleActionSuccess(`Categoría "${modalState.category.name}" eliminada.`);
+      onSuccess(`Categoría "${modalState.category.name}" eliminada.`);
+      setFilters((f) => ({ ...f, page: 1 }));
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
@@ -98,14 +102,17 @@ export default function CategoryList() {
       <Layout isLoading={loading}>
         {showSuccess && (
           <div className="fixed top-20 right-5 z-50">
-            <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+            <SuccessMessage
+              message={successMessage}
+              onClose={() => setShowSuccess(false)}
+            />
           </div>
         )}
 
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar
             title="Lista de Categorías"
-            onBackClick={() => navigate("/products")}
+            onBackClick={() => navigate("/products-list")}
             onButtonClick={() => openModal("create")}
             buttonText="Nueva Categoría"
           />
@@ -113,34 +120,39 @@ export default function CategoryList() {
           <Filter
             columns={filterColumns}
             initialFilters={filters}
-            onFilterChange={(newF) => setFilters((f) => ({ ...f, ...newF, page: 1 }))}
+            onFilterChange={(newF) =>
+              setFilters((f) => ({ ...f, ...newF, page: 1 }))
+            }
           />
 
-          {isError && <ErrorMessage message={error.message || "Error al cargar categorías."} />}
+          {isError && (
+            <ErrorMessage message={error.message || "Error al cargar categorías."} />
+          )}
 
           {loading ? (
             <div className="my-8 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
-          ) : categories.length > 0 ? (
-            <CategoryTable
-              categories={categories}
-              openViewModal={(c) => openModal("view", c)}
-              openEditModal={(c) => openModal("edit", c)}
-              openDeleteConfirmModal={(c) => openModal("deleteConfirm", c)}
-              goToNextPage={() => {
-                setFilters((f) => ({ ...f, page: f.page + 1 }));
-                prefetchPage(nextPageUrl);
-              }}
-              goToPreviousPage={() => {
-                setFilters((f) => ({ ...f, page: f.page - 1 }));
-                prefetchPage(previousPageUrl);
-              }}
-              nextPageUrl={nextPageUrl}
-              previousPageUrl={previousPageUrl}
-            />
           ) : (
-            <p className="text-center py-10">No se encontraron categorías.</p>
+            <>
+              {categories.length > 0 ? (
+                <CategoryTable
+                  categories={categories}
+                  openViewModal={(c) => openModal("view", c)}
+                  openEditModal={(c) => openModal("edit", c)}
+                  openDeleteConfirmModal={(c) => openModal("deleteConfirm", c)}
+                />
+              ) : (
+                <p className="text-center py-10">No se encontraron categorías.</p>
+              )}
+
+              <Pagination
+                onNext={nextPageUrl ? () => setFilters((f) => ({ ...f, page: f.page + 1 })) : undefined}
+                onPrevious={previousPageUrl ? () => setFilters((f) => ({ ...f, page: f.page - 1 })) : undefined}
+                hasNext={Boolean(nextPageUrl)}
+                hasPrevious={Boolean(previousPageUrl)}
+              />
+            </>
           )}
         </div>
       </Layout>
@@ -153,11 +165,11 @@ export default function CategoryList() {
         onDelete={handleDelete}
         isProcessing={
           modalState.type === "create"
-            ? createStatus
+            ? createMut.isLoading
             : modalState.type === "edit"
-              ? updateStatus
+              ? updateMut.isLoading
               : modalState.type === "deleteConfirm"
-                ? deleteStatus
+                ? deleteMut.isLoading
                 : false
         }
         actionError={actionError}

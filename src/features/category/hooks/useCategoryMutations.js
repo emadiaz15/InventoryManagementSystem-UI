@@ -6,31 +6,32 @@ import {
 } from "../services/categories";
 
 export const useCreateCategory = () => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: createCategoryApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      // invalidar todo lo que empiece con "categories"
+      qc.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 };
 
 export const useUpdateCategory = () => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }) => updateCategoryApi(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 };
 
 export const useDeleteCategory = () => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: deleteCategoryApi,
+    mutationFn: (id) => deleteCategoryApi(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 };

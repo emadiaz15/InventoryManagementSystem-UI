@@ -58,14 +58,6 @@ const CategoryTable = ({
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-2">
                 <Table headers={headers} rows={tableRows} />
             </div>
-            <div className="mt-4">
-                <Pagination
-                    onNext={goToNextPage}
-                    onPrevious={goToPreviousPage}
-                    hasNext={hasNext}
-                    hasPrevious={hasPrevious}
-                />
-            </div>
         </>
     );
 };

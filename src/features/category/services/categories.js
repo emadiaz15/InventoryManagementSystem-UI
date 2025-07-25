@@ -3,7 +3,7 @@ import { djangoApi } from "@/api/clients";
 import { buildQueryString } from "@/utils/queryUtils";
 
 /**
- * 🗂️ Cache en memoria (si aún lo quieres)
+ * 🗂️ Cache en memoria (opcional)
  */
 const categoryCache = new Map();
 export const getCachedCategories = (url) => categoryCache.get(url) || null;
@@ -15,9 +15,11 @@ export const clearCategoriesCache = () => categoryCache.clear();
  * 📋 Listar categorías con paginación/filtros
  */
 export const listCategories = async (params = {}) => {
-  // No pasamos ni status ni limit aquí
-  // Dejamos que el backend use su propio filterset y su propio page_size
+  // construimos correctamente el query string
+  const qs = buildQueryString(params);
   const url = `/inventory/categories/${qs}`;
+
+  // memoria cache (opcional)
   const dataFromCache = getCachedCategories(url);
   if (dataFromCache) return dataFromCache;
 
@@ -31,8 +33,8 @@ export const listCategories = async (params = {}) => {
  */
 export const createCategory = async (payload) => {
   const { data } = await djangoApi.post("/inventory/categories/create/", payload);
-  clearCategoriesCache(); // invalidamos cache global
-  return data;
+  clearCategoriesCache(); // invalidamos cache en memoria
+  return data;            // devolvemos directamente data, no el objeto Axios completo
 };
 
 /**
