@@ -115,7 +115,7 @@ export default function CategoryList() {
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar
             title="Lista de Categorías"
-            onBackClick={() => navigate("/products-list")}
+            onBackClick={() => navigate("/product-list")}
             onButtonClick={() => openModal("create")}
             buttonText="Nueva Categoría"
           />
