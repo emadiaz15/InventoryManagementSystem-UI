@@ -1,3 +1,4 @@
+// src/features/category/pages/CategoryList.jsx
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Toolbar from "../../../components/common/Toolbar";
@@ -29,7 +30,7 @@ export default function CategoryList() {
   const [successMessage, setSuccessMessage] = useState("");
   const [actionError, setActionError] = useState(null);
 
-  // 📦 React Query hook para listado
+  // 📦 React Query hook para listado paginado
   const {
     categories,
     nextPageUrl,
@@ -39,22 +40,25 @@ export default function CategoryList() {
     error,
   } = useCategories(filters);
 
-  // ⚙️ Mutations
+  // ⚙️ Mutaciones
   const createMut = useCreateCategory();
   const updateMut = useUpdateCategory();
   const deleteMut = useDeleteCategory();
 
+  // 📝 Filtros de búsqueda
   const filterColumns = useMemo(
     () => [{ key: "name", label: "Nombre Categoría", filterType: "text" }],
     []
   );
 
+  // 🟢 Open/cerrar modales
   const openModal = (type, category = null) => {
     setModalState({ type, category });
     setActionError(null);
   };
   const closeModal = () => setModalState({ type: null, category: null });
 
+  // 🟢 Mostrar mensaje de éxito
   const onSuccess = (msg) => {
     setSuccessMessage(msg);
     setShowSuccess(true);
@@ -62,36 +66,35 @@ export default function CategoryList() {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  // ➕ Crear
+  // ➕ Crear categoría
   const handleCreate = async (data) => {
     try {
       const created = await createMut.mutateAsync(data);
       onSuccess(`Categoría "${created.name}" creada.`);
-      // resetear a página 1 para que aparezca la nueva
-      setFilters((f) => ({ ...f, page: 1 }));
+      setFilters((f) => ({ ...f, page: 1 })); // <- SIEMPRE página 1 tras crear
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
   };
 
-  // ✏️ Actualizar
+  // ✏️ Editar categoría
   const handleUpdate = async ({ id, payload }) => {
     try {
       const updated = await updateMut.mutateAsync({ id, payload });
       onSuccess(`Categoría "${updated.name}" actualizada.`);
-      setFilters((f) => ({ ...f, page: 1 }));
+      setFilters((f) => ({ ...f, page: 1 })); // <- página 1 tras editar
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
   };
 
-  // 🗑️ Eliminar
+  // 🗑️ Eliminar categoría
   const handleDelete = async () => {
     if (!modalState.category) return;
     try {
       await deleteMut.mutateAsync(modalState.category.id);
       onSuccess(`Categoría "${modalState.category.name}" eliminada.`);
-      setFilters((f) => ({ ...f, page: 1 }));
+      setFilters((f) => ({ ...f, page: 1 })); // <- página 1 tras eliminar
     } catch (err) {
       setActionError(err.response?.data?.detail || err.message);
     }
@@ -147,8 +150,8 @@ export default function CategoryList() {
               )}
 
               <Pagination
-                onNext={nextPageUrl ? () => setFilters((f) => ({ ...f, page: f.page + 1 })) : undefined}
-                onPrevious={previousPageUrl ? () => setFilters((f) => ({ ...f, page: f.page - 1 })) : undefined}
+                onNext={nextPageUrl ? () => setFilters(f => ({ ...f, page: f.page + 1 })) : undefined}
+                onPrevious={previousPageUrl ? () => setFilters(f => ({ ...f, page: f.page - 1 })) : undefined}
                 hasNext={Boolean(nextPageUrl)}
                 hasPrevious={Boolean(previousPageUrl)}
               />
