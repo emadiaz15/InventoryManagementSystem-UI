@@ -1,3 +1,9 @@
+/*
+src/hooks/useSuccess.js
+Hook para manejar mensajes de éxito y error en una aplicación React.
+Permite mostrar mensajes de éxito temporales y manejar errores de API con mensajes claros.
+*/
+
 import { useState, useRef, useCallback, useEffect } from "react";
 
 /**

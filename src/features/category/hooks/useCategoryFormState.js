@@ -1,3 +1,4 @@
+// src/features/category/hooks/useCategoryFormState.js
 import { useState, useCallback } from "react";
 
 export const useCategoryFormState = (initial = { name: "", description: "" }) => {

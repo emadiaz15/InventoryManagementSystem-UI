@@ -1,4 +1,4 @@
-/**
+/** src/utils/sessionUtils.js
  * 🌐 Session Utils — Manejo centralizado de tokens JWT para autenticación
  */
 

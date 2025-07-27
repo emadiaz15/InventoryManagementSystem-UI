@@ -1,13 +1,13 @@
 // src/features/category/pages/CategoryList.jsx
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Toolbar from "../../../components/common/Toolbar";
-import SuccessMessage from "../../../components/common/SuccessMessage";
-import ErrorMessage from "../../../components/common/ErrorMessage";
-import Filter from "../../../components/ui/Filter";
-import Layout from "../../../pages/Layout";
+import Toolbar from "@/components/common/Toolbar";
+import SuccessMessage from "@/components/common/SuccessMessage";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import Filter from "@/components/ui/Filter";
+import Layout from "@/pages/Layout";
 import Spinner from "@/components/ui/Spinner";
-import Pagination from "../../../components/ui/Pagination";
+import Pagination from "@/components/ui/Pagination";
 
 import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
@@ -18,6 +18,9 @@ import {
   useDeleteCategory,
 } from "../hooks/useCategoryMutations";
 
+import useEntityModal from "@/hooks/useEntityModal";
+import useSuccess from "@/hooks/useSuccess";
+
 export default function CategoryList() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
@@ -25,12 +28,42 @@ export default function CategoryList() {
     page: 1,
     page_size: 10,
   });
-  const [modalState, setModalState] = useState({ type: null, category: null });
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [actionError, setActionError] = useState(null);
 
-  // 📦 React Query hook para listado paginado
+  const {
+    successMessage,
+    error: actionError,
+    handleSuccess,
+    handleError,
+    clear: clearStatus,
+  } = useSuccess();
+
+  const deleteMut = useDeleteCategory();
+
+  const {
+    showCreateModal,
+    showEditModal,
+    showViewModal,
+    showConfirmDialog,
+    selectedEntity: selectedCategory,
+    entityToDelete,
+    openCreateModal,
+    openEditModal,
+    openViewModal,
+    openConfirmDialog,
+    handleDelete: handleDeleteModal,
+    closeAllModals, // ✅ usamos el correcto
+  } = useEntityModal({
+    onDelete: async (cat) => {
+      try {
+        await deleteMut.mutateAsync(cat.id);
+        handleSuccess(`Categoría "${cat.name}" eliminada.`);
+        setFilters((f) => ({ ...f, page: 1 }));
+      } catch (err) {
+        handleError(err);
+      }
+    },
+  });
+
   const {
     categories,
     nextPageUrl,
@@ -40,75 +73,44 @@ export default function CategoryList() {
     error,
   } = useCategories(filters);
 
-  // ⚙️ Mutaciones
   const createMut = useCreateCategory();
   const updateMut = useUpdateCategory();
-  const deleteMut = useDeleteCategory();
 
-  // 📝 Filtros de búsqueda
   const filterColumns = useMemo(
     () => [{ key: "name", label: "Nombre Categoría", filterType: "text" }],
     []
   );
 
-  // 🟢 Open/cerrar modales
-  const openModal = (type, category = null) => {
-    setModalState({ type, category });
-    setActionError(null);
-  };
-  const closeModal = () => setModalState({ type: null, category: null });
-
-  // 🟢 Mostrar mensaje de éxito
-  const onSuccess = (msg) => {
-    setSuccessMessage(msg);
-    setShowSuccess(true);
-    closeModal();
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-  // ➕ Crear categoría
   const handleCreate = async (data) => {
+    clearStatus();
     try {
       const created = await createMut.mutateAsync(data);
-      onSuccess(`Categoría "${created.name}" creada.`);
-      setFilters((f) => ({ ...f, page: 1 })); // <- SIEMPRE página 1 tras crear
+      handleSuccess(`Categoría "${created.name}" creada.`);
+      setFilters((f) => ({ ...f, page: 1 }));
+      closeAllModals();
     } catch (err) {
-      setActionError(err.response?.data?.detail || err.message);
+      handleError(err);
     }
   };
 
-  // ✏️ Editar categoría
   const handleUpdate = async ({ id, payload }) => {
+    clearStatus();
     try {
       const updated = await updateMut.mutateAsync({ id, payload });
-      onSuccess(`Categoría "${updated.name}" actualizada.`);
-      setFilters((f) => ({ ...f, page: 1 })); // <- página 1 tras editar
+      handleSuccess(`Categoría "${updated.name}" actualizada.`);
+      setFilters((f) => ({ ...f, page: 1 }));
+      closeAllModals(); // ✅ cerrar el modal manualmente después del éxito
     } catch (err) {
-      setActionError(err.response?.data?.detail || err.message);
-    }
-  };
-
-  // 🗑️ Eliminar categoría
-  const handleDelete = async () => {
-    if (!modalState.category) return;
-    try {
-      await deleteMut.mutateAsync(modalState.category.id);
-      onSuccess(`Categoría "${modalState.category.name}" eliminada.`);
-      setFilters((f) => ({ ...f, page: 1 })); // <- página 1 tras eliminar
-    } catch (err) {
-      setActionError(err.response?.data?.detail || err.message);
+      handleError(err);
     }
   };
 
   return (
     <>
       <Layout isLoading={loading}>
-        {showSuccess && (
+        {successMessage && (
           <div className="fixed top-20 right-5 z-50">
-            <SuccessMessage
-              message={successMessage}
-              onClose={() => setShowSuccess(false)}
-            />
+            <SuccessMessage message={successMessage} onClose={clearStatus} />
           </div>
         )}
 
@@ -116,7 +118,7 @@ export default function CategoryList() {
           <Toolbar
             title="Lista de Categorías"
             onBackClick={() => navigate("/product-list")}
-            onButtonClick={() => openModal("create")}
+            onButtonClick={openCreateModal}
             buttonText="Nueva Categoría"
           />
 
@@ -141,9 +143,9 @@ export default function CategoryList() {
               {categories.length > 0 ? (
                 <CategoryTable
                   categories={categories}
-                  openViewModal={(c) => openModal("view", c)}
-                  openEditModal={(c) => openModal("edit", c)}
-                  openDeleteConfirmModal={(c) => openModal("deleteConfirm", c)}
+                  openViewModal={openViewModal}
+                  openEditModal={openEditModal}
+                  openDeleteConfirmModal={openConfirmDialog}
                 />
               ) : (
                 <p className="text-center py-10">No se encontraron categorías.</p>
@@ -161,21 +163,20 @@ export default function CategoryList() {
       </Layout>
 
       <CategoryModals
-        modalState={modalState}
-        closeModal={closeModal}
+        category={selectedCategory}
+        categoryToDelete={entityToDelete}
+        showCreateModal={showCreateModal}
+        showEditModal={showEditModal}
+        showViewModal={showViewModal}
+        showConfirmDialog={showConfirmDialog}
+        closeAllModals={closeAllModals}
         onCreate={handleCreate}
         onUpdateCategory={handleUpdate}
-        onDelete={handleDelete}
+        onDelete={handleDeleteModal}
         isProcessing={
-          modalState.type === "create"
-            ? createMut.isLoading
-            : modalState.type === "edit"
-              ? updateMut.isLoading
-              : modalState.type === "deleteConfirm"
-                ? deleteMut.isLoading
-                : false
+          createMut.isLoading || updateMut.isLoading || deleteMut.isLoading
         }
-        actionError={actionError}
+        error={actionError}
       />
     </>
   );

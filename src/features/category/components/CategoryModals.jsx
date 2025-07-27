@@ -3,59 +3,67 @@ import React from "react";
 import CategoryCreateModal from "./CategoryCreateModal";
 import CategoryEditModal from "./CategoryEditModal";
 import CategoryViewModal from "./CategoryViewModal";
-import DeleteMessage from "../../../components/common/DeleteMessage";
+import DeleteMessage from "@/components/common/DeleteMessage";
 
+/**
+ * Modales centralizados para categorías.
+ * Ahora usan props desacoplados (sin modalState).
+ */
 const CategoryModals = ({
-    modalState,
-    closeModal,
+    showCreateModal,
+    showEditModal,
+    showViewModal,
+    showConfirmDialog,
+    category,
+    categoryToDelete,
     onCreate,
     onUpdateCategory,
     onDelete,
-    createStatus,
-    updateStatus,
-    deleteStatus,
-    actionError,
+    isProcessing,
+    error,
+    closeAllModals,
 }) => {
-    const { type, category } = modalState;
-    const common = { isOpen: type !== null, onClose: closeModal };
-
     return (
         <>
-            {type === "create" && (
+            {showCreateModal && (
                 <CategoryCreateModal
-                    {...common}
+                    isOpen={showCreateModal}
+                    onClose={closeAllModals}
                     onCreate={onCreate}
-                    isProcessing={createStatus === "loading"}
-                    error={actionError}
+                    isProcessing={isProcessing}
+                    error={error}
                 />
             )}
 
-            {type === "edit" && category && (
+            {showEditModal && category && (
                 <CategoryEditModal
-                    {...common}
+                    isOpen={showEditModal}
+                    onClose={closeAllModals}
                     category={category}
                     onUpdateCategory={onUpdateCategory}
-                    isProcessing={updateStatus === "loading"}
-                    error={actionError}
+                    isProcessing={isProcessing}
+                    error={error}
                 />
             )}
 
-            {type === "view" && category && (
+            {showViewModal && category && (
                 <CategoryViewModal
-                    {...common}
+                    isOpen={showViewModal}
+                    onClose={closeAllModals}
                     category={category}
                 />
             )}
 
-            {type === "deleteConfirm" && category && (
+            {showConfirmDialog && categoryToDelete && (
                 <DeleteMessage
-                    {...common}
-                    onDelete={() => onDelete(category)}
-                    isDeleting={deleteStatus === "loading"}
-                    deleteError={actionError}
-                    clearDeleteError={closeModal}
+                    isOpen={showConfirmDialog}
+                    onClose={closeAllModals}
+                    onDelete={onDelete}
+                    isDeleting={isProcessing}
+                    deleteError={error}
+                    clearDeleteError={closeAllModals}
                     itemName="categoría"
-                    itemIdentifier={category.name}
+                    itemIdentifier={categoryToDelete.name}
                 />
             )}
         </>

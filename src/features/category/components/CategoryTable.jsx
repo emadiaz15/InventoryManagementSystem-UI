@@ -1,7 +1,6 @@
 // src/features/category/components/CategoryTable.jsx
 import React, { useMemo } from "react";
-import Table from "../../../components/common/Table";
-import Pagination from "../../../components/ui/Pagination";
+import Table from "@/components/common/Table";
 import { PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/outline";
 
 const CategoryTable = ({
@@ -9,10 +8,6 @@ const CategoryTable = ({
     openViewModal,
     openEditModal,
     openDeleteConfirmModal,
-    goToNextPage,
-    goToPreviousPage,
-    hasNext,
-    hasPrevious,
 }) => {
     const tableRows = useMemo(
         () =>
@@ -54,11 +49,9 @@ const CategoryTable = ({
     const headers = ["Nombre", "Descripción", "Acciones"];
 
     return (
-        <>
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-2">
-                <Table headers={headers} rows={tableRows} />
-            </div>
-        </>
+        <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-2">
+            <Table headers={headers} rows={tableRows} />
+        </div>
     );
 };
 
