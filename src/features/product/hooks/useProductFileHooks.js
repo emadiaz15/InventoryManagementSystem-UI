@@ -1,4 +1,4 @@
-// src/features/product/hooks/useProductFileHooks.js
+import { useState } from "react" // ⬅️ necesario para manejar el estado local
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   listProductFiles,
@@ -61,14 +61,17 @@ export function useProductFilesData(productId) {
  * @param {string|number} productId
  */
 export function useUploadProductFiles(productId) {
-  const qc        = useQueryClient()
+  const qc = useQueryClient()
   const filesKey  = productKeys.files(productId)
   const detailKey = productKeys.detail(productId)
 
-  return useMutation({
+  const [uploadError, setUploadError] = useState(null) // ⬅️ estado para manejar errores
+
+  const mutation = useMutation({
     mutationFn: (files) => uploadFileProduct(productId, files),
     onMutate: async (files) => {
       await qc.cancelQueries(filesKey)
+      setUploadError(null) // limpiar errores anteriores
       const previous = qc.getQueryData(filesKey) || []
 
       // placeholders
@@ -86,7 +89,8 @@ export function useUploadProductFiles(productId) {
       ])
       return { previous }
     },
-    onError: (_err, _files, context) => {
+    onError: (err, _files, context) => {
+      setUploadError(err?.message || "Error uploading files.") // setear error
       if (context?.previous) {
         qc.setQueryData(filesKey, context.previous)
       }
@@ -96,6 +100,13 @@ export function useUploadProductFiles(productId) {
       qc.invalidateQueries(detailKey)
     },
   })
+
+  return {
+    uploadFiles: mutation.mutateAsync,
+    uploading: mutation.isLoading,
+    uploadError,
+    clearUploadError: () => setUploadError(null), // función expuesta para limpiar error
+  }
 }
 
 /**

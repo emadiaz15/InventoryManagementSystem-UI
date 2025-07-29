@@ -1,3 +1,5 @@
+//* src/features/product/components/AdvancedFilter */
+
 import React, { useState } from "react";
 
 const AdvancedFilter = ({ columns, initialFilters = {}, onFilterChange }) => {
