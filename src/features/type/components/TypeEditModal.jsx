@@ -1,8 +1,6 @@
-// src/features/type/components/TypeEditModal.jsx
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import Modal from "@/components/ui/Modal"
 import ErrorMessage from "@/components/common/ErrorMessage"
-import SuccessMessage from "@/components/common/SuccessMessage"
 import FormInput from "@/components/ui/form/FormInput"
 import FormSelect from "@/components/ui/form/FormSelect"
 
@@ -25,14 +23,12 @@ const TypeEditModal = ({
 
     const [formData, setFormData] = useState(initial)
     const [error, setError] = useState("")
-    const [success, setSuccess] = useState("")
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
             setFormData(initial)
             setError("")
-            setSuccess("")
             setSaving(false)
         }
     }, [isOpen, initial])
@@ -57,16 +53,12 @@ const TypeEditModal = ({
 
         setSaving(true)
         try {
-            const updated = await onUpdateType(type.id, {
+            await onUpdateType(type.id, {
                 name: formData.name.trim(),
                 description: formData.description.trim(),
                 category: parseInt(formData.category, 10)
             })
-            setSuccess(`Tipo "${updated.name}" actualizado.`)
-            setTimeout(() => {
-                setSuccess("")
-                onClose()
-            }, 2000)
+            onClose() // ✅ cerrar modal en éxito
         } catch (err) {
             setError(err.message || "Error al actualizar el tipo.")
         } finally {
@@ -77,7 +69,6 @@ const TypeEditModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Editar Tipo">
             {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-            {success && <SuccessMessage message={success} />}
             <form onSubmit={handleSubmit} className="space-y-4">
                 <FormInput
                     label="Nombre"

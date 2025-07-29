@@ -13,7 +13,7 @@ const CategoryTable = ({
         () =>
             categories.map((category) => ({
                 Nombre: category.name || "N/A",
-                Descripción: category.description || "Sin descripción",
+                Descripción: category.description || "N/A",
                 Acciones: (
                     <div className="flex space-x-2">
                         <button

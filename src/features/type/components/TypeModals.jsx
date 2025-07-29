@@ -1,4 +1,3 @@
-// src/features/type/components/TypeModals.jsx
 import React from "react"
 import TypeCreateModal from "./TypeCreateModal"
 import TypeEditModal from "./TypeEditModal"
@@ -6,53 +5,62 @@ import TypeViewModal from "./TypeViewModal"
 import DeleteMessage from "@/components/common/DeleteMessage"
 
 const TypeModals = ({
-    modalState,
-    closeModal,
+    showCreateModal,
+    showEditModal,
+    showViewModal,
+    showConfirmDialog,
+    type,
+    typeToDelete,
     onCreateType,
     onUpdateType,
     onDeleteType,
     categories,
     loadingCategories,
-    getCategoryName
+    getCategoryName,
+    closeAllModals,
+    error
 }) => {
-    const { type, typeData } = modalState
-
     return (
         <>
-            {type === "create" && (
+            {showCreateModal && (
                 <TypeCreateModal
                     isOpen
-                    onClose={closeModal}
+                    onClose={closeAllModals}
                     onCreateType={onCreateType}
                     categories={categories}
                     loadingCategories={loadingCategories}
                 />
             )}
-            {type === "edit" && typeData && (
+
+            {showEditModal && type && (
                 <TypeEditModal
                     isOpen
-                    onClose={closeModal}
-                    type={typeData}
+                    onClose={closeAllModals}
+                    type={type}
                     onUpdateType={onUpdateType}
                     categories={categories}
                     loadingCategories={loadingCategories}
                 />
             )}
-            {type === "view" && typeData && (
+
+            {showViewModal && type && (
                 <TypeViewModal
                     isOpen
-                    onClose={closeModal}
-                    type={typeData}
+                    onClose={closeAllModals}
+                    type={type}
                     getCategoryName={getCategoryName}
                 />
             )}
-            {type === "deleteConfirm" && typeData && (
+
+            {showConfirmDialog && typeToDelete && (
                 <DeleteMessage
                     isOpen
-                    onClose={closeModal}
-                    onDelete={() => onDeleteType(typeData)}
+                    onClose={closeAllModals}
+                    onDelete={() => onDeleteType(typeToDelete)}
+                    deleteError={error}
+                    clearDeleteError={closeAllModals}
                     itemName="el tipo"
-                    itemIdentifier={typeData.name}
+                    itemIdentifier={typeToDelete.name}
                 />
             )}
         </>
