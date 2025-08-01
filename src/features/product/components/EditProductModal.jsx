@@ -1,81 +1,52 @@
 // src/features/product/components/EditProductModal.jsx
-import React, { useState, useEffect, useMemo } from "react"
-import PropTypes from "prop-types"
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import PropTypes from "prop-types";
+import Modal from "@/components/ui/Modal";
+import FormInput from "@/components/ui/form/FormInput";
+import FormStockInput from "@/features/product/components/FormStockInput";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import SuccessMessage from "@/components/common/SuccessMessage";
+import DeleteMessage from "@/components/common/DeleteMessage";
+import ProductCarouselOverlay from "@/features/product/components/ProductCarouselOverlay";
+import { useProducts } from "@/features/product/hooks/useProductHooks";
+import { useUploadProductFiles, useDeleteProductFile } from "@/features/product/hooks/useProductFileHooks";
+import { usePrefetchedData } from "@/context/DataPrefetchContext";
 
-import Modal from "@/components/ui/Modal"
-import FormInput from "@/components/ui/form/FormInput"
-import FormSelect from "@/components/ui/form/FormSelect"
-import FormStockInput from "@/features/product/components/FormStockInput"
-import ErrorMessage from "@/components/common/ErrorMessage"
-import SuccessMessage from "@/components/common/SuccessMessage"
-import DeleteMessage from "@/components/common/DeleteMessage"
-import ProductCarouselOverlay from "@/features/product/components/ProductCarouselOverlay"
+export default function EditProductModal({ product, isOpen, onClose, onSave, children }) {
+    const { categories, types } = usePrefetchedData();
+    const { products, updateProduct } = useProducts({ page_size: 1000 });
+    const uploadMut = useUploadProductFiles(product.id);
+    const deleteMut = useDeleteProductFile(product.id);
 
-import { useProducts } from "@/features/product/hooks/useProductHooks"
-import {
-    useUploadProductFiles,
-    useDeleteProductFile,
-} from "@/features/product/hooks/useProductFileHooks"
-import { usePrefetchedData } from "@/context/DataPrefetchContext"
-
-export default function EditProductModal({
-    product,
-    isOpen,
-    onClose,
-    onSave,
-    children,
-}) {
-    // Datos precargados
-    const { categories, types } = usePrefetchedData()
-
-    // Hooks
-    const { products, updateProduct } = useProducts({ page_size: 1000 })
-    const uploadMut = useUploadProductFiles(product.id)
-    const deleteMut = useDeleteProductFile(product.id)
-
-    // Form state
     const [formData, setFormData] = useState({
-        name: "",
-        code: "",
-        description: "",
-        brand: "",
-        location: "",
-        position: "",
-        category: "",
-        type: "",
-        initial_stock_quantity: "",
-        has_subproducts: false,
-        images: [],       // new uploads
-    })
-    const [previewFiles, setPreviewFiles] = useState([]) // filenames
-    const [error, setError] = useState("")
-    const [loading, setLoading] = useState(false)
-    const [showSuccess, setShowSuccess] = useState(false)
+        name: "", code: "", description: "", brand: "", location: "",
+        position: "", categoryInput: "", typeInput: "", category: null,
+        type: "", initial_stock_quantity: "", has_subproducts: false, images: []
+    });
+    const [previewFiles, setPreviewFiles] = useState([]);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [fileToDelete, setFileToDelete] = useState(null);
 
-    // Delete confirmation
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-    const [fileToDelete, setFileToDelete] = useState(null)
+    const childrenWithProps = React.Children.map(children, c =>
+        React.isValidElement(c) && c.type === ProductCarouselOverlay
+            ? React.cloneElement(c, { onDelete: (f) => { setFileToDelete(f); setIsDeleteOpen(true); } })
+            : c
+    );
 
-    // Inject delete handler into carousel children
-    const childrenWithProps = React.Children.map(children, (child) =>
-        React.isValidElement(child) &&
-            child.type === ProductCarouselOverlay
-            ? React.cloneElement(child, {
-                onDelete: (file) => {
-                    setFileToDelete(file)
-                    setIsDeleteOpen(true)
-                },
-            })
-            : child
-    )
-
-    // Initialize form when open
     useEffect(() => {
-        if (!isOpen) return
-        setError("")
-        setShowSuccess(false)
-        setLoading(false)
-        setPreviewFiles([])
+        if (!isOpen) return;
+
+        const categoryName = categories.find(c => c.id === product.category)?.name ?? "";
+        const typeName = types.find(t => t.id === product.type)?.name ?? "";
+
+        setError("");
+        setShowSuccess(false);
+        setLoading(false);
+        setPreviewFiles([]);
         setFormData({
             name: product.name ?? "",
             code: String(product.code ?? ""),
@@ -83,121 +54,106 @@ export default function EditProductModal({
             brand: product.brand ?? "",
             location: product.location ?? "",
             position: product.position ?? "",
+            categoryInput: categoryName,
+            typeInput: typeName,
             category: String(product.category ?? ""),
             type: String(product.type ?? ""),
             initial_stock_quantity: "",
             has_subproducts: !!product.has_subproducts,
-            images: [],
-        })
-    }, [isOpen, product])
+            images: []
+        });
+    }, [isOpen, product, categories, types]);
 
-    // Filter types by category
     const filteredTypes = useMemo(() => {
-        const cid = parseInt(formData.category, 10)
-        return cid
-            ? types.filter((t) =>
-                t.category?.id === cid || t.category_id === cid
-            )
-            : types
-    }, [types, formData.category])
+        const cid = parseInt(formData.category, 10);
+        return cid ? types.filter(t => t.category?.id === cid || t.category_id === cid) : [];
+    }, [types, formData.category]);
 
-    // Handlers
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target
-        setFormData((f) => ({
-            ...f,
-            [name]: type === "checkbox" ? checked : value,
-        }))
-    }
+    useEffect(() => {
+        const normalize = txt => txt.trim().toLowerCase();
+        const found = categories.find(c => normalize(c.name) === normalize(formData.categoryInput));
+        setFormData(f => ({ ...f, category: found ? String(found.id) : null }));
+    }, [formData.categoryInput, categories]);
+
+    useEffect(() => {
+        setFormData(f => ({ ...f, type: "" }));
+    }, [formData.category]);
+
+    const normalize = txt => txt.trim().toLowerCase().replace(/\s+/g, "");
+    const validateCodeUnique = () => {
+        const codeStr = normalize(formData.code);
+        return !products.some(p => p.id !== product.id && normalize(String(p.code)) === codeStr);
+    };
+
+    const handleChange = useCallback(e => {
+        const { name, value, type, checked } = e.target;
+        setFormData(f => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+    }, []);
+
     const handleStockChange = (e) => {
-        setFormData((f) => ({
-            ...f,
-            initial_stock_quantity: e.target.value,
-        }))
-    }
-    const handleFileChange = (e) => {
-        const files = Array.from(e.target.files)
+        setFormData(f => ({ ...f, initial_stock_quantity: e.target.value }));
+    };
+
+    const handleFileChange = e => {
+        const files = Array.from(e.target.files);
         if (formData.images.length + files.length > 5) {
-            setError("Máximo 5 archivos permitidos.")
-            return
+            setError("Máximo 5 archivos permitidos."); return;
         }
-        setFormData((f) => ({ ...f, images: [...f.images, ...files] }))
-        setPreviewFiles((p) => [...p, ...files.map((f) => f.name)])
-    }
-    const removeFile = (idx) => {
-        setFormData((f) => ({
-            ...f,
-            images: f.images.filter((_, i) => i !== idx),
-        }))
-        setPreviewFiles((p) => p.filter((_, i) => i !== idx))
-    }
+        setFormData(f => ({ ...f, images: [...f.images, ...files] }));
+        setPreviewFiles(p => [...p, ...files.map(f => f.name)]);
+    };
 
-    // Unique code validation
-    const validateCode = () => {
-        const norm = formData.code.trim().toLowerCase()
-        if (
-            products.some(
-                (p) =>
-                    p.id !== product.id &&
-                    String(p.code).trim().toLowerCase() === norm
-            )
-        ) {
-            setError("El código ya está en uso.")
-            return false
+    const removeFile = idx => {
+        setFormData(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
+        setPreviewFiles(p => p.filter((_, i) => i !== idx));
+    };
+
+    const handleSubmit = async e => {
+        e.preventDefault();
+        setError(""); setShowSuccess(false);
+        if (!validateCodeUnique()) { setError("El código ya está en uso."); return; }
+        const validCat = categories.find(c => String(c.id) === formData.category);
+        if (!validCat) { setError("La categoría no existe."); return; }
+        if (formData.typeInput) {
+            const validType = filteredTypes.find(t => t.name.toLowerCase() === formData.typeInput.toLowerCase());
+            if (!validType) { setError("El tipo no es válido para esa categoría."); return; }
+            setFormData(f => ({ ...f, type: String(validType.id) }));
         }
-        return true
-    }
 
-    // Submit
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        setError("")
-        setShowSuccess(false)
-        if (!validateCode()) return
+        const codeNum = parseInt(formData.code.trim(), 10);
+        if (isNaN(codeNum)) { setError("El código debe ser numérico."); return; }
 
-        const fd = new FormData()
-        fd.append("name", formData.name.trim())
-        const codeNum = parseInt(formData.code.trim(), 10)
-        if (isNaN(codeNum)) {
-            setError("El código debe ser un número válido.")
-            return
-        }
-        fd.append("code", codeNum)
-        fd.append("description", formData.description.trim())
-        fd.append("brand", formData.brand.trim())
-        fd.append("location", formData.location.trim())
-        fd.append("position", formData.position.trim())
-        fd.append("category", formData.category)
-        fd.append("type", formData.type)
-        fd.append("has_subproducts", formData.has_subproducts ? "true" : "false")
-        const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "")
-        if (stockVal) fd.append("initial_stock_quantity", stockVal)
+        const fd = new FormData();
+        fd.append("name", formData.name.trim());
+        fd.append("code", codeNum);
+        fd.append("description", formData.description.trim());
+        fd.append("brand", formData.brand.trim());
+        fd.append("location", formData.location.trim());
+        fd.append("position", formData.position.trim());
+        fd.append("category", formData.category);
+        fd.append("type", formData.type);
+        fd.append("has_subproducts", formData.has_subproducts ? "true" : "false");
+        const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
+        if (stockVal) fd.append("initial_stock_quantity", stockVal);
 
         try {
-            setLoading(true)
-            await updateProduct(product.id, fd)
-            // upload new files
-            if (formData.images.length) {
-                await uploadMut.mutateAsync(formData.images)
-            }
-            setShowSuccess(true)
-            setTimeout(() => setShowSuccess(false), 2000)
-            onSave?.()
-            onClose()
+            setLoading(true);
+            await updateProduct(product.id, fd);
+            if (formData.images.length) await uploadMut.mutateAsync(formData.images);
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 2000);
+            onSave?.(); onClose();
         } catch (err) {
-            setError(err.message || "Error al actualizar el producto.")
-        } finally {
-            setLoading(false)
-        }
-    }
+            setError(err.message || "Error al actualizar el producto.");
+        } finally { setLoading(false); }
+    };
 
-    // Confirm delete
     const confirmDelete = async () => {
-        if (!fileToDelete) return
-        await deleteMut.mutateAsync(fileToDelete.id)
-        setIsDeleteOpen(false)
-        onSave?.()
-    }
+        if (!fileToDelete) return;
+        await deleteMut.mutateAsync(fileToDelete.id);
+        setIsDeleteOpen(false);
+        onSave?.();
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Editar Producto" maxWidth="max-w-6xl">
@@ -205,22 +161,64 @@ export default function EditProductModal({
                 <div className="flex-1 p-4 bg-background-100 rounded max-h-[80vh] overflow-y-auto">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-                        <FormSelect
-                            label="Categoría"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleChange}
-                            options={categories.map((c) => ({ value: String(c.id), label: c.name }))}
-                            required
-                        />
-                        <FormSelect
-                            label="Tipo (opcional)"
-                            name="type"
-                            value={formData.type}
-                            onChange={handleChange}
-                            options={[{ value: "", label: "N/A" }, ...filteredTypes.map((t) => ({ value: String(t.id), label: t.name }))]}
-                            disabled={!formData.category}
-                        />
+                        {showSuccess && <SuccessMessage message="Producto actualizado correctamente" />}
+
+                        {/* Categoría input + datalist */}
+                        <div>
+                            <label htmlFor="category-input" className="block text-sm font-medium text-text-secondary">Categoría *</label>
+                            <div className="relative mt-1">
+                                <input
+                                    id="category-input"
+                                    name="categoryInput"
+                                    type="text"
+                                    list="category-options"
+                                    value={formData.categoryInput}
+                                    onChange={handleChange}
+                                    placeholder="Selecciona o escribe una categoría"
+                                    required
+                                    className="mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 border-background-200"
+                                />
+                                <datalist id="category-options">
+                                    {categories.map(c => <option key={c.id} value={c.name} />)}
+                                </datalist>
+                            </div>
+                        </div>
+
+                        {/* Tipo input con sugerencias */}
+                        <div>
+                            <label htmlFor="type-input" className="block text-sm font-medium text-text-secondary">Tipo (opcional)</label>
+                            <div className="relative mt-1">
+                                <input
+                                    id="type-input"
+                                    name="typeInput"
+                                    type="text"
+                                    value={formData.typeInput}
+                                    onChange={handleChange}
+                                    disabled={!formData.category}
+                                    placeholder="Selecciona o escribe un tipo"
+                                    className="mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 border-background-200 disabled:opacity-50"
+                                    autoComplete="off"
+                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+                                    onFocus={() => setShowSuggestions(true)}
+                                />
+                                {showSuggestions && formData.typeInput && filteredTypes.length > 0 && (
+                                    <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-md bg-white border border-gray-300 text-sm shadow-lg">
+                                        {filteredTypes.filter(t =>
+                                            t.name.toLowerCase().includes(formData.typeInput.toLowerCase())
+                                        ).map(t => (
+                                            <li key={t.id} onMouseDown={() => {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    typeInput: t.name,
+                                                    type: String(t.id)
+                                                }));
+                                                setShowSuggestions(false);
+                                            }} className="cursor-pointer px-4 py-2 hover:bg-primary-100">{t.name}</li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
                         <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
@@ -273,7 +271,7 @@ export default function EditProductModal({
                 itemIdentifier={fileToDelete?.name || fileToDelete?.filename || ""}
             />
         </Modal>
-    )
+    );
 }
 
 EditProductModal.propTypes = {
@@ -282,4 +280,4 @@ EditProductModal.propTypes = {
     onClose: PropTypes.func.isRequired,
     onSave: PropTypes.func,
     children: PropTypes.node,
-}
+};
