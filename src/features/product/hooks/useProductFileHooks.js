@@ -1,4 +1,4 @@
-import { useState } from "react" // ⬅️ necesario para manejar el estado local
+import { useState, useCallback } from "react" // ⬅️ import useCallback
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   listProductFiles,
@@ -67,11 +67,16 @@ export function useUploadProductFiles(productId) {
 
   const [uploadError, setUploadError] = useState(null) // ⬅️ estado para manejar errores
 
+  // Memoizar clearUploadError para identidad estable
+  const clearUploadError = useCallback(() => {
+    setUploadError(null)
+  }, [])
+
   const mutation = useMutation({
     mutationFn: (files) => uploadFileProduct(productId, files),
     onMutate: async (files) => {
       await qc.cancelQueries(filesKey)
-      setUploadError(null) // limpiar errores anteriores
+      clearUploadError() // limpiar errores anteriores
       const previous = qc.getQueryData(filesKey) || []
 
       // placeholders
@@ -102,10 +107,10 @@ export function useUploadProductFiles(productId) {
   })
 
   return {
-    uploadFiles: mutation.mutateAsync,
-    uploading: mutation.isLoading,
+    uploadFiles:     mutation.mutateAsync,
+    uploading:       mutation.isLoading,
     uploadError,
-    clearUploadError: () => setUploadError(null), // función expuesta para limpiar error
+    clearUploadError // ahora memoizada
   }
 }
 
