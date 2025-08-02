@@ -97,20 +97,18 @@ const ProductModals = ({
                 )
             }
 
-            {
-                type === "deleteConfirm" && isStaff && productData && (
-                    <DeleteMessage
-                        isOpen
-                        onClose={closeModal}
-                        onDelete={() => onDeleteProduct(productId)}
-                        isDeleting={isDeleting}
-                        deleteError={deleteError}
-                        clearDeleteError={clearDeleteError}
-                        itemName="el producto"
-                        itemIdentifier={productData.name || "SIN NOMBRE"}
-                    />
-                )
-            }
+            {type === "deleteConfirm" && isStaff && productData && (
+                <DeleteMessage
+                    isOpen
+                    onClose={closeModal}
+                    onDelete={() => onDeleteProduct(productData.id)}
+                    isDeleting={isDeleting}
+                    deleteError={deleteError}
+                    clearDeleteError={clearDeleteError}
+                    itemName="el producto"
+                    itemIdentifier={productData.name || "SIN NOMBRE"}
+                />
+            )}
         </>
     )
 }

@@ -1,8 +1,13 @@
 // src/features/product/components/ProductCarouselOverlay.jsx
 import React, { useState, useEffect, useCallback } from "react";
-import { TrashIcon, DocumentIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import {
+    TrashIcon,
+    DocumentIcon,
+    ArrowDownTrayIcon,
+} from "@heroicons/react/24/outline";
 import Spinner from "@/components/ui/Spinner";
 import PropTypes from "prop-types";
+import { downloadProductFile } from "@/features/product/services/products/files"; // <-- import
 
 const ProductCarouselOverlay = ({
     images = [],
@@ -20,7 +25,11 @@ const ProductCarouselOverlay = ({
     const getMediaType = (type = "", filename = "") => {
         const ext = filename.toLowerCase().split(".").pop();
         if (type === "application/pdf" || ext === "pdf") return "pdf";
-        if (type.startsWith("video/") || ["mp4", "webm", "mov"].includes(ext)) return "video";
+        if (
+            type.startsWith("video/") ||
+            ["mp4", "webm", "mov", "avi", "mkv", "mpeg"].includes(ext)
+        )
+            return "video";
         if (
             type.startsWith("image/") ||
             ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)
@@ -51,7 +60,7 @@ const ProductCarouselOverlay = ({
                 id: img.drive_file_id || img.id,
                 filename: img.filename || img.name || img.id,
                 contentType: img.contentType || img.mimeType || "application/octet-stream",
-                url: img.url,
+                url: img.url, // sigue siendo URL presignada para abrir en nueva pestaña
             }))
             .filter((i) => i.url);
         setLocalImages(formatted);
@@ -73,8 +82,7 @@ const ProductCarouselOverlay = ({
         const idx = Math.min(current, localImages.length - 1);
         const item = localImages[idx];
         if (!item) return;
-        const mediaType = getMediaType(item.contentType, item.filename);
-        if (mediaType === "image") {
+        if (getMediaType(item.contentType, item.filename) === "image") {
             const img = new Image();
             img.src = item.url;
             if (img.complete) setImgLoaded(true);
@@ -88,11 +96,10 @@ const ProductCarouselOverlay = ({
             </div>
         );
     }
-
     if (!localImages.length) {
         return (
             <div className="p-6 text-center text-sm text-gray-600">
-                No se encontraron archivos multimedia.
+                No hay archivos multimedia.
             </div>
         );
     }
@@ -109,32 +116,55 @@ const ProductCarouselOverlay = ({
                     {!imgLoaded && mediaType === "image" && (
                         <Spinner size="6" color="text-white" />
                     )}
-                    {mediaType === "video" ? (
-                        <video
-                            src={item.url}
-                            controls
-                            className="w-full h-full object-contain"
-                            onCanPlay={() => setImgLoaded(true)}
-                        />
-                    ) : mediaType === "pdf" ? (
-                        <button
-                            onClick={() => window.open(item.url, "_blank")}
-                            className="flex flex-col items-center justify-center space-y-2 bg-gray-100 p-4 rounded"
+
+                    {mediaType === "video" && (
+                        <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full h-full"
+                        >
+                            <video
+                                src={item.url}
+                                controls
+                                className="w-full h-full object-contain"
+                                onCanPlay={() => setImgLoaded(true)}
+                            />
+                        </a>
+                    )}
+
+                    {mediaType === "pdf" && (
+                        <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-col items-center justify-center bg-gray-100 p-4 rounded"
                         >
                             <DocumentIcon className="w-12 h-12 text-red-600" />
                             <span className="text-sm text-gray-700 truncate max-w-xs">
                                 {item.filename}
                             </span>
-                        </button>
-                    ) : mediaType === "image" ? (
-                        <img
-                            src={item.url}
-                            onLoad={() => setImgLoaded(true)}
-                            className={`w-full h-full object-contain cursor-pointer transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"
-                                }`}
-                            alt={item.filename}
-                        />
-                    ) : (
+                        </a>
+                    )}
+
+                    {mediaType === "image" && (
+                        <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full h-full block"
+                        >
+                            <img
+                                src={item.url}
+                                onLoad={() => setImgLoaded(true)}
+                                className={`w-full h-full object-contain transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"
+                                    }`}
+                                alt={item.filename}
+                            />
+                        </a>
+                    )}
+
+                    {mediaType === "unknown" && (
                         <div className="text-white text-sm">Tipo no soportado</div>
                     )}
                 </div>
@@ -153,17 +183,7 @@ const ProductCarouselOverlay = ({
                     ▶
                 </button>
 
-                {/* Botón de descarga */}
-                <a
-                    href={item.url}
-                    download={item.filename}
-                    className="absolute top-2 right-2 bg-white bg-opacity-75 p-2 rounded-full shadow hover:bg-opacity-100"
-                    title="Descargar archivo"
-                >
-                    <ArrowDownTrayIcon className="w-5 h-5 text-gray-800" />
-                </a>
-
-                {/* Botón eliminar */}
+                {/* Eliminar */}
                 {editable && (
                     <button
                         onClick={() => onDeleteRequest?.(item)}
@@ -175,14 +195,14 @@ const ProductCarouselOverlay = ({
                 )}
             </div>
 
-            {/* Indicators */}
+            {/* Indicadores */}
             <div className="flex justify-center py-2 border-t border-gray-200 bg-gray-50 rounded">
                 {localImages.map((_, i) => (
                     <button
                         key={i}
                         onClick={() => {
-                            setCurrent(i);
                             setImgLoaded(false);
+                            setCurrent(i);
                         }}
                         className={`w-3 h-3 mx-1 rounded-full ${i === idx ? "bg-blue-500" : "bg-gray-400"
                             }`}

@@ -35,7 +35,6 @@ export const uploadFileProduct = async (productId, files) => {
   }
   const id = String(productId).trim();
   const formData = new FormData();
-  // El backend hace `request.FILES.getlist("file")`
   files.forEach((file) => formData.append("file", file));
   try {
     const response = await djangoApi.post(
@@ -50,29 +49,6 @@ export const uploadFileProduct = async (productId, files) => {
       error.response?.data?.detail ||
       "No se pudo subir el archivo.";
     throw new Error(message);
-  }
-};
-
-/**
- * 🔽 Descarga un archivo multimedia de un producto.
- */
-export const downloadProductFile = async (
-  productId,
-  fileId,
-  signal = null
-) => {
-  if (!productId || !fileId) {
-    console.warn("⚠️ Faltan parámetros para descargar archivo.");
-    return null;
-  }
-  try {
-    return await fetchProtectedFile(productId, fileId, null, signal);
-  } catch (error) {
-    console.error(
-      `❌ Error al descargar archivo ${fileId} del producto ${productId}:`,
-      error
-    );
-    return null;
   }
 };
 
@@ -100,32 +76,24 @@ export const deleteProductFile = async (productId, fileId) => {
 };
 
 /**
- * 🖇️ Enriquecer metadatos con URLs de blob + nombre + tipo de contenido.
- * Ahora recibe un downloadFn (ej: downloadProductFile).
+ * 🔽 Descarga protegido y convierte a blob URL.
  */
-export const enrichFilesWithBlobUrls = async ({
+export const downloadProductFile = async (
   productId,
-  rawFiles = [],
-  subproductId = null,
-  signal = null,
-  downloadFn,              // <— nueva firma
-}) => {
-  if (!productId || !Array.isArray(rawFiles)) return [];
-  const enriched = await Promise.all(
-    rawFiles.map(async (f) => {
-      const id = f.drive_file_id || f.id;
-      if (!id || f.mimeType === "application/vnd.google-apps.folder") return null;
-      // usa downloadFn en vez de fetchProtectedFile directamente
-      const url = await downloadFn(productId, id, signal);
-      if (!url) return null;
-      return {
-        ...f,
-        id,
-        url,
-        filename: f.name || f.filename || "",
-        contentType: f.mimeType || f.contentType,
-      };
-    })
-  );
-  return enriched.filter(Boolean);
+  fileId,
+  signal = null
+) => {
+  if (!productId || !fileId) {
+    console.warn("⚠️ Faltan parámetros para descargar archivo.");
+    return null;
+  }
+  try {
+    return await fetchProtectedFile(productId, fileId, null, signal);
+  } catch (error) {
+    console.error(
+      `❌ Error al descargar archivo ${fileId} del producto ${productId}:`,
+      error
+    );
+    return null;
+  }
 };
