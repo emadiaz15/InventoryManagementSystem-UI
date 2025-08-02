@@ -1,3 +1,10 @@
+
+/** src/context/DataPrefetchContext.jsx
+ * Contexto para prefetch de datos comunes como categorías y tipos.
+ * Utilizado para cargar datos necesarios antes de renderizar componentes.
+ * Permite evitar múltiples llamadas a la API en componentes individuales.
+ */
+
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext } from "react"
 import { useQuery } from "@tanstack/react-query"

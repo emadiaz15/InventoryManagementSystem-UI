@@ -1,4 +1,3 @@
-// src/features/type/components/TypeTable.jsx
 import React, { useMemo } from "react"
 import Table from "@/components/common/Table"
 import Pagination from "@/components/ui/Pagination"
@@ -15,21 +14,35 @@ const TypeTable = ({
     nextPageUrl,
     previousPageUrl
 }) => {
+    const headers = useMemo(() => ["Tipo", "Descripción", "Categoría", "Acciones"], [])
+
     const rows = useMemo(
         () =>
-            types.map((t) => ({
-                Tipo: t.name,
-                Descripción: t.description || "Sin descripción",
-                Categoría: getCategoryName(t.category),
+            types.map((type) => ({
+                Tipo: type.name,
+                Descripción: type.description || "N/A",
+                Categoría: getCategoryName(type.category),
                 Acciones: (
                     <div className="flex space-x-2">
-                        <button onClick={() => openViewModal(t)} className="bg-blue-500 p-2 rounded hover:bg-blue-600">
+                        <button
+                            onClick={() => openViewModal(type)}
+                            className="bg-blue-500 p-2 rounded hover:bg-blue-600"
+                            aria-label="Ver tipo"
+                        >
                             <EyeIcon className="w-5 h-5 text-white" />
                         </button>
-                        <button onClick={() => openEditModal(t)} className="bg-primary-500 p-2 rounded hover:bg-primary-600">
+                        <button
+                            onClick={() => openEditModal(type)}
+                            className="bg-primary-500 p-2 rounded hover:bg-primary-600"
+                            aria-label="Editar tipo"
+                        >
                             <PencilIcon className="w-5 h-5 text-white" />
                         </button>
-                        <button onClick={() => openDeleteConfirmModal(t)} className="bg-red-500 p-2 rounded hover:bg-red-600">
+                        <button
+                            onClick={() => openDeleteConfirmModal(type)}
+                            className="bg-red-500 p-2 rounded hover:bg-red-600"
+                            aria-label="Eliminar tipo"
+                        >
                             <TrashIcon className="w-5 h-5 text-white" />
                         </button>
                     </div>
@@ -37,8 +50,6 @@ const TypeTable = ({
             })),
         [types, getCategoryName, openViewModal, openEditModal, openDeleteConfirmModal]
     )
-
-    const headers = useMemo(() => ["Tipo", "Descripción", "Categoría", "Acciones"], [])
 
     return (
         <>

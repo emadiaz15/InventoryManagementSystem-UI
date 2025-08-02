@@ -46,14 +46,14 @@ const ProductTable = ({
                         {p.current_stock ?? 0}
                     </div>
                 ),
-                Marca: (
+                Marcas: (
                     <div className="w-[100px] truncate">
-                        {p.brand ?? "Sin marca"}
+                        {p.brand ?? ""}
                     </div>
                 ),
                 Categoría: (
                     <div className="w-[100px] truncate">
-                        {p.category_name ?? "Sin categoría"}
+                        {p.category_name ?? ""}
                     </div>
                 ),
                 Acciones: (

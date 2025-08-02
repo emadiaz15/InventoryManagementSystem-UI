@@ -55,32 +55,9 @@ export function useCreateSubproduct(productId) {
 
   return useMutation({
     mutationFn: (formData) => createSubproduct(productId, formData),
-    onMutate: async (newFormData) => {
-      await qc.cancelQueries(listKey)
-      const previous = qc.getQueryData(listKey) || { results: [], count: 0 }
-      const tempId = `temp-${Date.now()}`
-      const preview = Object.fromEntries(newFormData.entries())
+    onSuccess: () => {
+      queryClient.invalidateQueries(["subproducts"])
 
-      qc.setQueryData(listKey, (old = previous) => ({
-        ...old,
-        results: [{ id: tempId, ...preview, current_stock: 0 }, ...old.results],
-        count: old.count + 1,
-      }))
-      return { previous }
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        qc.setQueryData(listKey, context.previous)
-      }
-    },
-    onSettled: () => {
-      qc.invalidateQueries({
-        predicate: (q) =>
-          productKeys.prefixMatch(q.queryKey) &&
-          q.queryKey[0] === "products" &&
-          q.queryKey[2] === "subproducts" &&
-          q.queryKey[1] === productId,
-      })
     },
   })
 }
@@ -96,14 +73,12 @@ export function useUpdateSubproduct(productId) {
   return useMutation({
     mutationFn: ({ subproductId, formData }) =>
       updateSubproduct(productId, subproductId, formData),
-    onMutate: async ({ subproductId, formData }) => {
-      await Promise.all([
-        qc.cancelQueries(listKey),
-        qc.cancelQueries(detailKey(subproductId)),
-      ])
+
+    onMutate: async ({ subproductId, updates }) => {
+      await qc.cancelQueries(listKey)
+
       const prevList = qc.getQueryData(listKey)
       const prevDetail = qc.getQueryData(detailKey(subproductId))
-      const updates = Object.fromEntries(formData.entries())
 
       qc.setQueryData(listKey, (old = prevList) => ({
         ...old,
@@ -111,20 +86,23 @@ export function useUpdateSubproduct(productId) {
           sp.id === subproductId ? { ...sp, ...updates } : sp
         ),
       }))
+
       qc.setQueryData(detailKey(subproductId), (old = prevDetail) =>
         old ? { ...old, ...updates } : old
       )
 
       return { prevList, prevDetail }
     },
-    onError: (_err, vars, context) => {
+
+    onError: (_err, _vars, context) => {
       if (context?.prevList) {
         qc.setQueryData(listKey, context.prevList)
       }
       if (context?.prevDetail) {
-        qc.setQueryData(detailKey(vars.subproductId), context.prevDetail)
+        qc.setQueryData(detailKey(context.subproductId), context.prevDetail)
       }
     },
+
     onSettled: () => {
       qc.invalidateQueries({
         predicate: (q) =>
@@ -134,7 +112,7 @@ export function useUpdateSubproduct(productId) {
           q.queryKey[1] === productId,
       })
     },
-  })
+  });
 }
 
 /**

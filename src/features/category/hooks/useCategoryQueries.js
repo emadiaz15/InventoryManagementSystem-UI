@@ -1,13 +1,12 @@
-import { useQuery } from "@tanstack/react-query"
-import { djangoApi } from "@/api/clients"
-import { buildQueryString } from "@/utils/queryUtils"
+// src/features/category/hooks/useCategoryQueries.js
+import { useQuery } from "@tanstack/react-query";
+import { djangoApi } from "@/api/clients";
+import { buildQueryString } from "@/utils/queryUtils";
+import { categoryKeys } from "../utils/categoryKeys";
 
-/**
- * Named export ✅
- */
 export function useCategories(filters = {}) {
-  const qs = buildQueryString(filters)
-  const endpoint = `/inventory/categories/${qs}`
+  const qs = buildQueryString(filters);
+  const endpoint = `/inventory/categories/${qs}`;
 
   const {
     data,
@@ -15,13 +14,13 @@ export function useCategories(filters = {}) {
     isError,
     error,
   } = useQuery({
-    queryKey: ["categories", filters],
+    queryKey: categoryKeys.list(filters),
     queryFn: () => djangoApi.get(endpoint).then((res) => res.data),
     keepPreviousData: false,
     staleTime: 0,
     cacheTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
-  })
+  });
 
   return {
     categories: data?.results || [],
@@ -31,5 +30,5 @@ export function useCategories(filters = {}) {
     loading,
     isError,
     error,
-  }
+  };
 }

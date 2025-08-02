@@ -1,5 +1,5 @@
 // src/features/product/components/ViewProductModal.jsx
-import React from "react"
+import React, { useEffect } from "react"
 import PropTypes from "prop-types"
 
 import Modal from "@/components/ui/Modal"
@@ -8,30 +8,38 @@ import { useProductFilesData } from "@/features/product/hooks/useProductFileHook
 import ProductCarouselOverlay from "@/features/product/components/ProductCarouselOverlay"
 import { formatArgentineDate } from "@/utils/dateUtils"
 import Spinner from "@/components/ui/Spinner"
+import { useQueryClient } from "@tanstack/react-query"
+import { productKeys } from "@/features/product/utils/queryKeys"
 
 const ViewProductModal = ({ product, isOpen, onClose }) => {
-    // 1️⃣ Hooks SIEMPRE al tope del componente:
     const { categories, types } = usePrefetchedData()
     const productId = isOpen ? product?.id : null
+    const qc = useQueryClient()
+
+    // 🔄 Forzar refetch al abrir
+    useEffect(() => {
+        if (isOpen && productId) {
+            qc.invalidateQueries(productKeys.files(productId))
+        }
+    }, [isOpen, productId, qc])
+
     const {
         files = [],
         isLoading: loadingFiles,
         error: filesError,
     } = useProductFilesData(productId)
 
-    // 2️⃣ Early return tras los hooks:
     if (!product) return null
 
-    // 3️⃣ Cálculos derivados:
     const categoryName =
         categories.find((c) => c.id === product.category)?.name ||
         product.category_name ||
-        "Sin categoría"
+        "N/A"
 
     const typeName =
         types.find((t) => t.id === product.type)?.name ||
         product.type_name ||
-        "Sin tipo"
+        ""
 
     return (
         <Modal
@@ -46,17 +54,14 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
                     <p><strong>ID:</strong> {product.id}</p>
                     <p><strong>Código:</strong> {product.code ?? "N/A"}</p>
                     <p><strong>Categoría:</strong> {categoryName}</p>
-                    <p><strong>Tipo:</strong> {typeName}</p>
-                    <p><strong>Nombre/Medida:</strong> {product.name || "SIN NOMBRE"}</p>
+                    <p><strong>Nombre/Medida:</strong> {typeName} {product.name || "SIN NOMBRE"}</p>
                     <p><strong>Descripción:</strong> {product.description || "SIN DESCRIPCIÓN"}</p>
-                    <p><strong>Estado:</strong> {product.status ? "Activo" : "Inactivo"}</p>
-                    <p><strong>Subproductos?</strong> {product.has_subproducts ? "Sí" : "No"}</p>
                     <p><strong>Stock actual:</strong> {product.current_stock ?? 0}</p>
                     <p><strong>Marca:</strong> {product.brand || "N/A"}</p>
                     <p><strong>Ubicación:</strong> {product.location || "N/A"}</p>
                     <p><strong>Posición:</strong> {product.position || "N/A"}</p>
                     <p><strong>Creado en:</strong> {formatArgentineDate(product.created_at)}</p>
-                    <p><strong>Modificado en:</strong> {formatArgentineDate(product.modified_at)}</p>
+                    <p><strong>Última Modificación:</strong> {formatArgentineDate(product.modified_at)}</p>
                     <p><strong>Creado por:</strong> {product.created_by || "N/A"}</p>
                     <p><strong>Modificado por:</strong> {product.modified_by || "N/A"}</p>
                     <div className="flex justify-end mt-4">

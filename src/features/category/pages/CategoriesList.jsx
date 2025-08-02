@@ -1,23 +1,68 @@
 // src/features/category/pages/CategoryList.jsx
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Toolbar from "../../../components/common/Toolbar";
-import SuccessMessage from "../../../components/common/SuccessMessage";
-import ErrorMessage from "../../../components/common/ErrorMessage";
-import Filter from "../../../components/ui/Filter";
-import Layout from "../../../pages/Layout";
+import Toolbar from "@/components/common/Toolbar";
+import SuccessMessage from "@/components/common/SuccessMessage";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import Filter from "@/components/ui/Filter";
+import Layout from "@/pages/Layout";
 import Spinner from "@/components/ui/Spinner";
+import Pagination from "@/components/ui/Pagination";
 
 import CategoryTable from "../components/CategoryTable";
 import CategoryModals from "../components/CategoryModals";
 import { useCategories } from "../hooks/useCategories";
+import {
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "../hooks/useCategoryMutations";
+
+import useEntityModal from "@/hooks/useEntityModal";
+import useSuccess from "@/hooks/useSuccess";
 
 export default function CategoryList() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({ name: "", page: 1, page_size: 10 /* NO status */ }); const [modalState, setModalState] = useState({ type: null, category: null });
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [actionError, setActionError] = useState(null);
+  const [filters, setFilters] = useState({
+    name: "",
+    page: 1,
+    page_size: 10,
+  });
+
+  const {
+    successMessage,
+    error: actionError,
+    handleSuccess,
+    handleError,
+    clear: clearStatus,
+  } = useSuccess();
+
+  const deleteMut = useDeleteCategory();
+
+  const {
+    showCreateModal,
+    showEditModal,
+    showViewModal,
+    showConfirmDialog,
+    selectedEntity: selectedCategory,
+    entityToDelete,
+    openCreateModal,
+    openEditModal,
+    openViewModal,
+    openConfirmDialog,
+    handleDelete: handleDeleteModal,
+    closeAllModals, // ✅ usamos el correcto
+  } = useEntityModal({
+    onDelete: async (cat) => {
+      try {
+        await deleteMut.mutateAsync(cat.id);
+        handleSuccess(`Categoría "${cat.name}" eliminada.`);
+        setFilters((f) => ({ ...f, page: 1 }));
+      } catch (err) {
+        handleError(err);
+      }
+    },
+  });
 
   const {
     categories,
@@ -26,130 +71,112 @@ export default function CategoryList() {
     loading,
     isError,
     error,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    prefetchPage,
-    createStatus,
-    updateStatus,
-    deleteStatus,
   } = useCategories(filters);
+
+  const createMut = useCreateCategory();
+  const updateMut = useUpdateCategory();
 
   const filterColumns = useMemo(
     () => [{ key: "name", label: "Nombre Categoría", filterType: "text" }],
     []
   );
 
-  const openModal = (type, category = null) => {
-    setModalState({ type, category });
-    setActionError(null);
-  };
-  const closeModal = () => setModalState({ type: null, category: null });
-
-  const onSuccess = (msg) => {
-    setSuccessMessage(msg);
-    setShowSuccess(true);
-    closeModal();
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-  // create
   const handleCreate = async (data) => {
+    clearStatus();
     try {
-      const res = await createCategory(data);
-      onSuccess(`Categoría "${res.name}" creada.`);
+      const created = await createMut.mutateAsync(data);
+      handleSuccess(`Categoría "${created.name}" creada.`);
+      setFilters((f) => ({ ...f, page: 1 }));
+      closeAllModals();
     } catch (err) {
-      setActionError(err.response?.data?.detail || err.message);
+      handleError(err);
     }
   };
-  // update
+
   const handleUpdate = async ({ id, payload }) => {
+    clearStatus();
     try {
-      const res = await updateCategory({ id, payload });
-      onSuccess(`Categoría "${res.name}" actualizada.`);
+      const updated = await updateMut.mutateAsync({ id, payload });
+      handleSuccess(`Categoría "${updated.name}" actualizada.`);
+      setFilters((f) => ({ ...f, page: 1 }));
+      closeAllModals(); // ✅ cerrar el modal manualmente después del éxito
     } catch (err) {
-      setActionError(err.response?.data?.detail || err.message);
-    }
-  };
-  // delete
-  const handleDelete = async () => {
-    if (!modalState.category) return;
-    try {
-      await deleteCategory(modalState.category.id);
-      onSuccess(`Categoría "${modalState.category.name}" eliminada.`);
-    } catch (err) {
-      setActionError(err.response?.data?.detail || err.message);
+      handleError(err);
     }
   };
 
   return (
     <>
-      <Layout>
-        {showSuccess && (
+      <Layout isLoading={loading}>
+        {successMessage && (
           <div className="fixed top-20 right-5 z-50">
-            <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
+            <SuccessMessage message={successMessage} onClose={clearStatus} />
           </div>
         )}
 
         <div className="px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-12">
           <Toolbar
             title="Lista de Categorías"
-            onBackClick={() => navigate("/products")}
-            onButtonClick={() => openModal("create")}
+            onBackClick={() => navigate("/product-list")}
+            onButtonClick={openCreateModal}
             buttonText="Nueva Categoría"
           />
 
           <Filter
             columns={filterColumns}
             initialFilters={filters}
-            onFilterChange={(newF) => setFilters((f) => ({ ...f, ...newF, page: 1 }))}
+            onFilterChange={(newF) =>
+              setFilters((f) => ({ ...f, ...newF, page: 1 }))
+            }
           />
 
-          {isError && <ErrorMessage message={error.message || "Error al cargar categorías."} />}
+          {isError && (
+            <ErrorMessage message={error.message || "Error al cargar categorías."} />
+          )}
 
           {loading ? (
             <div className="my-8 flex justify-center items-center min-h-[30vh]">
               <Spinner size="6" color="text-primary-500" />
             </div>
-          ) : categories.length > 0 ? (
-            <CategoryTable
-              categories={categories}
-              openViewModal={(c) => openModal("view", c)}
-              openEditModal={(c) => openModal("edit", c)}
-              openDeleteConfirmModal={(c) => openModal("deleteConfirm", c)}
-              goToNextPage={() => {
-                setFilters((f) => ({ ...f, page: f.page + 1 }));
-                prefetchPage(nextPageUrl);
-              }}
-              goToPreviousPage={() => {
-                setFilters((f) => ({ ...f, page: f.page - 1 }));
-                prefetchPage(previousPageUrl);
-              }}
-              nextPageUrl={nextPageUrl}
-              previousPageUrl={previousPageUrl}
-            />
           ) : (
-            <p className="text-center py-10">No se encontraron categorías.</p>
+            <>
+              {categories.length > 0 ? (
+                <CategoryTable
+                  categories={categories}
+                  openViewModal={openViewModal}
+                  openEditModal={openEditModal}
+                  openDeleteConfirmModal={openConfirmDialog}
+                />
+              ) : (
+                <p className="text-center py-10">No se encontraron categorías.</p>
+              )}
+
+              <Pagination
+                onNext={nextPageUrl ? () => setFilters(f => ({ ...f, page: f.page + 1 })) : undefined}
+                onPrevious={previousPageUrl ? () => setFilters(f => ({ ...f, page: f.page - 1 })) : undefined}
+                hasNext={Boolean(nextPageUrl)}
+                hasPrevious={Boolean(previousPageUrl)}
+              />
+            </>
           )}
         </div>
       </Layout>
 
       <CategoryModals
-        modalState={modalState}
-        closeModal={closeModal}
+        category={selectedCategory}
+        categoryToDelete={entityToDelete}
+        showCreateModal={showCreateModal}
+        showEditModal={showEditModal}
+        showViewModal={showViewModal}
+        showConfirmDialog={showConfirmDialog}
+        closeAllModals={closeAllModals}
         onCreate={handleCreate}
         onUpdateCategory={handleUpdate}
-        onDelete={handleDelete}
+        onDelete={handleDeleteModal}
         isProcessing={
-          modalState.type === "create"
-            ? createStatus
-            : modalState.type === "edit"
-              ? updateStatus
-              : modalState.type === "deleteConfirm"
-                ? deleteStatus
-                : false
+          createMut.isLoading || updateMut.isLoading || deleteMut.isLoading
         }
-        actionError={actionError}
+        error={actionError}
       />
     </>
   );

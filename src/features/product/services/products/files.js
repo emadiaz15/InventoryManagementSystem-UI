@@ -101,24 +101,27 @@ export const deleteProductFile = async (productId, fileId) => {
 
 /**
  * 🖇️ Enriquecer metadatos con URLs de blob + nombre + tipo de contenido.
+ * Ahora recibe un downloadFn (ej: downloadProductFile).
  */
 export const enrichFilesWithBlobUrls = async ({
   productId,
   rawFiles = [],
   subproductId = null,
   signal = null,
+  downloadFn,              // <— nueva firma
 }) => {
   if (!productId || !Array.isArray(rawFiles)) return [];
   const enriched = await Promise.all(
     rawFiles.map(async (f) => {
       const id = f.drive_file_id || f.id;
       if (!id || f.mimeType === "application/vnd.google-apps.folder") return null;
-      const url = await fetchProtectedFile(productId, id, subproductId, signal);
+      // usa downloadFn en vez de fetchProtectedFile directamente
+      const url = await downloadFn(productId, id, signal);
       if (!url) return null;
       return {
         ...f,
         id,
-        url,                                  // ← aquí el carousel leerá image.url
+        url,
         filename: f.name || f.filename || "",
         contentType: f.mimeType || f.contentType,
       };

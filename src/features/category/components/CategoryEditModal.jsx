@@ -1,9 +1,11 @@
 // src/features/category/components/CategoryEditModal.jsx
-import React, { useState, useEffect } from "react";
-import Modal from "../../../components/ui/Modal";
-import FormInput from "../../../components/ui/form/FormInput";
-import ErrorMessage from "../../../components/common/ErrorMessage";
-import Spinner from "../../../components/ui/Spinner";
+import React, { useEffect } from "react";
+import Modal from "@/components/ui/Modal";
+import FormInput from "@/components/ui/form/FormInput";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import Spinner from "@/components/ui/Spinner";
+import { useCategoryFormState } from "../hooks/useCategoryFormState";
+import useSuccess from "@/hooks/useSuccess";
 
 const CategoryEditModal = ({
   isOpen,
@@ -11,26 +13,38 @@ const CategoryEditModal = ({
   category,
   onUpdateCategory,
   isProcessing,
-  error,
 }) => {
-  const [form, setForm] = useState({ name: "", description: "" });
+  const {
+    formData,
+    setFormData,
+    handleChange,
+    resetForm,
+    validate,
+    validationErrors,
+  } = useCategoryFormState();
+
+  const { error, handleError, clear: clearStatus } = useSuccess();
 
   useEffect(() => {
     if (category) {
-      setForm({
+      setFormData({
         name: category.name,
         description: category.description || "",
       });
     }
-  }, [category]);
-
-  const handleChange = (e) =>
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  }, [category, setFormData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    await onUpdateCategory({ id: category.id, payload: form });
+    clearStatus();
+
+    if (!validate()) return;
+
+    try {
+      await onUpdateCategory({ id: category.id, payload: formData });
+    } catch (err) {
+      handleError(err);
+    }
   };
 
   return (
@@ -40,20 +54,24 @@ const CategoryEditModal = ({
         <FormInput
           label="Nombre"
           name="name"
-          value={form.name}
+          value={formData.name}
           onChange={handleChange}
           required
+          error={validationErrors.name?.[0]}
         />
         <FormInput
           label="Descripción"
           name="description"
-          value={form.description}
+          value={formData.description}
           onChange={handleChange}
         />
         <div className="flex justify-end space-x-2 pt-4 border-t">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              resetForm();
+              onClose();
+            }}
             className="bg-neutral-500 text-white py-2 px-4 rounded hover:bg-neutral-600"
             disabled={isProcessing}
           >
