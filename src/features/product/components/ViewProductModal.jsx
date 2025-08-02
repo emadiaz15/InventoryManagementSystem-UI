@@ -1,5 +1,5 @@
 // src/features/product/components/ViewProductModal.jsx
-import React from "react"
+import React, { useEffect } from "react"
 import PropTypes from "prop-types"
 
 import Modal from "@/components/ui/Modal"
@@ -8,21 +8,29 @@ import { useProductFilesData } from "@/features/product/hooks/useProductFileHook
 import ProductCarouselOverlay from "@/features/product/components/ProductCarouselOverlay"
 import { formatArgentineDate } from "@/utils/dateUtils"
 import Spinner from "@/components/ui/Spinner"
+import { useQueryClient } from "@tanstack/react-query"
+import { productKeys } from "@/features/product/utils/queryKeys"
 
 const ViewProductModal = ({ product, isOpen, onClose }) => {
-    // 1️⃣ Hooks SIEMPRE al tope del componente:
     const { categories, types } = usePrefetchedData()
     const productId = isOpen ? product?.id : null
+    const qc = useQueryClient()
+
+    // 🔄 Forzar refetch al abrir
+    useEffect(() => {
+        if (isOpen && productId) {
+            qc.invalidateQueries(productKeys.files(productId))
+        }
+    }, [isOpen, productId, qc])
+
     const {
         files = [],
         isLoading: loadingFiles,
         error: filesError,
     } = useProductFilesData(productId)
 
-    // 2️⃣ Early return tras los hooks:
     if (!product) return null
 
-    // 3️⃣ Cálculos derivados:
     const categoryName =
         categories.find((c) => c.id === product.category)?.name ||
         product.category_name ||
@@ -43,9 +51,10 @@ const ViewProductModal = ({ product, isOpen, onClose }) => {
             <div className="flex flex-col md:flex-row gap-4 h-full text-text-primary">
                 {/* — Detalles */}
                 <div className="flex-1 space-y-2 bg-background-100 p-4 rounded overflow-y-auto max-h-[80vh]">
+                    <p><strong>ID:</strong> {product.id}</p>
                     <p><strong>Código:</strong> {product.code ?? "N/A"}</p>
                     <p><strong>Categoría:</strong> {categoryName}</p>
-                    <p><strong>Nombre/Medida:</strong>{typeName} {product.name || "SIN NOMBRE"}</p>
+                    <p><strong>Nombre/Medida:</strong> {typeName} {product.name || "SIN NOMBRE"}</p>
                     <p><strong>Descripción:</strong> {product.description || "SIN DESCRIPCIÓN"}</p>
                     <p><strong>Stock actual:</strong> {product.current_stock ?? 0}</p>
                     <p><strong>Marca:</strong> {product.brand || "N/A"}</p>

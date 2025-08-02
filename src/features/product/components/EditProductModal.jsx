@@ -90,9 +90,13 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
         setFormData(f => ({ ...f, [name]: type === "checkbox" ? checked : value }));
     }, []);
 
-    const handleStockChange = (e) => {
-        setFormData(f => ({ ...f, initial_stock_quantity: e.target.value }));
-    };
+    const handleStockChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    }, []);
 
     const handleFileChange = e => {
         const files = Array.from(e.target.files);
@@ -139,7 +143,9 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
         try {
             setLoading(true);
             await updateProduct(product.id, fd);
-            if (formData.images.length) await uploadMut.mutateAsync(formData.images);
+            if (formData.images.length) {
+                await uploadMut.uploadFiles(formData.images);
+            }
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 2000);
             onSave?.(); onClose();

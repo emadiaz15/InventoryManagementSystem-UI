@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
 import { useQuery } from "@tanstack/react-query";
-
 import Modal from "@/components/ui/Modal";
 import FormInput from "@/components/ui/form/FormInput";
 import FormStockInput from "@/features/product/components/FormStockInput";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import SuccessMessage from "@/components/common/SuccessMessage";
-
 import { listCategories } from "@/features/category/services/categories";
 import { listTypes } from "@/features/type/services/types";
 import { useProducts } from "@/features/product/hooks/useProductHooks";
@@ -17,213 +15,128 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   const [categoryInput, setCategoryInput] = useState("");
   const [typeInput, setTypeInput] = useState("");
   const [formData, setFormData] = useState({
-    name: "",
-    code: "",
-    description: "",
-    brand: "",
-    location: "",
-    position: "",
-    category: null,
-    type: "",
-    initial_stock_quantity: "",
-    has_subproducts: false,
-    images: [],
+    name: "", code: "", description: "", brand: "", location: "",
+    position: "", category: null, type: "", initial_stock_quantity: "",
+    has_subproducts: false, images: []
   });
   const [previewFiles, setPreviewFiles] = useState([]);
-  const [error, setError] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false); // 🔧 añadido
+
+  const { createProduct, products } = useProducts({ status: true, page_size: 1000 });
+  const [createdProductId, setCreatedProductId] = useState(null);
+  const { uploadFiles, uploading, uploadError } = useUploadProductFiles(createdProductId);
 
   const { data: catPage = {}, isLoading: loadingCategories } = useQuery({
     queryKey: ["categories"],
     queryFn: () => listCategories({ limit: 1000, status: true }),
-    staleTime: 300000,
-    refetchOnWindowFocus: false,
+    staleTime: 300000, refetchOnWindowFocus: false
   });
   const categories = useMemo(() => catPage.results ?? [], [catPage.results]);
 
-  useEffect(() => {
-    const normalize = (txt) => txt.trim().toLowerCase();
-    const found = categories.find(
-      (c) => normalize(c.name) === normalize(categoryInput)
-    );
-    setFormData((prev) => ({
-      ...prev,
-      category: found ? found.id : null,
-    }));
-  }, [categoryInput, categories]);
-
   const { data: typePage = {}, isLoading: loadingTypes } = useQuery({
     queryKey: ["types", formData.category],
-    queryFn: () =>
-      listTypes({
-        limit: 1000,
-        status: true,
-        category_id: formData.category,
-      }),
-    enabled: formData.category != null,
-    staleTime: 300000,
-    refetchOnWindowFocus: false,
+    queryFn: () => listTypes({ limit: 1000, status: true, category_id: formData.category }),
+    enabled: formData.category != null, staleTime: 300000, refetchOnWindowFocus: false
   });
   const types = useMemo(() => typePage.results ?? [], [typePage.results]);
 
   useEffect(() => {
-    setTypeInput("");
-    setFormData((prev) => ({ ...prev, type: "" }));
+    const found = categories.find(c => c.name.trim().toLowerCase() === categoryInput.trim().toLowerCase());
+    setFormData(prev => ({ ...prev, category: found ? found.id : null }));
+  }, [categoryInput, categories]);
+
+  useEffect(() => {
+    setTypeInput(""); setFormData(prev => ({ ...prev, type: "" }));
   }, [formData.category]);
 
   useEffect(() => {
-    const found = types.find((t) => t.name === typeInput);
-    setFormData((prev) => ({
-      ...prev,
-      type: found ? String(found.id) : "",
-    }));
+    const found = types.find(t => t.name === typeInput);
+    setFormData(prev => ({ ...prev, type: found ? String(found.id) : "" }));
   }, [typeInput, types]);
 
-  const { clearUploadError } = useUploadProductFiles();
-  useEffect(() => {
-    if (!isOpen) return;
-    clearUploadError();
-    setCategoryInput("");
-    setTypeInput("");
-    setFormData({
-      name: "",
-      code: "",
-      description: "",
-      brand: "",
-      location: "",
-      position: "",
-      category: null,
-      type: "",
-      initial_stock_quantity: "",
-      has_subproducts: false,
-      images: [],
-    });
-    setError("");
-    setShowSuccess(false);
-    setPreviewFiles([]);
-    setSubmitting(false);
-  }, [isOpen, clearUploadError]);
-
-  const { products, createProduct } = useProducts({
-    status: true,
-    page_size: 1000,
-  });
-  const { uploadFiles, uploading, uploadError } = useUploadProductFiles();
-
-  const normalize = (txt) =>
-    txt.trim().toLowerCase().replace(/\s+/g, "");
+  const normalize = txt => txt.trim().toLowerCase().replace(/\s+/g, "");
   const validateCodeUnique = () => {
     const codeStr = normalize(formData.code);
-    if (
-      products.some((p) => p.code && normalize(String(p.code)) === codeStr)
-    ) {
-      setError("El código ya está en uso.");
-      return false;
+    if (products.some(p => p.code && normalize(String(p.code)) === codeStr)) {
+      setError("El código ya está en uso."); return false;
     }
     return true;
   };
 
-  const handleChange = useCallback((e) => {
+  const handleChange = useCallback(e => {
     const { name, type, checked, value } = e.target;
-    setFormData((f) => ({
-      ...f,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setFormData(f => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   }, []);
-  const handleStockChange = (e) =>
-    setFormData((f) => ({ ...f, initial_stock_quantity: e.target.value }));
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
+
+  const handleStockChange = e => setFormData(f => ({ ...f, initial_stock_quantity: e.target.value }));
+
+  const handleFileChange = e => {
+    const files = Array.from(e.target.files).filter(f => f instanceof File);
     if (formData.images.length + files.length > 5) {
-      setError("Máximo 5 archivos permitidos.");
-      return;
+      setError("Máximo 5 archivos permitidos."); return;
     }
-    setFormData((f) => ({ ...f, images: [...f.images, ...files] }));
-    setPreviewFiles((p) => [...p, ...files.map((f) => f.name)]);
-  };
-  const removeFile = (idx) => {
-    setFormData((f) => ({
-      ...f,
-      images: f.images.filter((_, i) => i !== idx),
-    }));
-    setPreviewFiles((p) => p.filter((_, i) => i !== idx));
+    setFormData(f => ({ ...f, images: [...f.images, ...files] }));
+    setPreviewFiles(p => [...p, ...files.map(f => f.name)]);
   };
 
-  const handleSubmit = async (e) => {
+  const removeFile = idx => {
+    setFormData(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
+    setPreviewFiles(p => p.filter((_, i) => i !== idx));
+  };
+
+  useEffect(() => {
+    if (createdProductId && formData.images.length) {
+      uploadFiles(formData.images)
+        .then(() => {
+          setShowSuccess(true);
+          setTimeout(() => {
+            onSave?.();
+            onClose();
+          }, 1500);
+        })
+        .catch(err => {
+          setError(err.message || uploadError || "Error subiendo archivos.");
+        });
+    }
+  }, [createdProductId, formData.images, uploadFiles, uploadError, onSave, onClose]);
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    setError("");
-    setShowSuccess(false);
-
+    setError(""); setShowSuccess(false);
     if (!validateCodeUnique()) return;
-    if (!formData.category) {
-      setError("Selecciona una categoría válida.");
-      return;
-    }
-    const validCategory = categories.find(
-      (c) => c.id === formData.category
-    );
-    if (!validCategory) {
-      setError("La categoría ingresada no existe.");
-      return;
-    }
-    if (
-      typeInput &&
-      !types.find(
-        (t) => t.name.toLowerCase() === typeInput.toLowerCase()
-      )
-    ) {
-      setError(
-        "El tipo ingresado no es válido para la categoría seleccionada."
-      );
-      return;
+    if (!formData.category) { setError("Selecciona una categoría válida."); return; }
+    if (typeInput && !types.find(t => t.name.toLowerCase() === typeInput.toLowerCase())) {
+      setError("El tipo ingresado no es válido."); return;
     }
 
-    const payload = new FormData();
-    payload.append("name", formData.name.trim());
+    const fd = new FormData();
+    fd.append("name", formData.name.trim());
     const codeNum = parseInt(formData.code, 10);
-    if (isNaN(codeNum)) {
-      setError("El código debe ser numérico.");
-      return;
-    }
-    payload.append("code", codeNum.toString());
-    payload.append("description", formData.description.trim());
-    payload.append("brand", formData.brand.trim());
-    payload.append("location", formData.location.trim());
-    payload.append("position", formData.position.trim());
-    payload.append("category", formData.category);
-    if (formData.type) payload.append("type", formData.type);
+    if (isNaN(codeNum)) { setError("El código debe ser numérico."); return; }
+    fd.append("code", codeNum.toString());
+    fd.append("description", formData.description.trim());
+    fd.append("brand", formData.brand.trim());
+    fd.append("location", formData.location.trim());
+    fd.append("position", formData.position.trim());
+    fd.append("category", formData.category);
+    formData.type && fd.append("type", formData.type);
     const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
-    if (stockVal && parseFloat(stockVal) > 0)
-      payload.append("initial_stock_quantity", stockVal);
-    payload.append("has_subproducts", formData.has_subproducts ? "true" : "false");
+    if (stockVal && parseFloat(stockVal) > 0) fd.append("initial_stock_quantity", stockVal);
+    fd.append("has_subproducts", formData.has_subproducts ? "true" : "false");
 
     try {
       setSubmitting(true);
-      const newProd = await createProduct(payload);
-      if (formData.images.length) {
-        const ok = await uploadFiles({
-          productId: newProd.id,
-          files: formData.images,
-        });
-        if (!ok && uploadError) {
-          setError(uploadError);
-          return;
-        }
-      }
-      setShowSuccess(true);
-      setTimeout(() => {
-        onSave?.(newProd);
-        onClose();
-      }, 1500);
+      const newProd = await createProduct(fd);
+      setCreatedProductId(newProd.id);
     } catch (err) {
       setError(err.message || "Error al crear el producto.");
     } finally {
       setSubmitting(false);
     }
   };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Producto">
       <form onSubmit={handleSubmit} className="space-y-4">
