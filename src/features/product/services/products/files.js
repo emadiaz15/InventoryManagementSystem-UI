@@ -60,7 +60,8 @@ export const deleteProductFile = async (productId, fileId) => {
     throw new Error("Se requieren productId y fileId para eliminar.");
   }
   const id = String(productId).trim();
-  const fId = String(fileId).trim();
+  // encodea el fileId para que "products/43/xyz.png" se convierta en "products%2F43%2Fxyz.png"
+  const fId = encodeURIComponent(String(fileId).trim());
   try {
     const response = await djangoApi.delete(
       `/inventory/products/${id}/files/${fId}/delete/`

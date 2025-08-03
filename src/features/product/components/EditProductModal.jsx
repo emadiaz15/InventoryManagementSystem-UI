@@ -9,15 +9,31 @@ import SuccessMessage from "@/components/common/SuccessMessage";
 import DeleteMessage from "@/components/common/DeleteMessage";
 import ProductCarouselOverlay from "@/features/product/components/ProductCarouselOverlay";
 import { useProducts } from "@/features/product/hooks/useProductHooks";
-import { useUploadProductFiles, useDeleteProductFile } from "@/features/product/hooks/useProductFileHooks";
+import {
+    useUploadProductFiles,
+    useDeleteProductFile,
+} from "@/features/product/hooks/useProductFileHooks";
 import { usePrefetchedData } from "@/context/DataPrefetchContext";
 
-export default function EditProductModal({ product, isOpen, onClose, onSave, children }) {
+export default function EditProductModal({
+    product,
+    isOpen,
+    onClose,
+    onSave,
+    children,
+}) {
     const { categories, types } = usePrefetchedData();
     const { products, updateProduct } = useProducts({ page_size: 1000 });
-    const uploadMut = useUploadProductFiles(product.id);
-    const deleteMut = useDeleteProductFile(product.id);
 
+    // hooks para subir y eliminar archivos
+    const uploadMut = useUploadProductFiles(product.id);
+    const {
+        deleteFile,               // la función que dispara la mutación
+        deleting: isDeleting,     // estado de carga
+        deleteError,              // posible error
+    } = useDeleteProductFile(product.id);
+
+    // estados del formulario
     const [formData, setFormData] = useState({
         name: "",
         code: "",
@@ -38,21 +54,30 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
+
+    // estados para eliminar un archivo existente
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [fileToDelete, setFileToDelete] = useState(null);
 
-    // inject delete handler into carousel children
-    const childrenWithProps = React.Children.map(children, c =>
+    // Inject delete handler into carousel children
+    const childrenWithProps = React.Children.map(children, (c) =>
         React.isValidElement(c) && c.type === ProductCarouselOverlay
-            ? React.cloneElement(c, { onDelete: f => { setFileToDelete(f); setIsDeleteOpen(true); } })
+            ? React.cloneElement(c, {
+                onDeleteRequest: (f) => {
+                    setFileToDelete(f);
+                    setIsDeleteOpen(true);
+                },
+                editable: true,
+            })
             : c
     );
 
-    // initialize when modal opens
+    // Inicializar formulario al abrir
     useEffect(() => {
         if (!isOpen) return;
-        const categoryName = categories.find(c => c.id === product.category)?.name ?? "";
-        const typeName = types.find(t => t.id === product.type)?.name ?? "";
+        const categoryName =
+            categories.find((c) => c.id === product.category)?.name ?? "";
+        const typeName = types.find((t) => t.id === product.type)?.name ?? "";
 
         setError("");
         setShowSuccess(false);
@@ -68,65 +93,78 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
             categoryInput: categoryName,
             typeInput: typeName,
             category: String(product.category ?? ""),
-            type: "", // we'll resolve type on submit
+            type: "", // se establecerá al hacer submit
             initial_stock_quantity: "",
             has_subproducts: !!product.has_subproducts,
             images: [],
         });
     }, [isOpen, product, categories, types]);
 
-    // compute filtered types when category changes
+    // Filtrar types según categoría seleccionada
     const filteredTypes = useMemo(() => {
         const cid = parseInt(formData.category, 10);
-        return cid ? types.filter(t => t.category?.id === cid || t.category_id === cid) : [];
+        return cid
+            ? types.filter((t) => t.category?.id === cid || t.category_id === cid)
+            : [];
     }, [types, formData.category]);
 
-    // sync category ID from text input
+    // Sincronizar categoría por texto
     useEffect(() => {
-        const normalize = txt => txt.trim().toLowerCase();
-        const found = categories.find(c => normalize(c.name) === normalize(formData.categoryInput));
-        setFormData(f => ({ ...f, category: found ? String(found.id) : null }));
+        const normalize = (txt) => txt.trim().toLowerCase();
+        const found = categories.find(
+            (c) => normalize(c.name) === normalize(formData.categoryInput)
+        );
+        setFormData((f) => ({
+            ...f,
+            category: found ? String(found.id) : null,
+        }));
     }, [formData.categoryInput, categories]);
 
-    // clear type when category changes
+    // Limpiar tipo al cambiar categoría
     useEffect(() => {
-        setFormData(f => ({ ...f, typeInput: "", type: "" }));
+        setFormData((f) => ({ ...f, typeInput: "", type: "" }));
     }, [formData.category]);
 
-    const normalize = txt => txt.trim().toLowerCase().replace(/\s+/g, "");
+    const normalize = (txt) => txt.trim().toLowerCase().replace(/\s+/g, "");
     const validateCodeUnique = () => {
         const codeStr = normalize(formData.code);
-        return !products.some(p =>
-            p.id !== product.id && normalize(String(p.code)) === codeStr
+        return !products.some(
+            (p) => p.id !== product.id && normalize(String(p.code)) === codeStr
         );
     };
 
-    const handleChange = useCallback(e => {
+    const handleChange = useCallback((e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(f => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+        setFormData((f) => ({
+            ...f,
+            [name]: type === "checkbox" ? checked : value,
+        }));
     }, []);
 
-    const handleStockChange = useCallback(e => {
+    const handleStockChange = useCallback((e) => {
         const { name, value } = e.target;
-        setFormData(f => ({ ...f, [name]: value }));
+        setFormData((f) => ({ ...f, [name]: value }));
     }, []);
 
-    const handleFileChange = e => {
+    const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
         if (formData.images.length + files.length > 5) {
             setError("Máximo 5 archivos permitidos.");
             return;
         }
-        setFormData(f => ({ ...f, images: [...f.images, ...files] }));
-        setPreviewFiles(p => [...p, ...files.map(f => f.name)]);
+        setFormData((f) => ({ ...f, images: [...f.images, ...files] }));
+        setPreviewFiles((p) => [...p, ...files.map((f) => f.name)]);
     };
 
-    const removeFile = idx => {
-        setFormData(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
-        setPreviewFiles(p => p.filter((_, i) => i !== idx));
+    const removeFile = (idx) => {
+        setFormData((f) => ({
+            ...f,
+            images: f.images.filter((_, i) => i !== idx),
+        }));
+        setPreviewFiles((p) => p.filter((_, i) => i !== idx));
     };
 
-    const handleSubmit = async e => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setShowSuccess(false);
@@ -135,24 +173,26 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
             setError("El código ya está en uso.");
             return;
         }
-        const validCat = categories.find(c => String(c.id) === formData.category);
+        const validCat = categories.find(
+            (c) => String(c.id) === formData.category
+        );
         if (!validCat) {
             setError("La categoría no existe.");
             return;
         }
-        // determine final typeId
+        // Determinar typeId
         let typeId = "";
         if (formData.typeInput) {
             const validType = filteredTypes.find(
-                t => t.name.trim().toLowerCase() === formData.typeInput.trim().toLowerCase()
+                (t) =>
+                    t.name.trim().toLowerCase() ===
+                    formData.typeInput.trim().toLowerCase()
             );
             if (!validType) {
                 setError("El tipo no es válido para esa categoría.");
                 return;
             }
             typeId = String(validType.id);
-        } else {
-            typeId = ""; // optional
         }
 
         const codeNum = parseInt(formData.code.trim(), 10);
@@ -169,14 +209,10 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
         fd.append("location", formData.location.trim());
         fd.append("position", formData.position.trim());
         fd.append("category", formData.category);
-        if (typeId) {
-            fd.append("type", typeId);
-        }
+        if (typeId) fd.append("type", typeId);
         fd.append("has_subproducts", formData.has_subproducts ? "true" : "false");
         const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
-        if (stockVal) {
-            fd.append("initial_stock_quantity", stockVal);
-        }
+        if (stockVal) fd.append("initial_stock_quantity", stockVal);
 
         try {
             setLoading(true);
@@ -195,24 +231,38 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
         }
     };
 
+    // Función que confirma la eliminación de un archivo
     const confirmDelete = async () => {
         if (!fileToDelete) return;
-        await deleteMut.mutateAsync(fileToDelete.id);
+        await deleteFile(fileToDelete.id);
         setIsDeleteOpen(false);
         onSave?.();
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Editar Producto" maxWidth="max-w-6xl">
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Editar Producto"
+            maxWidth="max-w-6xl"
+        >
             <div className="flex flex-col md:flex-row gap-4">
+                {/* Formulario */}
                 <div className="flex-1 p-4 bg-background-100 rounded max-h-[80vh] overflow-y-auto">
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {error && <ErrorMessage message={error} onClose={() => setError("")} />}
-                        {showSuccess && <SuccessMessage message="Producto actualizado correctamente" />}
+                        {error && (
+                            <ErrorMessage message={String(error)} onClose={() => setError("")} />
+                        )}
+                        {showSuccess && (
+                            <SuccessMessage message="Producto actualizado correctamente" />
+                        )}
 
                         {/* Categoría */}
                         <div>
-                            <label htmlFor="category-input" className="block text-sm font-medium text-text-secondary">
+                            <label
+                                htmlFor="category-input"
+                                className="block text-sm font-medium text-text-secondary"
+                            >
                                 Categoría *
                             </label>
                             <div className="relative mt-1">
@@ -228,14 +278,19 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
                                     className="mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 border-background-200"
                                 />
                                 <datalist id="category-options">
-                                    {categories.map(c => <option key={c.id} value={c.name} />)}
+                                    {categories.map((c) => (
+                                        <option key={c.id} value={c.name} />
+                                    ))}
                                 </datalist>
                             </div>
                         </div>
 
                         {/* Tipo */}
                         <div>
-                            <label htmlFor="type-input" className="block text-sm font-medium text-text-secondary">
+                            <label
+                                htmlFor="type-input"
+                                className="block text-sm font-medium text-text-secondary"
+                            >
                                 Tipo (opcional)
                             </label>
                             <div className="relative mt-1">
@@ -254,32 +309,43 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
                                 />
                                 {showSuggestions && formData.typeInput && filteredTypes.length > 0 && (
                                     <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-md bg-white border border-gray-300 text-sm shadow-lg">
-                                        {filteredTypes.filter(t =>
-                                            t.name.toLowerCase().includes(formData.typeInput.toLowerCase())
-                                        ).map(t => (
-                                            <li
-                                                key={t.id}
-                                                onMouseDown={() => {
-                                                    setFormData(f => ({
-                                                        ...f,
-                                                        typeInput: t.name
-                                                    }));
-                                                    setShowSuggestions(false);
-                                                }}
-                                                className="cursor-pointer px-4 py-2 hover:bg-primary-100"
-                                            >
-                                                {t.name}
-                                            </li>
-                                        ))}
+                                        {filteredTypes
+                                            .filter((t) =>
+                                                t.name.toLowerCase().includes(formData.typeInput.toLowerCase())
+                                            )
+                                            .map((t) => (
+                                                <li
+                                                    key={t.id}
+                                                    onMouseDown={() => {
+                                                        setFormData((f) => ({ ...f, typeInput: t.name }));
+                                                        setShowSuggestions(false);
+                                                    }}
+                                                    className="cursor-pointer px-4 py-2 hover:bg-primary-100"
+                                                >
+                                                    {t.name}
+                                                </li>
+                                            ))}
                                     </ul>
                                 )}
                             </div>
                         </div>
 
                         {/* Otros campos */}
-                        <FormInput label="Nombre / Medida" name="name" value={formData.name} onChange={handleChange} required />
+                        <FormInput
+                            label="Nombre / Medida"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                        />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormInput label="Código" name="code" value={formData.code} onChange={handleChange} required />
+                            <FormInput
+                                label="Código"
+                                name="code"
+                                value={formData.code}
+                                onChange={handleChange}
+                                required
+                            />
                             <FormStockInput
                                 label="Stock Inicial"
                                 name="initial_stock_quantity"
@@ -290,10 +356,25 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <FormInput label="Marca" name="brand" value={formData.brand} onChange={handleChange} />
-                            <FormInput label="Ubicación" name="location" value={formData.location} onChange={handleChange} />
-                            <FormInput label="Posición" name="position" value={formData.position} onChange={handleChange} />
+                            <FormInput
+                                label="Ubicación"
+                                name="location"
+                                value={formData.location}
+                                onChange={handleChange}
+                            />
+                            <FormInput
+                                label="Posición"
+                                name="position"
+                                value={formData.position}
+                                onChange={handleChange}
+                            />
                         </div>
-                        <FormInput label="Descripción" name="description" value={formData.description} onChange={handleChange} />
+                        <FormInput
+                            label="Descripción"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                        />
                         <div className="flex items-center space-x-2">
                             <input
                                 type="checkbox"
@@ -310,13 +391,20 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
 
                         {/* Archivos */}
                         <div>
-                            <label className="block mb-2 text-sm font-medium">Archivos (máx. 5)</label>
+                            <label className="block mb-2 text-sm font-medium">
+                                Archivos (máx. 5)
+                            </label>
                             <div className="flex items-center space-x-4">
-                                <label htmlFor="images" className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600">
+                                <label
+                                    htmlFor="images"
+                                    className="cursor-pointer bg-info-500 text-white px-4 py-2 rounded hover:bg-info-600"
+                                >
                                     Seleccionar archivos
                                 </label>
                                 <span className="text-sm">
-                                    {previewFiles.length ? `${previewFiles.length} archivo(s)` : "Sin archivos"}
+                                    {previewFiles.length
+                                        ? `${previewFiles.length} archivo(s)`
+                                        : "Sin archivos"}
                                 </span>
                             </div>
                             <input
@@ -345,7 +433,7 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
                             )}
                         </div>
 
-                        {/* Acciones */}
+                        {/* Botones */}
                         <div className="flex justify-end space-x-2">
                             <button
                                 type="button"
@@ -373,7 +461,7 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
                     </form>
                 </div>
 
-                {/* Carrusel de archivos */}
+                {/* Carrusel */}
                 {childrenWithProps && (
                     <div className="flex-1 p-4 bg-background-50 rounded max-h-[80vh] overflow-y-auto">
                         {childrenWithProps}
@@ -381,15 +469,15 @@ export default function EditProductModal({ product, isOpen, onClose, onSave, chi
                 )}
             </div>
 
-            {/* Confirmar eliminación */}
+            {/* Confirmar eliminación de archivo */}
             <DeleteMessage
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
                 onDelete={confirmDelete}
-                isDeleting={deleteMut.isLoading}
-                deleteError={deleteMut.error}
+                isDeleting={isDeleting}
+                deleteError={deleteError?.message || null}
                 itemName="el archivo"
-                itemIdentifier={fileToDelete?.name || fileToDelete?.filename || ""}
+                itemIdentifier={fileToDelete?.filename || fileToDelete?.name || ""}
             />
         </Modal>
     );
