@@ -56,8 +56,7 @@ export function useCreateSubproduct(productId) {
   return useMutation({
     mutationFn: (formData) => createSubproduct(productId, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries(["subproducts"])
-
+      qc.invalidateQueries(listKey)
     },
   })
 }
