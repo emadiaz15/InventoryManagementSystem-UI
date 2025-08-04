@@ -1,185 +1,183 @@
-// src/features/product/hooks/useSubproductFileHooks.js
-import { useState, useRef, useCallback } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useState, useRef, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listSubproductFiles,
   uploadSubproductFiles,
   deleteSubproductFile,
-} from "@/features/product/services/subproducts/subproductsFiles.js"
-import { fetchProtectedFile } from "@/services/files/fileAccessService.js"
-import { productKeys } from "@/features/product/utils/queryKeys.js"
+  downloadSubproductFile,
+} from "@/features/product/services/subproducts/subproductsFiles";
+import { productKeys } from "@/features/product/utils/queryKeys";
 
 /**
- * Hook unificado para obtener metadatos RAW y archivos ENRIQUECIDOS (blob URLs).
+ * Hook combinado para obtener archivos RAW y enriquecidos (Blob URLs).
  */
 export function useSubproductFilesData(productId, subproductId) {
-  const listKey     = productKeys.subproductFiles(productId, subproductId)
-  const enrichedKey = [...listKey, "enriched"]
+  const listKey     = productKeys.subproductFiles(productId, subproductId);
+  const enrichedKey = [...listKey, "enriched"];
 
-  // 1️⃣ Query raw
+  // 1️⃣ Query RAW
   const rawQuery = useQuery({
     queryKey: listKey,
     queryFn: () => listSubproductFiles(productId, subproductId),
     enabled: !!productId && !!subproductId,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
-  })
+  });
 
-  // 2️⃣ Query enriched
+  // 2️⃣ Query ENRICHED (Blob URLs)
   const enrichedQuery = useQuery({
     queryKey: enrichedKey,
     queryFn: async () => {
-      const raw = rawQuery.data || []
+      const raw = rawQuery.data || [];
       const enriched = await Promise.all(
         raw.map(async (f) => {
-          const id = f.drive_file_id || f.id || f.key
-          if (!id) return null
-          const url = await fetchProtectedFile(productId, id, subproductId)
-          if (!url) return null
+          const id = f.drive_file_id || f.id || f.key;
+          if (!id) return null;
+          const url = await downloadSubproductFile(
+            productId,
+            subproductId,
+            id
+          );
+          if (!url) return null;
           return {
             ...f,
             id,
             url,
-            filename:   f.name || f.filename || "",
+            filename:    f.name || f.filename || "",
             contentType: f.mimeType || f.contentType || "",
-          }
+          };
         })
-      )
-      return enriched.filter(Boolean)
+      );
+      return enriched.filter(Boolean);
     },
     enabled: rawQuery.isSuccess,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
-  })
+  });
 
   return {
-    // RAW metadata
     rawFiles:   rawQuery.data || [],
     rawStatus:  rawQuery.status,
     rawError:   rawQuery.error,
-    // Enriched
+
     files:      enrichedQuery.data || [],
     status:     enrichedQuery.status,
     error:      enrichedQuery.error || rawQuery.error,
-    // Combined flags
+
     isLoading:  rawQuery.isLoading  || enrichedQuery.isLoading,
     isError:    rawQuery.isError    || enrichedQuery.isError,
-  }
+  };
 }
 
 /**
- * Hook para subir archivos a un subproducto con optimistic updates.
+ * Hook para subir archivos con optimistic updates.
  */
 export function useUploadSubproductFiles(productId, subproductId) {
-  const qc        = useQueryClient()
-  const listKey   = productKeys.subproductFiles(productId, subproductId)
-  const detailKey = productKeys.subproductDetail(productId, subproductId)
+  const qc        = useQueryClient();
+  const listKey   = productKeys.subproductFiles(productId, subproductId);
+  const detailKey = productKeys.subproductDetail(productId, subproductId);
 
-  return useMutation(
-    (files) => uploadSubproductFiles(productId, subproductId, files),
-    {
-      onMutate: async (files) => {
-        await qc.cancelQueries(listKey)
-        const previous = qc.getQueryData(listKey) || []
+  return useMutation({
+    mutationKey: listKey,
+    mutationFn: (files) => uploadSubproductFiles(productId, subproductId, files),
 
-        const placeholders = files.map((file) => ({
-          id:          `tmp-${file.name}-${Date.now()}`,
-          name:        file.name,
-          mimeType:    file.type,
-          url:         URL.createObjectURL(file),
-          isUploading: true,
-        }))
+    onMutate: async (files) => {
+      await qc.cancelQueries(listKey);
+      const previous = qc.getQueryData(listKey) || [];
+      const placeholders = files.map((file) => ({
+        id:          `tmp-${file.name}-${Date.now()}`,
+        name:        file.name,
+        mimeType:    file.type,
+        url:         URL.createObjectURL(file),
+        isUploading: true,
+      }));
+      qc.setQueryData(listKey, (old = []) => [...placeholders, ...old]);
+      return { previous };
+    },
 
-        qc.setQueryData(listKey, (old = []) => [
-          ...placeholders,
-          ...old,
-        ])
+    onError: (_err, _files, context) => {
+      if (context?.previous) {
+        qc.setQueryData(listKey, context.previous);
+      }
+    },
 
-        return { previous }
-      },
-      onError: (_err, _files, context) => {
-        if (context?.previous) {
-          qc.setQueryData(listKey, context.previous)
-        }
-      },
-      onSettled: () => {
-        qc.invalidateQueries(listKey)
-        qc.invalidateQueries(detailKey)
-      },
-    }
-  )
+    onSettled: () => {
+      qc.invalidateQueries(listKey);
+      qc.invalidateQueries(detailKey);
+    },
+  });
 }
 
 /**
- * Hook para eliminar un archivo de un subproducto con optimistic updates.
+ * Hook para eliminar un archivo con optimistic updates.
  */
 export function useDeleteSubproductFile(productId, subproductId) {
-  const qc        = useQueryClient()
-  const listKey   = productKeys.subproductFiles(productId, subproductId)
-  const detailKey = productKeys.subproductDetail(productId, subproductId)
+  const qc        = useQueryClient();
+  const listKey   = productKeys.subproductFiles(productId, subproductId);
+  const detailKey = productKeys.subproductDetail(productId, subproductId);
 
-  return useMutation(
-    (fileId) => deleteSubproductFile(productId, subproductId, fileId),
-    {
-      onMutate: async (fileId) => {
-        await qc.cancelQueries(listKey)
-        const previous = qc.getQueryData(listKey) || []
+  return useMutation({
+    mutationKey: [...listKey, "delete"],
+    mutationFn: (fileId) => deleteSubproductFile(productId, subproductId, fileId),
 
-        qc.setQueryData(listKey, (old = []) =>
-          old.filter((f) => (f.id || f.key) !== fileId)
-        )
+    onMutate: async (fileId) => {
+      await qc.cancelQueries(listKey);
+      const previous = qc.getQueryData(listKey) || [];
+      qc.setQueryData(listKey, (old = []) =>
+        old.filter((f) => (f.id || f.key) !== fileId)
+      );
+      return { previous };
+    },
 
-        return { previous }
-      },
-      onError: (_err, _fileId, context) => {
-        if (context?.previous) {
-          qc.setQueryData(listKey, context.previous)
-        }
-      },
-      onSettled: () => {
-        qc.invalidateQueries(listKey)
-        qc.invalidateQueries(detailKey)
-      },
-    }
-  )
+    onError: (_err, _fileId, context) => {
+      if (context?.previous) {
+        qc.setQueryData(listKey, context.previous);
+      }
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries(listKey);
+      qc.invalidateQueries(detailKey);
+    },
+  });
 }
 
 /**
- * Hook para descargar un archivo de subproducto (blob URL).
+ * Hook para descargar un archivo (blob URL) con señal de abort y estado.
  */
 export function useDownloadSubproductFile() {
-  const [downloading, setDownloading]   = useState(false)
-  const [downloadError, setDownloadError] = useState(null)
-  const controllerRef = useRef(null)
+  const [downloading, setDownloading]     = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+  const controllerRef                     = useRef(null);
 
   const downloadFile = useCallback(
     async (productId, subproductId, fileId) => {
-      controllerRef.current?.abort()
-      const controller = new AbortController()
-      controllerRef.current = controller
-      setDownloading(true)
-      setDownloadError(null)
+      controllerRef.current?.abort();
+      const controller = new AbortController();
+      controllerRef.current = controller;
+      setDownloading(true);
+      setDownloadError(null);
 
       try {
-        return await fetchProtectedFile(
+        return await downloadSubproductFile(
           productId,
-          fileId,
           subproductId,
+          fileId,
           controller.signal
-        )
+        );
       } catch (err) {
         if (err.name !== "AbortError") {
-          setDownloadError(err.message || "Error descargando archivo")
+          setDownloadError(err.message || "Error descargando archivo");
         }
-        return null
+        return null;
       } finally {
-        setDownloading(false)
+        setDownloading(false);
       }
     },
     []
-  )
+  );
 
-  const abortDownload = () => controllerRef.current?.abort()
+  const abortDownload = () => controllerRef.current?.abort();
 
-  return { downloadFile, downloading, downloadError, abortDownload }
+  return { downloadFile, downloading, downloadError, abortDownload };
 }

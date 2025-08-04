@@ -1,158 +1,105 @@
-// src/features/product/hooks/useProductFileHooks.js
-
-import { useState, useCallback } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listProductFiles,
   uploadFileProduct,
   deleteProductFile,
-  downloadProductFile,
-} from "@/features/product/services/products/files"
-import { productKeys } from "@/features/product/utils/queryKeys"
+} from "@/features/product/services/products/files";
+import { productKeys } from "@/features/product/utils/queryKeys";
 
 /**
- * Hook combinado para obtener raw + URLs blob de MinIO
+ * Hook combinado para obtener metadatos + URLs presignadas de MinIO
  * @param {string|number|null} productId
  */
 export function useProductFilesData(productId) {
-  const filesKey = productKeys.files(productId)
-  const blobKey = [...filesKey, "blob-urls"]
+  const qc = useQueryClient();
+  const filesKey = productKeys.files(productId);
 
-  // 1️⃣ Consulta metadatos en el backend
-  const rawQuery = useQuery({
+  // 1️⃣ Query de metadatos (ya incluye la URL presignada en `url`)
+  const {
+    data: rawFiles = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: filesKey,
     queryFn: () => listProductFiles(productId),
     enabled: Boolean(productId),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
-  })
+  });
 
-  // 2️⃣ Para cada metadato, descargar blob protegido y generar URL
-  const enrichedQuery = useQuery({
-    queryKey: blobKey,
-    queryFn: async () => {
-      const raws = rawQuery.data || []
-      const withUrls = await Promise.all(
-        raws.map(async (file) => {
-          const id = file.drive_file_id || file.id
-          if (!id) return null
-          try {
-            const url = await downloadProductFile(productId, id)
-            return {
-              ...file,
-              id,
-              url,
-              filename: file.name || file.filename || "",
-              contentType: file.mimeType || file.contentType || "application/octet-stream",
-            }
-          } catch {
-            return null
-          }
-        })
-      )
-      return withUrls.filter(Boolean)
-    },
-    enabled: rawQuery.isSuccess,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  })
+  // 2️⃣ Mapeamos al formato que espera el carrusel
+  const files = rawFiles.map((f) => ({
+    id: f.key,                                   // clave en MinIO
+    url: f.url,                                  // URL presignada para <img src=...>
+    filename: f.name || f.filename || "",
+    contentType: f.mimeType || f.contentType,
+  }));
 
   return {
-    rawFiles: rawQuery.data || [],
-    rawStatus: rawQuery.status,
-    rawError: rawQuery.error,
-
-    files: enrichedQuery.data || [],
-    status: enrichedQuery.status,
-    error: enrichedQuery.error || rawQuery.error,
-
-    isLoading: rawQuery.isLoading || enrichedQuery.isLoading,
-    isError: rawQuery.isError || enrichedQuery.isError,
-  }
+    rawFiles,
+    files,
+    isLoading,
+    isError,
+    error,
+  };
 }
 
 /**
  * Hook para subir archivos a un producto con React Query.
- * @param {string|number} productId
  */
 export function useUploadProductFiles(productId) {
-  const qc = useQueryClient()
-  const filesKey = productKeys.files(productId)
-  const detailKey = productKeys.detail(productId)
-  const [uploadError, setUploadError] = useState(null)
-
-  const clearUploadError = useCallback(() => {
-    setUploadError(null)
-  }, [])
+  const qc = useQueryClient();
+  const filesKey = productKeys.files(productId);
+  const detailKey = productKeys.detail(productId);
 
   const mutation = useMutation({
     mutationFn: (files) => uploadFileProduct(productId, files),
-    onMutate: async (files) => {
-      await qc.cancelQueries(filesKey)
-      clearUploadError()
-      const previous = qc.getQueryData(filesKey) || []
-
-      const fileArray = Array.isArray(files) ? files : [files]
-      const placeholders = fileArray
-        .filter((f) => f instanceof File || f instanceof Blob)
-        .map((f) => ({
-          id: `tmp-${f.name}-${Date.now()}`,
-          name: f.name,
-          mimeType: f.type,
-          url: URL.createObjectURL(f),
-          isUploading: true,
-        }))
-
-      qc.setQueryData(filesKey, (old = []) => [...placeholders, ...old])
-      return { previous }
+    onSuccess: () => {
+      qc.invalidateQueries(filesKey);
+      qc.invalidateQueries(detailKey);
     },
-    onError: (err, _files, context) => {
-      setUploadError(err?.message || "Error uploading files.")
-      if (context?.previous) {
-        qc.setQueryData(filesKey, context.previous)
-      }
-    },
-    onSettled: () => {
-      qc.invalidateQueries(filesKey)
-      qc.invalidateQueries(detailKey)
-    },
-  })
+  });
 
   return {
     uploadFiles: mutation.mutateAsync,
     uploading: mutation.isLoading,
-    uploadError,
-    clearUploadError,
-  }
+    uploadError: mutation.error,
+  };
 }
 
 /**
- * Hook para eliminar un archivo de un producto con React Query.
- * @param {string|number} productId
+ * Hook para eliminar un archivo de un producto.
  */
 export function useDeleteProductFile(productId) {
-  const qc = useQueryClient()
-  const filesKey = productKeys.files(productId)
-  const detailKey = productKeys.detail(productId)
+  const qc = useQueryClient();
+  const filesKey = productKeys.files(productId);
+  const detailKey = productKeys.detail(productId);
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: (fileId) => deleteProductFile(productId, fileId),
     onMutate: async (fileId) => {
-      await qc.cancelQueries(filesKey)
-      const previous = qc.getQueryData(filesKey) || []
+      await qc.cancelQueries(filesKey);
+      const previous = qc.getQueryData(filesKey) || [];
       qc.setQueryData(filesKey, (old = []) =>
-        old.filter((f) => (f.id || f.key) !== fileId)
-      )
-      return { previous }
+        old.filter((f) => f.id !== fileId)
+      );
+      return { previous };
     },
     onError: (_err, _fileId, context) => {
       if (context?.previous) {
-        qc.setQueryData(filesKey, context.previous)
+        qc.setQueryData(filesKey, context.previous);
       }
     },
     onSettled: () => {
-      qc.invalidateQueries(filesKey)
-      qc.invalidateQueries(detailKey)
+      qc.invalidateQueries(filesKey);
+      qc.invalidateQueries(detailKey);
     },
-  })
+  });
+
+  return {
+    deleteFile: mutation.mutateAsync,
+    deleting: mutation.isLoading,
+    deleteError: mutation.error,
+  };
 }

@@ -35,7 +35,6 @@ export const uploadFileProduct = async (productId, files) => {
   }
   const id = String(productId).trim();
   const formData = new FormData();
-  // El backend hace `request.FILES.getlist("file")`
   files.forEach((file) => formData.append("file", file));
   try {
     const response = await djangoApi.post(
@@ -54,7 +53,31 @@ export const uploadFileProduct = async (productId, files) => {
 };
 
 /**
- * 🔽 Descarga un archivo multimedia de un producto.
+ * 🗑️ Elimina un archivo multimedia de un producto.
+ */
+export const deleteProductFile = async (productId, fileId) => {
+  if (!productId || !fileId) {
+    throw new Error("Se requieren productId y fileId para eliminar.");
+  }
+  const id = String(productId).trim();
+  // encodea el fileId para que "products/43/xyz.png" se convierta en "products%2F43%2Fxyz.png"
+  const fId = encodeURIComponent(String(fileId).trim());
+  try {
+    const response = await djangoApi.delete(
+      `/inventory/products/${id}/files/${fId}/delete/`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error al eliminar archivo del producto:", error);
+    const message =
+      error.response?.data?.detail ||
+      "No se pudo eliminar el archivo.";
+    throw new Error(message);
+  }
+};
+
+/**
+ * 🔽 Descarga protegido y convierte a blob URL.
  */
 export const downloadProductFile = async (
   productId,
@@ -74,58 +97,4 @@ export const downloadProductFile = async (
     );
     return null;
   }
-};
-
-/**
- * 🗑️ Elimina un archivo multimedia de un producto.
- */
-export const deleteProductFile = async (productId, fileId) => {
-  if (!productId || !fileId) {
-    throw new Error("Se requieren productId y fileId para eliminar.");
-  }
-  const id = String(productId).trim();
-  const fId = String(fileId).trim();
-  try {
-    const response = await djangoApi.delete(
-      `/inventory/products/${id}/files/${fId}/delete/`
-    );
-    return response.data;
-  } catch (error) {
-    console.error("❌ Error al eliminar archivo del producto:", error);
-    const message =
-      error.response?.data?.detail ||
-      "No se pudo eliminar el archivo.";
-    throw new Error(message);
-  }
-};
-
-/**
- * 🖇️ Enriquecer metadatos con URLs de blob + nombre + tipo de contenido.
- * Ahora recibe un downloadFn (ej: downloadProductFile).
- */
-export const enrichFilesWithBlobUrls = async ({
-  productId,
-  rawFiles = [],
-  subproductId = null,
-  signal = null,
-  downloadFn,              // <— nueva firma
-}) => {
-  if (!productId || !Array.isArray(rawFiles)) return [];
-  const enriched = await Promise.all(
-    rawFiles.map(async (f) => {
-      const id = f.drive_file_id || f.id;
-      if (!id || f.mimeType === "application/vnd.google-apps.folder") return null;
-      // usa downloadFn en vez de fetchProtectedFile directamente
-      const url = await downloadFn(productId, id, signal);
-      if (!url) return null;
-      return {
-        ...f,
-        id,
-        url,
-        filename: f.name || f.filename || "",
-        contentType: f.mimeType || f.contentType,
-      };
-    })
-  );
-  return enriched.filter(Boolean);
 };

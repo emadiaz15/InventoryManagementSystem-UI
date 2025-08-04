@@ -92,11 +92,11 @@ const ProductsList = () => {
   );
 
   const handleDelete = useCallback(
-    async (prd) => {
+    async (id) => {
       setIsDeleting(true);
       setDeleteError(null);
       try {
-        await deleteProduct(prd.id);
+        await deleteProduct(id);
         handleSave("¡Producto eliminado con éxito!");
         closeModal();
       } catch (err) {

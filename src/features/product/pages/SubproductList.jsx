@@ -123,7 +123,7 @@ export default function SubproductList() {
   }, []);
 
   return (
-    <Layout isLoading={loading}>
+    <Layout isLoading={isLoading}>
       {showSuccess && (
         <div className="fixed top-20 right-5 z-50">
           <SuccessMessage message={successMessage} onClose={() => setShowSuccess(false)} />
