@@ -180,6 +180,7 @@ export function useEditProductForm({
       setError("Selecciona una categoría válida.");
       return;
     }
+
     let typeId = "";
     if (formData.typeInput) {
       const validType = filteredTypes.find(
@@ -207,11 +208,11 @@ export function useEditProductForm({
     fd.append("location", formData.location.trim());
     fd.append("position", formData.position.trim());
     fd.append("category", formData.category);
-    if (typeId) fd.append("type", typeId);
-    fd.append(
-      "has_subproducts",
-      formData.has_subproducts ? "true" : "false"
-    );
+
+    // Siempre incluimos el campo "type", incluso si typeId === ""
+    fd.append("type", typeId);
+
+    fd.append("has_subproducts", formData.has_subproducts ? "true" : "false");
     const stockVal = formData.initial_stock_quantity.replace(/[^0-9.]/g, "");
     if (stockVal) fd.append("initial_stock_quantity", stockVal);
 
@@ -230,7 +231,16 @@ export function useEditProductForm({
     } finally {
       setLoading(false);
     }
-  }, [formData, validateCodeUnique, filteredTypes, updateProduct, uploadMut, onSave, onClose, product.id]);
+  }, [
+    formData,
+    validateCodeUnique,
+    filteredTypes,
+    updateProduct,
+    uploadMut,
+    onSave,
+    onClose,
+    product.id,
+  ]);
 
   // 8) delete flow
   const openDeleteRequest = useCallback((file) => {

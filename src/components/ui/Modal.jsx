@@ -1,3 +1,4 @@
+// src/components/ui/Modal.jsx
 import React, { useEffect, useRef } from 'react';
 
 const Modal = ({
@@ -48,7 +49,6 @@ const Modal = ({
     <div
       id="modal-overlay"
       className={`fixed inset-0 z-[9999] flex p-4 bg-black bg-opacity-60 transition-opacity duration-300 ease-in-out ${positionClasses[position]}`}
-      onClick={(e) => e.target.id === 'modal-overlay' && onClose()}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
@@ -60,6 +60,7 @@ const Modal = ({
         className={`bg-background-100 p-6 rounded-lg shadow-xl w-full ${maxWidth} relative max-h-[90vh] overflow-y-auto flex flex-col ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           {title && (
             <h2 id={titleId} className="text-xl md:text-2xl font-semibold text-text-primary">
@@ -76,6 +77,8 @@ const Modal = ({
             </svg>
           </button>
         </div>
+
+        {/* Contenido */}
         <div id={contentId} className="text-text-primary overflow-y-auto">
           {children}
         </div>

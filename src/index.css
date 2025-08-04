@@ -17,3 +17,9 @@ select option {
   background-color: #ffffff !important;
   color: #17202a !important;
 }
+
+@layer base {
+  html {
+    font-size: 90%;
+  }
+}
