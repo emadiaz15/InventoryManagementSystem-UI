@@ -1,5 +1,5 @@
 // src/features/product/components/CreateSubproductModal.jsx
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import Modal from "@/components/ui/Modal"
 import FormInput from "@/components/ui/form/FormInput"
@@ -40,21 +40,24 @@ const CreateSubproductModal = ({ product, isOpen, onClose, onSave }) => {
     const [error, setError] = useState("")
     const [showSuccess, setShowSuccess] = useState(false)
 
-    // Hook para crear subproducto
+    // Hooks para crear subproducto y subir archivos
     const createMut = useCreateSubproduct(product.id)
-    // Hook para subir archivos de subproducto
     const uploadMut = useUploadSubproductFiles(product.id)
 
-    // Reset al abrir/cerrar
+    // Extraemos las funciones reset para usarlas como dependencias estables
+    const { reset: resetCreate } = createMut
+    const { reset: resetUpload } = uploadMut
+
+    // Reset al abrir/cerrar modal
     useEffect(() => {
         if (!isOpen) return
         setFormData(initialState)
         setPreviewFiles([])
         setError("")
         setShowSuccess(false)
-        createMut.reset()
-        uploadMut.reset()
-    }, [isOpen, createMut, uploadMut])
+        resetCreate()
+        resetUpload()
+    }, [isOpen, resetCreate, resetUpload])
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -259,7 +262,8 @@ const CreateSubproductModal = ({ product, isOpen, onClose, onSave }) => {
                     <button
                         type="submit"
                         disabled={createMut.isLoading || uploadMut.isLoading}
-                        className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 ${createMut.isLoading || uploadMut.isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                        className={`bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-600 ${createMut.isLoading || uploadMut.isLoading ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
                     >
                         {(createMut.isLoading || uploadMut.isLoading) ? "Guardando..." : "Crear Subproducto"}
                     </button>
