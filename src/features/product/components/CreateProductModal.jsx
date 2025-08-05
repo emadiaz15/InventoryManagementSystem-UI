@@ -88,7 +88,9 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
   };
 
   useEffect(() => {
-    if (createdProductId && formData.images.length) {
+    if (!createdProductId) return;
+
+    if (formData.images.length > 0) {
       uploadFiles(formData.images)
         .then(() => {
           setShowSuccess(true);
@@ -100,8 +102,21 @@ const CreateProductModal = ({ isOpen, onClose, onSave }) => {
         .catch(err => {
           setError(err.message || uploadError || "Error subiendo archivos.");
         });
+    } else {
+      setShowSuccess(true);
+      setTimeout(() => {
+        onSave?.();
+        onClose();
+      }, 1500);
     }
-  }, [createdProductId, formData.images, uploadFiles, uploadError, onSave, onClose]);
+  }, [
+    createdProductId,
+    formData.images,
+    uploadFiles,
+    uploadError,
+    onSave,
+    onClose,
+  ]);
 
   const handleSubmit = async e => {
     e.preventDefault();
