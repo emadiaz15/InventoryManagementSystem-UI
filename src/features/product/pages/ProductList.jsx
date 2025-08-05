@@ -30,7 +30,6 @@ const ProductsList = () => {
     error: fetchError,
     nextPageUrl,
     previousPageUrl,
-    createProduct,
     updateProduct,
     deleteProduct,
   } = useProducts(filters, pageUrl);
@@ -63,19 +62,6 @@ const ProductsList = () => {
   const filterColumns = useMemo(
     () => [{ key: "code", label: "Código", filterable: true, type: "number" }],
     []
-  );
-
-  const handleCreate = useCallback(
-    async (formData) => {
-      try {
-        await createProduct(formData);
-        handleSave("¡Producto creado con éxito!");
-        closeModal();
-      } catch (err) {
-        console.error("Error creando producto:", err);
-      }
-    },
-    [createProduct, handleSave, closeModal]
   );
 
   const handleUpdate = useCallback(
@@ -165,7 +151,6 @@ const ProductsList = () => {
       <ProductModals
         modalState={modalState}
         closeModal={closeModal}
-        onCreateProduct={handleCreate}
         onUpdateProduct={handleUpdate}
         handleSave={handleSave}
         onDeleteProduct={handleDelete}
