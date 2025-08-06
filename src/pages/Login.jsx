@@ -32,7 +32,7 @@ const Login = () => {
         <div className="relative z-10 h-full flex items-center justify-center px-4">
           <div className="flex flex-col lg:flex-row items-center justify-center w-full max-w-5xl gap-6">
             {/* Imagen lateral */}
-            <div className="hidden lg:block lg:w-1/2">
+            <div className="hidden lg:block lg:w-5/12">
               <img src="/home-img.png" alt="Home" className="w-full" />
             </div>
 

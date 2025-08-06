@@ -78,15 +78,15 @@ const ProductTable = ({
                             </button>
                         )}
 
-                        {/* Historial de stock */}
-                        <button
-                            onClick={() => onViewHistory(p)}
-                            className="bg-yellow-500 p-2 rounded hover:bg-yellow-600 transition-colors"
-                            aria-label="Ver historial de stock"
-                        >
-                            <ClockIcon className="w-5 h-5 text-white" />
-                        </button>
-
+                        {/* Historial de stock 
+                            <button
+                                onClick={() => onViewHistory(p)}
+                                className="bg-yellow-500 p-2 rounded hover:bg-yellow-600 transition-colors"
+                                aria-label="Ver historial de stock"
+                            >
+                                <ClockIcon className="w-5 h-5 text-white" />
+                            </button>
+                        */}
                         {/* Edición / Eliminación (solo staff) */}
                         {isStaff && (
                             <>
