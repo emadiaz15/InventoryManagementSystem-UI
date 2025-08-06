@@ -20,8 +20,7 @@ import MyProfile from '../features/user/pages/MyProfile';
 const AppRoutes = () => (
   <Routes>
     {/* PÚBLICAS */}
-    <Route path="/" element={<Home />} />
-    <Route path="/login" element={<Login />} />
+    <Route path="/" element={<Login />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
 
     {/* CUALQUIERA autenticado */}
