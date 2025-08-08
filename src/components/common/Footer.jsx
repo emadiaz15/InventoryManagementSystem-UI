@@ -6,7 +6,7 @@ const Footer = () => {
       className="
         bg-primary-500 
         text-white 
-        py-4 px-6 
+        py-1 px-4 
         w-screen          /* ancho = viewport width */
         /* fixed bottom-0 left-0  Si lo quieres siempre visible pegado al bottom */
       "
